@@ -250,16 +250,16 @@
                         </div>
 
 
-                        {{-- Salary --}}
+                        {{-- salary --}}
 
                         <div class="col-md-6">
 
-                            <label for="Salary" class="form-label">
-                                Salary
+                            <label for="salary" class="form-label">
+                                salary
                             </label>
 
-                            <input type="number" name="Salary" id="Salary" min="1.00" step="0.01"
-                                value="{{ old('Salary') }}" class="form-control" required>
+                            <input type="number" name="salary" id="salary" min="1.00" step="0.01"
+                                value="{{ old('salary') }}" class="form-control" required>
 
                         </div>
 

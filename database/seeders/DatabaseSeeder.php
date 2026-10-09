@@ -6,6 +6,7 @@ use App\Models\Department;
 use App\Models\User;
 use App\Models\Employee;
 use App\Models\Project;
+use App\Models\RoleMaster;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -27,5 +28,14 @@ class DatabaseSeeder extends Seeder
         Department::factory()->count(3)->create();
         Project::factory()->count(5)->create();
         Employee::factory()->count(20)->create();
+        RoleMaster::factory()->count(5)->create();
+        // Seed roles and permissions.
+        $this->call([
+            RoleAndPermissionSeeder::class,
+        ]);
+
+        $this->call([
+            EmployeeProjectSeeder::class,
+        ]);
     }
 }

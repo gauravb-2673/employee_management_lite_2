@@ -49,6 +49,17 @@ class EmployeePolicy
      */
     public function update(User $user, Employee $employee): bool
     {
+        // Admin can update any employee.
+        if ($user->hasRole('admin')) {
+            return true;
+        }
+
+        // HR can update any employee.
+        if ($user->hasRole('hr')) {
+            return true;
+        }
+
+        // Other roles cannot update employees.
         return false;
     }
 
@@ -57,7 +68,8 @@ class EmployeePolicy
      */
     public function delete(User $user, Employee $employee): bool
     {
-        return false;
+        // Only admin can delete employees.
+        return $user->hasRole('admin');
     }
 
     /**

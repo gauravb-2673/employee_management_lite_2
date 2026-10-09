@@ -3,10 +3,18 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\UserRoleController;
 
 Route::get('/', function () {
     return view('welcome');
 });
+// Display the role assignment form.
+Route::get('/user-roles/assign', [UserRoleController::class, 'index'])
+    ->name('user-roles.assign');
+
+// Process the role assignment form.
+Route::post('/user-roles/assign', [UserRoleController::class, 'store'])
+    ->name('user-roles.store');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

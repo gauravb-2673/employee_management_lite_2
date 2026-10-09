@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\Department;
+use App\Models\RoleMaster;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Department>
+ * @extends Factory<RoleMaster>
  */
-class DepartmentFactory extends Factory
+class RoleMasterFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -18,7 +18,7 @@ class DepartmentFactory extends Factory
     public function definition(): array
     {
         return [
-            'department_name' => fake()->unique()->text(10),
+            'role_name' => fake()->unique()->randomLetter(20),
         ];
     }
 }

@@ -202,12 +202,9 @@
 
                     <div class="d-flex gap-2 mt-3 mt-md-0">
                         <form action="{{ route('employees.index') }}" method="GET">
-                            @method('GET')
-                            @csrf
-
-
                             <label for="employeesearch" placeholder="Search By Employee Name or Email">Search</label>
-                            <input type="text" name="employeesearch" id="employeesearch">
+                            <input type="text" name="employeesearch" id="employeesearch"
+                                value="{{ request('employeesearch') }}">
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 Search
                             </button>
@@ -215,10 +212,6 @@
                         </form>
 
                         <form action="{{ route('employees.index') }}" method="GET">
-
-                            @csrf
-
-                            @method('GET')
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 Clear Search
                             </button>
@@ -374,7 +367,7 @@
 
                                 <td>
 
-                                    ₹{{ number_format($employee->Salary, 2) }}
+                                    ₹{{ number_format($employee->salary, 2) }}
 
                                 </td>
 

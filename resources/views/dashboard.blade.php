@@ -1,7 +1,10 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Dashboard') }}
+            {{ __('Dashboard') }} <div class="p-6 text-gray-900">
+                <p>To assign user roles, click <a href="{{ route('user-roles.assign') }}"
+                        class="text-sm font-medium text-indigo-700 hover:text-indigo-600">here</a>.</p>
+            </div>
         </h2>
     </x-slot>
 

@@ -24,7 +24,7 @@ class EmployeeFactory extends Factory
             ),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'Salary' => fake()->randomFloat(2, 30000, 100000),
+            'salary' => fake()->randomFloat(2, 30000, 100000),
             'joining_date' => fake()->date(),
             'is_active' => fake()->boolean(),
         ];

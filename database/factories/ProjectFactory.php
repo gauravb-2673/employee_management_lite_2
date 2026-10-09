@@ -18,13 +18,7 @@ class ProjectFactory extends Factory
     public function definition(): array
     {
         return [
-            'project_name' => fake()->randomElement([
-                'Employee Portal',
-                'Payroll System',
-                'CRM Application',
-                'Inventory System',
-                'Job Portal',
-            ])
+            'project_name' => fake()->unique()->text(30),
         ];
     }
 }

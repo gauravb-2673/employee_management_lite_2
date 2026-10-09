@@ -26,7 +26,7 @@ class StoreEmployeeRequest extends FormRequest
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:employees,email',
             'department_id' => 'required|integer|exists:departments,id',
-            'Salary' => 'required|decimal:2|min:0',
+            'salary' => 'required|decimal:2|min:0',
             'joining_date' => 'required|date|before_or_equal:today',
             'is_active' => 'required|boolean',
 

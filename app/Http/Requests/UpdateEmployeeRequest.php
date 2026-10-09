@@ -30,7 +30,7 @@ class UpdateEmployeeRequest extends FormRequest
             'name' => 'required|string|max:100',
             'email' => ['required', 'email', Rule::unique('employees', 'email')->ignore($this->employee)],
             'department_id' => 'required|integer|exists:departments,id',
-            'Salary' => 'required|decimal:2|min:0',
+            'salary' => 'required|decimal:2|min:0',
             'joining_date' => 'required|date',
             'is_active' => 'required|boolean',
             'project_ids' => 'nullable|array',

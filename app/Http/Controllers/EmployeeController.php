@@ -22,12 +22,12 @@ class EmployeeController extends Controller
 
         // dd($request);
 
-        DB::listen(function ($query) use (&$queries) {
-            $queries[] = [
-                'sql' => $query->sql,
-                'bindings' => $query->bindings,
-            ];
-        });
+        // DB::listen(function ($query) use (&$queries) {
+        //     $queries[] = [
+        //         'sql' => $query->sql,
+        //         'bindings' => $query->bindings,
+        //     ];
+        // });
         //dd($queries);
         //     $employees = Employee::with('department', 'projects')->paginate(10);
 
@@ -39,7 +39,7 @@ class EmployeeController extends Controller
         $employeesearch = $request->input('employeesearch');
 
         if ($employeesearch !== '') {
-            $query->where('name', 'like', '%' . $employeesearch . '%');
+            $query->where('name', 'like', '%' . $employeesearch . '%')->orWhere('email', 'like', '%' . $employeesearch . '%');
         }
 
         if ($request->user()->hasRole('employee')) {
@@ -139,7 +139,7 @@ class EmployeeController extends Controller
     public function edit(Employee $employee)
     {
         //dd($employee);
-
+        Gate::authorize('update', $employee);
         $employee = $employee->load('department', 'projects');
         $departments = Department::all();
         $projects = Project::all();
@@ -156,6 +156,8 @@ class EmployeeController extends Controller
      */
     public function update(UpdateEmployeeRequest $request, Employee $employee)
     {
+
+        Gate::authorize('update', $employee);
 
         // dd($employee->all());
         $data = $request->validated();
@@ -187,6 +189,9 @@ class EmployeeController extends Controller
      */
     public function destroy(Employee $employee)
     {
+
+        Gate::authorize('delete', $employee);
+
         $employee->delete();
 
         return redirect()

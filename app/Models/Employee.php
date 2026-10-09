@@ -21,7 +21,7 @@ class Employee extends Model
         'department_id',
         'name',
         'email',
-        'Salary',
+        'salary',
         'joining_date',
         'is_active',
         'user_id',
@@ -45,7 +45,7 @@ class Employee extends Model
     {
         return [
             'joining_date' => 'date',
-            'Salary' => 'decimal:2',
+            'salary' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }

@@ -27,17 +27,19 @@
 
                 @auth
 
-                    <a href="{{ route('dashboard') }}" class="text-sm font-medium text-gray-700 hover:text-indigo-600">
+                    <a href="{{ route('dashboard') }}" class="text-sm font-medium text-indigo-700 hover:text-indigo-600">
                         Dashboard
                     </a>
                 @else
-                    <a href="{{ route('login') }}" class="text-sm font-medium text-gray-700 hover:text-indigo-600">
+                    <a href="{{ route('login') }}" class="text-sm font-medium text-indigo-700 hover:text-indigo-600">
                         Login
                     </a>
-                    <a href="{{ route('register') }}" class="text-sm font-medium text-gray-700 hover:text-indigo-600">
+                    <a href="{{ route('register') }}" class="text-sm font-medium text-indigo-700 hover:text-indigo-600">
                         Register
                     </a>
                 @endauth
+
+
 
             </div>
 
@@ -53,10 +55,6 @@
         <section class="px-6 py-16">
 
             <div class="mx-auto max-w-3xl text-center">
-
-                <h1 class="text-4xl font-bold">
-                    Employee Management System
-                </h1>
 
                 <p class="mt-4 text-lg text-gray-600">
                     Manage employees, departments and projects
@@ -99,7 +97,10 @@
                     </h2>
 
                     <p class="mt-2 text-sm text-gray-600">
-                        Manage employee information and details.
+                        Manage employee information and details. <a href="{{ route('user-roles.assign') }}"
+                            class="text-sm font-medium text-indigo-700 hover:text-indigo-600">
+                            Assign User Roles
+                        </a>
                     </p>
 
                 </div>
@@ -140,12 +141,6 @@
     <!-- Footer -->
 
     <footer class="border-t border-gray-200 bg-white">
-
-        <div class="mx-auto max-w-6xl px-6 py-5 text-center text-sm text-gray-500">
-
-            Employee Management System
-
-        </div>
 
     </footer>
 

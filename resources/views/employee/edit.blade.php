@@ -172,18 +172,18 @@
                     </div>
 
 
-                    <!-- Salary -->
+                    <!-- salary -->
                     <div class="col-md-6">
 
-                        <label for="Salary" class="form-label">
-                            Salary
+                        <label for="salary" class="form-label">
+                            salary
                         </label>
 
-                        <input type="number" name="Salary" id="Salary"
-                            class="form-control @error('Salary') is-invalid @enderror"
-                            value="{{ old('Salary', $employee->Salary) }}" min="0" step="0.01" required>
+                        <input type="number" name="salary" id="salary"
+                            class="form-control @error('salary') is-invalid @enderror"
+                            value="{{ old('salary', $employee->salary) }}" min="0" step="0.01" required>
 
-                        @error('Salary')
+                        @error('salary')
                             <div class="invalid-feedback">
                                 {{ $message }}
                             </div>
