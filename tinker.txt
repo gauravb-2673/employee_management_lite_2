@@ -1,0 +1,344 @@
+==================================================
+Test 1 - P3: Tinker Queries
+==================================================
+
+QUERY 1
+--------------------------------------------------
+All active employees in the "Development" department, with their department loaded in the same query set (no N+1).
+
+Query:
+
+$employees = App\Models\Employee::whereHas('department', function($query) { $query->where('department_name', 'like', 'd' . '%');  } )->get();
+
+
+Terminal Output:
+PASTE THE ACTUAL TERMINAL OUTPUT HERE
+
+= Illuminate\Database\Eloquent\Collection {#7550
+    all: [
+      App\Models\Employee {#7549
+        id: 1,
+        department_id: 1,
+        name: "Miss Elise Schaefer",
+        email: "marisol.langosh@example.org",
+        salary: "38357.71",
+        joining_date: "1997-10-27",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:58",
+        updated_at: "2026-10-09 11:53:58",
+        user_id: 1,
+      },
+      App\Models\Employee {#7548
+        id: 6,
+        department_id: 1,
+        name: "Dr. Ramona Runolfsdottir",
+        email: "oral67@example.com",
+        salary: "36243.75",
+        joining_date: "2008-05-21",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:59",
+        updated_at: "2026-10-09 11:53:59",
+        user_id: null,
+      },
+      App\Models\Employee {#7547
+        id: 11,
+        department_id: 1,
+        name: "Prof. Justen Kunde DDS",
+        email: "rolfson.stephen@example.com",
+        salary: "95585.29",
+        joining_date: "2025-01-31",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:54:00",
+        updated_at: "2026-10-09 11:54:00",
+        user_id: null,
+      },
+      App\Models\Employee {#7546
+        id: 14,
+        department_id: 1,
+        name: "Reba Quigley II",
+        email: "augustus04@example.com",
+        salary: "85626.11",
+        joining_date: "2017-03-18",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:54:01",
+        updated_at: "2026-10-09 11:54:01",
+        user_id: null,
+      },
+      App\Models\Employee {#7545
+        id: 16,
+        department_id: 1,
+        name: "Miss Tiana Weber",
+        email: "josiah91@example.org",
+        salary: "77782.21",
+        joining_date: "2025-12-24",
+        is_active: 0,
+        deleted_at: null,
+        created_at: "2026-10-09 11:54:01",
+        updated_at: "2026-10-09 11:54:01",
+        user_id: null,
+      },
+      App\Models\Employee {#7544
+        id: 19,
+        department_id: 1,
+        name: "Eduardo Johnston",
+        email: "glenna74@example.net",
+        salary: "73588.10",
+        joining_date: "2014-06-03",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:54:02",
+        updated_at: "2026-10-09 11:54:02",
+        user_id: null,
+      },
+    ],
+  }
+
+==================================================
+
+QUERY 2
+--------------------------------------------------
+Query:
+
+$department = App\Models\Department::withCount('employees')->orderBy('employees_count')->get();
+
+
+Terminal Output:
+Illuminate\Database\Eloquent\Collection {#7616
+    all: [
+      App\Models\Department {#7589
+        id: 2,
+        department_name: "Sit.",
+        created_at: "2026-10-09 11:53:57",
+        updated_at: "2026-10-09 11:53:57",
+        employees_count: 3,
+      },
+      App\Models\Department {#7488
+        id: 1,
+        department_name: "Deleniti.",
+        created_at: "2026-10-09 11:53:57",
+        updated_at: "2026-10-09 11:53:57",
+        employees_count: 6,
+      },
+      App\Models\Department {#7506
+        id: 3,
+        department_name: "Nobis id.",
+        created_at: "2026-10-09 11:53:57",
+        updated_at: "2026-10-09 11:53:57",
+        employees_count: 10,
+      },
+    ],
+  }
+
+
+
+
+==================================================
+
+QUERY 3
+--------------------------------------------------
+Query:
+$department =  App\Models\Department::withCount('employees')->having('employees_count', '>',3  )->get();
+
+
+Terminal Output:
+
+= Illuminate\Database\Eloquent\Collection {#7654
+    all: [
+      App\Models\Department {#7656
+        id: 1,
+        department_name: "Deleniti.",
+        created_at: "2026-10-09 11:53:57",
+        updated_at: "2026-10-09 11:53:57",
+        employees_count: 6,
+      },
+      App\Models\Department {#7662
+        id: 3,
+        department_name: "Nobis id.",
+        created_at: "2026-10-09 11:53:57",
+        updated_at: "2026-10-09 11:53:57",
+        employees_count: 10,
+      },
+    ],
+  }
+
+
+
+==================================================
+
+QUERY 4
+--------------------------------------------------
+Query:
+  $totandavgsalperdept = App\Models\Department::withAvg('employees','salary')->withSum('employees', 'salary')->get();
+
+
+
+Terminal Output:
+ Illuminate\Database\Eloquent\Collection {#7589
+    all: [
+      App\Models\Department {#7557
+        id: 1,
+        department_name: "Deleniti.",
+        created_at: "2026-10-09 11:53:57",
+        updated_at: "2026-10-09 11:53:57",
+        employees_avg_salary: "67863.861667",
+        employees_sum_salary: "407183.17",
+      },
+      App\Models\Department {#7586
+        id: 2,
+        department_name: "Sit.",
+        created_at: "2026-10-09 11:53:57",
+        updated_at: "2026-10-09 11:53:57",
+        employees_avg_salary: "46845.990000",
+        employees_sum_salary: "140537.97",
+      },
+      App\Models\Department {#7478
+        id: 3,
+        department_name: "Nobis id.",
+        created_at: "2026-10-09 11:53:57",
+        updated_at: "2026-10-09 11:53:57",
+        employees_avg_salary: "71973.791000",
+        employees_sum_salary: "719737.91",
+      },
+    ],
+  }
+
+
+==================================================
+
+QUERY 5
+--------------------------------------------------
+Query:
+$role = App\Models\RoleMaster::find(1);
+$employee = App\Models\Employee::findOrFail(1);
+
+$employee->projects()->syncWithoutDetaching([
+    2 => ['role' => $role->id],
+]);
+Terminal Output:
+> $employee = App\Models\Employee::findOrFail(1);
+
+= App\Models\Employee {#8011
+    id: 1,
+    department_id: 1,
+    name: "Miss Elise Schaefer",
+    email: "marisol.langosh@example.org",
+    salary: "38357.71",
+    joining_date: "1997-10-27",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:58",
+    updated_at: "2026-10-09 11:53:58",
+    user_id: 1,
+  }
+
+> 
+> $employee->projects()->syncWithoutDetaching([
+.     2 => ['role' => $role->id],
+. ]);
+
+= [
+    "attached" => [],
+    "detached" => [],
+    "updated" => [
+      2,
+    ],
+  ]
+
+
+
+
+==================================================
+
+QUERY 6
+--------------------------------------------------
+Query:
+$employee = App\Models\Employee::findOrFail(3);
+
+> $employee->delete();
+
+= true
+
+> App\Models\Employee::find(3);
+
+= null
+
+
+> $employee = App\Models\Employee::withTrashed()->findOrFail(3);
+
+> $employee->restore();
+
+
+
+> App\Models\Employee::find(3);
+
+> App\Models\Employee::where('id', 3)->get();
+
+Terminal Output:
+
+= App\Models\Employee {#8036
+    id: 3,
+    department_id: 3,
+    name: "Gabriel Berge",
+    email: "ahand@example.org",
+    salary: "92502.20",
+    joining_date: "1975-01-19",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:59",
+    updated_at: "2026-10-09 11:53:59",
+    user_id: null,
+  }
+
+
+
+
+
+
+= Illuminate\Database\Eloquent\Collection {#8032
+    all: [],
+  }
+
+
+= App\Models\Employee {#8039
+    id: 3,
+    department_id: 3,
+    name: "Gabriel Berge",
+    email: "ahand@example.org",
+    salary: "92502.20",
+    joining_date: "1975-01-19",
+    is_active: 1,
+    deleted_at: "2026-10-12 12:38:39",
+    created_at: "2026-10-09 11:53:59",
+    updated_at: "2026-10-12 12:38:39",
+    user_id: null,
+  }
+
+
+
+= Illuminate\Support\Carbon @1791808719 {#7477
+    date: 2026-10-12 12:38:39.0 UTC (+00:00),
+  }
+
+
+
+= true
+
+
+
+= App\Models\Employee {#8428
+    id: 3,
+    department_id: 3,
+    name: "Gabriel Berge",
+    email: "ahand@example.org",
+    salary: "92502.20",
+    joining_date: "1975-01-19",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:59",
+    updated_at: "2026-10-12 12:39:21",
+    user_id: null,
+  }

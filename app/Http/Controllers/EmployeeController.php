@@ -129,9 +129,15 @@ class EmployeeController extends Controller
     {
         Gate::authorize('view', $employee);
 
-        return view('employee.show', [
-            'employee' => $employee,
-        ]);
+        $employee = $employee->load('department', 'projects');
+        $departments = Department::all();
+        $projects = Project::all();
+        $roles = RoleMaster::all();
+
+        // dd($employee);
+
+
+        return view('employee.show', ['employee' => $employee, 'departments' => $departments, 'projects' => $projects, 'roles' => $roles]);
     }
     /**
      * Show the form for editing the specified resource.
@@ -156,19 +162,20 @@ class EmployeeController extends Controller
      */
     public function update(UpdateEmployeeRequest $request, Employee $employee)
     {
-
+        // Step 1: Check whether the authenticated user can update this employee.
         Gate::authorize('update', $employee);
 
-        // dd($employee->all());
+        // Step 2: Retrieve only the data that passed validation.
         $data = $request->validated();
 
+        // Step 3: Extract project IDs and their corresponding role IDs.
         $projectIds = $data['project_ids'] ?? [];
         $projectRoles = $data['project_roles'] ?? [];
 
+        // Step 4: Remove project-specific data from the employee's attributes.
         unset($data['project_ids'], $data['project_roles']);
 
-        $employee->update($data);
-
+        // Step 5: Prepare the pivot-table data before starting the transaction.
         $syncData = [];
 
         foreach ($projectIds as $projectId) {
@@ -177,8 +184,17 @@ class EmployeeController extends Controller
             ];
         }
 
-        $employee->projects()->sync($syncData);
+        // Step 6: Update the employee and synchronize projects atomically.
+        DB::transaction(function () use ($employee, $data, $syncData) {
 
+            // Update the employee record in the employees table.
+            $employee->update($data);
+
+            // Synchronize project assignments in the employee_project table.
+            $employee->projects()->sync($syncData);
+        });
+
+        // Step 7: Redirect after the transaction has completed successfully.
         return redirect()
             ->route('employees.index')
             ->with('success', 'Employee data updated successfully');

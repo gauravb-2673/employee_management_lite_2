@@ -444,6 +444,14 @@
 
                                     <div class="d-inline-flex gap-2">
 
+                                        @can('view employees')
+                                            <a href="{{ route('employees.show', ['employee' => $employee->id]) }}"
+                                                class="btn btn-sm btn-outline-primary">
+                                                View
+                                            </a>
+                                        @endcan
+
+
                                         @can('edit employees')
                                             <a href="{{ route('employees.edit', ['employee' => $employee->id]) }}"
                                                 class="btn btn-sm btn-outline-primary">
