@@ -1,0 +1,411 @@
+eager loading n+1 problem
+
+
+ DB::enableQueryLog();
+
+= null
+
+> DB::flushQueryLog();
+
+= null
+
+> $employees = App\Models\Employee::limit(5)->get();
+
+= Illuminate\Database\Eloquent\Collection {#7525
+    all: [
+      App\Models\Employee {#7526
+        id: 1,
+        department_id: 1,
+        name: "Miss Elise Schaefer",
+        email: "marisol.langosh@example.org",
+        salary: "38357.71",
+        joining_date: "1997-10-27",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:58",
+        updated_at: "2026-10-09 11:53:58",
+        user_id: 1,
+      },
+      App\Models\Employee {#7527
+        id: 2,
+        department_id: 3,
+        name: "Dr. Kendra Ernser I",
+        email: "ccummings@example.org",
+        salary: "42141.30",
+        joining_date: "1991-04-06",
+        is_active: 0,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:58",
+        updated_at: "2026-10-09 11:53:58",
+        user_id: null,
+      },
+      App\Models\Employee {#7528
+        id: 3,
+        department_id: 3,
+        name: "Gabriel Berge",
+        email: "ahand@example.org",
+        salary: "92502.20",
+        joining_date: "1975-01-19",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:59",
+        updated_at: "2026-10-12 12:39:21",
+        user_id: null,
+      },
+      App\Models\Employee {#7529
+        id: 4,
+        department_id: 3,
+        name: "Mariela Lueilwitz",
+        email: "kayleigh32@example.org",
+        salary: "68857.37",
+        joining_date: "1990-03-12",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:59",
+        updated_at: "2026-10-09 11:53:59",
+        user_id: null,
+      },
+      App\Models\Employee {#7530
+        id: 5,
+        department_id: 3,
+        name: "Heloise Wilderman DVM",
+        email: "cmarks@example.org",
+        salary: "94669.30",
+        joining_date: "1984-09-25",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:59",
+        updated_at: "2026-10-09 11:53:59",
+        user_id: null,
+      },
+    ],
+  }
+
+> $employees->each(function ($employee) {
+.     $employee->department;
+. });
+
+= Illuminate\Database\Eloquent\Collection {#7525
+    all: [
+      App\Models\Employee {#7526
+        id: 1,
+        department_id: 1,
+        name: "Miss Elise Schaefer",
+        email: "marisol.langosh@example.org",
+        salary: "38357.71",
+        joining_date: "1997-10-27",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:58",
+        updated_at: "2026-10-09 11:53:58",
+        user_id: 1,
+        department: App\Models\Department {#7494
+          id: 1,
+          department_name: "Deleniti.",
+          created_at: "2026-10-09 11:53:57",
+          updated_at: "2026-10-09 11:53:57",
+        },
+      },
+      App\Models\Employee {#7527
+        id: 2,
+        department_id: 3,
+        name: "Dr. Kendra Ernser I",
+        email: "ccummings@example.org",
+        salary: "42141.30",
+        joining_date: "1991-04-06",
+        is_active: 0,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:58",
+        updated_at: "2026-10-09 11:53:58",
+        user_id: null,
+        department: App\Models\Department {#7451
+          id: 3,
+          department_name: "Nobis id.",
+          created_at: "2026-10-09 11:53:57",
+          updated_at: "2026-10-09 11:53:57",
+        },
+      },
+      App\Models\Employee {#7528
+        id: 3,
+        department_id: 3,
+        name: "Gabriel Berge",
+        email: "ahand@example.org",
+        salary: "92502.20",
+        joining_date: "1975-01-19",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:59",
+        updated_at: "2026-10-12 12:39:21",
+        user_id: null,
+        department: App\Models\Department {#7544
+          id: 3,
+          department_name: "Nobis id.",
+          created_at: "2026-10-09 11:53:57",
+          updated_at: "2026-10-09 11:53:57",
+        },
+      },
+      App\Models\Employee {#7529
+        id: 4,
+        department_id: 3,
+        name: "Mariela Lueilwitz",
+        email: "kayleigh32@example.org",
+        salary: "68857.37",
+        joining_date: "1990-03-12",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:59",
+        updated_at: "2026-10-09 11:53:59",
+        user_id: null,
+        department: App\Models\Department {#7545
+          id: 3,
+          department_name: "Nobis id.",
+          created_at: "2026-10-09 11:53:57",
+          updated_at: "2026-10-09 11:53:57",
+        },
+      },
+      App\Models\Employee {#7530
+        id: 5,
+        department_id: 3,
+        name: "Heloise Wilderman DVM",
+        email: "cmarks@example.org",
+        salary: "94669.30",
+        joining_date: "1984-09-25",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:59",
+        updated_at: "2026-10-09 11:53:59",
+        user_id: null,
+        department: App\Models\Department {#7960
+          id: 3,
+          department_name: "Nobis id.",
+          created_at: "2026-10-09 11:53:57",
+          updated_at: "2026-10-09 11:53:57",
+        },
+      },
+    ],
+  }
+
+> count(DB::getQueryLog());
+
+= 6
+
+> collect(DB::getQueryLog())->pluck('query');
+
+= Illuminate\Support\Collection {#7541
+    all: [
+      "select * from `employees` where `employees`.`deleted_at` is null limit 5",
+      "select * from `departments` where `departments`.`id` = ? limit 1",
+      "select * from `departments` where `departments`.`id` = ? limit 1",
+      "select * from `departments` where `departments`.`id` = ? limit 1",
+      "select * from `departments` where `departments`.`id` = ? limit 1",
+      "select * from `departments` where `departments`.`id` = ? limit 1",
+    ],
+  }
+
+> DB::flushQueryLog();
+
+= null
+
+> $employees = App\Models\Employee::with('department')
+
+= Illuminate\Database\Eloquent\Builder {#7532
+    +pendingAttributes: [],
+  }
+
+>     ->limit(5)
+
+   PARSE ERROR  PHP Parse error: Syntax error, unexpected T_OBJECT_OPERATOR in vendor/psy/psysh/src/Exception/ParseErrorException.php on line 44.
+
+>     ->get();
+
+   PARSE ERROR  PHP Parse error: Syntax error, unexpected T_OBJECT_OPERATOR in vendor/psy/psysh/src/Exception/ParseErrorException.php on line 44.
+
+> 
+> $employees = App\Models\Employee::with('department')->limit(5)->get();
+
+= Illuminate\Database\Eloquent\Collection {#7895
+    all: [
+      App\Models\Employee {#7875
+        id: 1,
+        department_id: 1,
+        name: "Miss Elise Schaefer",
+        email: "marisol.langosh@example.org",
+        salary: "38357.71",
+        joining_date: "1997-10-27",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:58",
+        updated_at: "2026-10-09 11:53:58",
+        user_id: 1,
+        department: App\Models\Department {#7863
+          id: 1,
+          department_name: "Deleniti.",
+          created_at: "2026-10-09 11:53:57",
+          updated_at: "2026-10-09 11:53:57",
+        },
+      },
+      App\Models\Employee {#7486
+        id: 2,
+        department_id: 3,
+        name: "Dr. Kendra Ernser I",
+        email: "ccummings@example.org",
+        salary: "42141.30",
+        joining_date: "1991-04-06",
+        is_active: 0,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:58",
+        updated_at: "2026-10-09 11:53:58",
+        user_id: null,
+        department: App\Models\Department {#7894
+          id: 3,
+          department_name: "Nobis id.",
+          created_at: "2026-10-09 11:53:57",
+          updated_at: "2026-10-09 11:53:57",
+        },
+      },
+      App\Models\Employee {#7892
+        id: 3,
+        department_id: 3,
+        name: "Gabriel Berge",
+        email: "ahand@example.org",
+        salary: "92502.20",
+        joining_date: "1975-01-19",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:59",
+        updated_at: "2026-10-12 12:39:21",
+        user_id: null,
+        department: App\Models\Department {#7894},
+      },
+      App\Models\Employee {#8009
+        id: 4,
+        department_id: 3,
+        name: "Mariela Lueilwitz",
+        email: "kayleigh32@example.org",
+        salary: "68857.37",
+        joining_date: "1990-03-12",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:59",
+        updated_at: "2026-10-09 11:53:59",
+        user_id: null,
+        department: App\Models\Department {#7894},
+      },
+      App\Models\Employee {#7873
+        id: 5,
+        department_id: 3,
+        name: "Heloise Wilderman DVM",
+        email: "cmarks@example.org",
+        salary: "94669.30",
+        joining_date: "1984-09-25",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:59",
+        updated_at: "2026-10-09 11:53:59",
+        user_id: null,
+        department: App\Models\Department {#7894},
+      },
+    ],
+  }
+
+> $employees->each(function ($employee) {
+.     $employee->department;
+. });
+
+= Illuminate\Database\Eloquent\Collection {#7895
+    all: [
+      App\Models\Employee {#7875
+        id: 1,
+        department_id: 1,
+        name: "Miss Elise Schaefer",
+        email: "marisol.langosh@example.org",
+        salary: "38357.71",
+        joining_date: "1997-10-27",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:58",
+        updated_at: "2026-10-09 11:53:58",
+        user_id: 1,
+        department: App\Models\Department {#7863
+          id: 1,
+          department_name: "Deleniti.",
+          created_at: "2026-10-09 11:53:57",
+          updated_at: "2026-10-09 11:53:57",
+        },
+      },
+      App\Models\Employee {#7486
+        id: 2,
+        department_id: 3,
+        name: "Dr. Kendra Ernser I",
+        email: "ccummings@example.org",
+        salary: "42141.30",
+        joining_date: "1991-04-06",
+        is_active: 0,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:58",
+        updated_at: "2026-10-09 11:53:58",
+        user_id: null,
+        department: App\Models\Department {#7894
+          id: 3,
+          department_name: "Nobis id.",
+          created_at: "2026-10-09 11:53:57",
+          updated_at: "2026-10-09 11:53:57",
+        },
+      },
+      App\Models\Employee {#7892
+        id: 3,
+        department_id: 3,
+        name: "Gabriel Berge",
+        email: "ahand@example.org",
+        salary: "92502.20",
+        joining_date: "1975-01-19",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:59",
+        updated_at: "2026-10-12 12:39:21",
+        user_id: null,
+        department: App\Models\Department {#7894},
+      },
+      App\Models\Employee {#8009
+        id: 4,
+        department_id: 3,
+        name: "Mariela Lueilwitz",
+        email: "kayleigh32@example.org",
+        salary: "68857.37",
+        joining_date: "1990-03-12",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:59",
+        updated_at: "2026-10-09 11:53:59",
+        user_id: null,
+        department: App\Models\Department {#7894},
+      },
+      App\Models\Employee {#7873
+        id: 5,
+        department_id: 3,
+        name: "Heloise Wilderman DVM",
+        email: "cmarks@example.org",
+        salary: "94669.30",
+        joining_date: "1984-09-25",
+        is_active: 1,
+        deleted_at: null,
+        created_at: "2026-10-09 11:53:59",
+        updated_at: "2026-10-09 11:53:59",
+        user_id: null,
+        department: App\Models\Department {#7894},
+      },
+    ],
+  }
+
+> collect(DB::getQueryLog())->pluck('query');
+
+= Illuminate\Support\Collection {#7554
+    all: [
+      "select * from `employees` where `employees`.`deleted_at` is null limit 5",
+      "select * from `departments` where `departments`.`id` in (1, 3)",
+    ],
+  }
+
+> 
+
+

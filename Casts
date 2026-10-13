@@ -1,0 +1,221 @@
+server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+> $employee = App\Models\Employee::first();
+
+= App\Models\Employee {#7905
+    id: 1,
+    department_id: 1,
+    name: "Miss Elise Schaefer",
+    email: "marisol.langosh@example.org",
+    salary: "38357.71",
+    joining_date: "1997-10-27",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:58",
+    updated_at: "2026-10-09 11:53:58",
+    user_id: 1,
+  }
+
+> $employee->joining_date;
+
+= Illuminate\Support\Carbon @877910400 {#7474
+    date: 1997-10-27 00:00:00.0 UTC (+00:00),
+  }
+
+> get_debug_type($employee->joining_date);
+
+= "Illuminate\\Support\\Carbon"
+
+> server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+
+> $employee = App\Models\Employee::first();
+
+= App\Models\Employee {#7911
+    id: 1,
+    department_id: 1,
+    name: "Miss Elise Schaefer",
+    email: "marisol.langosh@example.org",
+    salary: "38357.71",
+    joining_date: "1997-10-27",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:58",
+    updated_at: "2026-10-09 11:53:58",
+    user_id: 1,
+  }
+
+> $employee->joining_date;
+
+= "1997-10-27"
+
+> get_debug_type($employee->joining_date);
+
+= "string"
+
+
+
+
+
+
+
+
+
+
+
+
+> $employee = App\Models\Employee::first();
+
+= App\Models\Employee {#7905
+    id: 1,
+    department_id: 1,
+    name: "Miss Elise Schaefer",
+    email: "marisol.langosh@example.org",
+    salary: "38357.71",
+    joining_date: "1997-10-27",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:58",
+    updated_at: "2026-10-09 11:53:58",
+    user_id: 1,
+  }
+
+> $employee->salary;
+
+= "38357.71"
+
+> get_debug_type($employee->salary);
+
+= "string"
+
+> server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+> $employee = App\Models\Employee::first();
+
+= App\Models\Employee {#7905
+    id: 1,
+    department_id: 1,
+    name: "Miss Elise Schaefer",
+    email: "marisol.langosh@example.org",
+    salary: "38357.71",
+    joining_date: "1997-10-27",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:58",
+    updated_at: "2026-10-09 11:53:58",
+    user_id: 1,
+  }
+
+> $employee->salary;
+
+= "38357.710"
+
+> get_debug_type($employee->salary);
+
+= "string"
+
+
+
+
+
+
+
+
+
+server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+> $employee = App\Models\Employee::first();
+
+= App\Models\Employee {#7905
+    id: 1,
+    department_id: 1,
+    name: "Miss Elise Schaefer",
+    email: "marisol.langosh@example.org",
+    salary: "38357.71",
+    joining_date: "1997-10-27",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:58",
+    updated_at: "2026-10-09 11:53:58",
+    user_id: 1,
+  }
+
+> $employee->is_active;
+
+= 1
+
+> get_debug_type($employee->is_active);
+
+= "int"
+
+> server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+> $employee = App\Models\Employee::first();
+
+= App\Models\Employee {#7905
+    id: 1,
+    department_id: 1,
+    name: "Miss Elise Schaefer",
+    email: "marisol.langosh@example.org",
+    salary: "38357.71",
+    joining_date: "1997-10-27",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:58",
+    updated_at: "2026-10-09 11:53:58",
+    user_id: 1,
+  }
+
+> $employee->is_active;
+
+= true
+
+> get_debug_type($employee->is_active);
+
+= "bool"
+
+> 
+
+
+
+
+
+server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+> $employee = App\Models\Employee::first();
+
+= App\Models\Employee {#7905
+    id: 1,
+    department_id: 1,
+    name: "Miss Elise Schaefer",
+    email: "marisol.langosh@example.org",
+    salary: "38357.71",
+    joining_date: "1997-10-27",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:58",
+    updated_at: "2026-10-09 11:53:58",
+    user_id: 1,
+  }
+
+> $employee->created_at;
+
+= Illuminate\Support\Carbon @1791546838 {#7475
+    date: 2026-10-09 11:53:58.0 UTC (+00:00),
+  }
+
+> get_debug_type($employee->created_at);
+
+= "Illuminate\\Support\\Carbon"
+
+> 
+
+
+
+

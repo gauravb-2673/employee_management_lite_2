@@ -12,6 +12,7 @@ use App\Http\Requests\UpdateEmployeeRequest;
 use App\Models\RoleMaster;
 use Illuminate\Support\Facades\Gate;
 
+
 class EmployeeController extends Controller
 {
     /**
@@ -19,7 +20,7 @@ class EmployeeController extends Controller
      */
     public function index(Request $request)
     {
-
+        //dd($request->input('departmentsearch'));
         // dd($request);
 
         // DB::listen(function ($query) use (&$queries) {
@@ -29,29 +30,45 @@ class EmployeeController extends Controller
         //     ];
         // });
         //dd($queries);
+
         //     $employees = Employee::with('department', 'projects')->paginate(10);
 
 
 
 
         $query = Employee::with('department', 'projects');
-
+        $departments = Department::all();
         $employeesearch = $request->input('employeesearch');
+        $departmentsearch = $request->input('departmentsearch');
 
-        if ($employeesearch !== '') {
-            $query->where('name', 'like', '%' . $employeesearch . '%')->orWhere('email', 'like', '%' . $employeesearch . '%');
+        // Apply employee name/email search only when a value is provided.
+        if ($request->filled('employeesearch')) {
+            $query->where(function ($subQuery) use ($employeesearch) {
+                $subQuery->where('name', 'like', '%' . $employeesearch . '%')
+                    ->orWhere('email', 'like', '%' . $employeesearch . '%');
+            });
         }
+
+        // Filter employees by department when a department is selected.
+        if ($request->filled('departmentsearch')) {
+            $query->where('department_id', $departmentsearch);
+        }
+
+        // if (){
+
+        // }
 
         if ($request->user()->hasRole('employee')) {
             $query->where('user_id', $request->user()->id);
         }
 
         $employees = $query->paginate(10)->withQueryString();;
-
-        //dd($queries);
+        //dd($query->toRawSql());
+        // dd($queries);
 
         return view('employee.index', [
-            'employees' => $employees
+            'employees' => $employees,
+            'departments' => $departments
         ]);
     }
     // public function index()

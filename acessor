@@ -1,0 +1,136 @@
+Acessor
+ protected function annualSalary(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => (float) $this->salary * 12,
+        );
+    }
+
+    protected function isHighSalary(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => (float) $this->salary > 30000,
+        );
+    }
+
+    protected function daysSinceJoining(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => $this->joining_date
+                ? (int) $this->joining_date->diffInDays(now())
+                : null,
+        );
+    }
+
+    protected function basicInformation(): Attribute
+    {
+        return Attribute::make(
+            get: fn() => [
+                'name' => $this->name,
+                'email' => $this->email,
+                'salary' => $this->salary,
+            ],
+        );
+    }
+
+server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+> $employee = App\Models\Employee::first();
+
+= App\Models\Employee {#7908
+    id: 1,
+    department_id: 1,
+    name: "Miss Elise Schaefer",
+    email: "marisol.langosh@example.org",
+    salary: "38357.71",
+    joining_date: "1997-10-27",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:58",
+    updated_at: "2026-10-09 11:53:58",
+    user_id: 1,
+  }
+
+> $employee->is_high_salary;
+
+= true
+
+> get_debug_type($employee->is_high_salary);
+
+= "bool"
+
+> server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+> $employee = App\Models\Employee::first();
+
+= App\Models\Employee {#7909
+    id: 1,
+    department_id: 1,
+    name: "Miss Elise Schaefer",
+    email: "marisol.langosh@example.org",
+    salary: "38357.71",
+    joining_date: "1997-10-27",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:58",
+    updated_at: "2026-10-09 11:53:58",
+    user_id: 1,
+  }
+
+> $employee->days_since_joining;
+
+= 10578
+
+> server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+> $employee = App\Models\Employee::first();
+
+= App\Models\Employee {#7910
+    id: 1,
+    department_id: 1,
+    name: "Miss Elise Schaefer",
+    email: "marisol.langosh@example.org",
+    salary: "38357.71",
+    joining_date: "1997-10-27",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:58",
+    updated_at: "2026-10-09 11:53:58",
+    user_id: 1,
+  }
+
+> $employee->basic_information;
+
+= [
+    "name" => "miss elise schaefer",
+    "email" => "marisol.langosh@example.org",
+    "salary" => "38357.71",
+  ]
+
+> $employee->annual_salary;
+
+= 460292.52
+
+> 
+
+| Function | What it does | Example output |
+|---|---|---|
+| `strtolower()` | Converts all letters to lowercase | `"  miss elise schaefer  "` |
+| `strtoupper()` | Converts all letters to uppercase | `"  MISS ELISE SCHAEFER  "` |
+| `ucwords()` | Capitalizes the first letter of each word | `"  MISS Elise SCHAEFER  "` |
+| `ucfirst()` | Capitalizes the first character of the string | `"  mISS eLISE sCHAEFER  "` |
+| `lcfirst()` | Converts the first character to lowercase | `"  mISS eLISE sCHAEFER  "` |
+| `trim()` | Removes whitespace from the beginning and end | `"mISS eLISE sCHAEFER"` |
+| `ltrim()` | Removes whitespace from the beginning | `"mISS eLISE sCHAEFER  "` |
+| `rtrim()` | Removes whitespace from the end | `"  mISS eLISE sCHAEFER"` |
+| `strrev()` | Reverses a string | `"  REAHCEHS eSILE SSI m"` |
+| `strlen()` | Returns the string's byte length | An integer |
+| `str_word_count()` | Counts words in a string | An integer |
+| `substr()` | Extracts part of a string | A substring |
+| `str_replace()` | Replaces specified text | Depends on the replacement |
+| `str_contains()` | Checks whether a string contains text | `true` or `false` |
+| `str_starts_with()` | Checks whether a string starts with text | `true` or `false` |
+| `str_ends_with()` | Checks whether a string ends with text | `true` or `false` |

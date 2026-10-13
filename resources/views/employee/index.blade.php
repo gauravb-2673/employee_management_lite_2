@@ -205,6 +205,20 @@
                             <label for="employeesearch" placeholder="Search By Employee Name or Email">Search</label>
                             <input type="text" name="employeesearch" id="employeesearch"
                                 value="{{ request('employeesearch') }}">
+
+
+                            <label for="departmentsearch">Filter by Department:</label>
+                            <select name="departmentsearch" id="departmentsearch">
+                                <option value="">All Departments</option>
+                                @foreach ($departments as $department)
+                                    <option value="{{ $department->id }}"
+                                        {{ request('departmentsearch') == $department->id ? 'selected' : '' }}>
+                                        {{ $department->department_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+
                             <button type="submit" class="btn btn-sm btn-outline-danger">
                                 Search
                             </button>
@@ -218,6 +232,7 @@
 
                         </form>
                     </div>
+
                 </div>
 
 

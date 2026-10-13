@@ -1,0 +1,15 @@
+
+Complete one page of notes in my own words covering Tinker, casts, and accessors.  
+
+
+
+Casts solve the probelm where the Mysql and Pdo datatypes differ i.e when the data is retrived from the database the pdo converts its datatype accroding to the pdo configration , for eg date datatype in mysql database when it is recieved by the pdo in laravel it is converted to string or int accroding to the driver verion or the pdo settings so we have to use casts to explicityly define the date as php carbon object, the php carbon object help us to manipulate the date objects and help us to fomart dates or use year month or date accroding to us.
+similary when the mysql is having a boolean value which is noramlly tiny(1) it is stored in mysql as 0 or 1 but php needs the boolean value in true or false so , while the data goes from mysql to php pdo converts this according to its settings and driver version mostly convert it into a string or integer so we need to manally use cast to set is as php boolean so we can perform true or false instead of checking raw 1 or 0
+similary with the decimal values in mysql while it travel to php pdo converts it to int or string based on drive and pdo settings there we need casts to cast it as decimal still it is in string "2500.00" as php has data type float but it is better for using becasue while finaincal values come it become more accurate rather than converting it to float.
+
+
+Accessor -- acessors is used to change the representation of the retrived value of the attribute from the model. for eg we can use acessor if we want to show the attribute in a specific format in frontend , acessor does not change the value in the database.
+
+Tinker - Laravel Tinker is an interactive command-line tool that lets you execute PHP code inside your Laravel application without creating a controller, route, or separate PHP file.
+
+

@@ -1,0 +1,28 @@
+Raw Sql quries againt the eloquent	
+
+ if ($request->filled('employeesearch')) {
+            $query->where(function ($subQuery) use ($employeesearch) {
+                $subQuery->where('name', 'like', '%' . $employeesearch . '%')
+                    ->orWhere('email', 'like', '%' . $employeesearch . '%');
+            });
+        }
+        
+ if ($request->filled('departmentsearch')) {
+            $query->where('department_id', $departmentsearch);
+        }
+
+ $employees = $query->paginate(10)->withQueryString();;
+
+select * from `employees` where (`name` like '%d%' or `email` like '%d%') and `department_id` = '2' and `employees`.`deleted_at` is null limit 10 offset 0" // app/Http/Controllers/EmployeeController.php:65
+
+
+
+
+
+| Feature | `toRawSql()` | `DB::listen()` |
+|---	  |	      ---|	       ---|
+| Main purpose | Inspect a particular query builder | Observe queries executed during a request |
+| Shows query before execution | Yes | No; it reports queries as they execute |
+| Shows actual executed query events | No | Yes |
+| Captures eager-loading queries automatically | No | Yes, if the listener is registered before they execute |
+| Captures pagination count queries | Not from the main builder alone | Yes, if they execute while the listener is active |
