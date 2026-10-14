@@ -42,10 +42,10 @@ class EmployeeController extends Controller
         $departmentsearch = $request->input('departmentsearch');
 
         // Apply employee name/email search only when a value is provided.
-        if ($request->filled('employeesearch')) {
-            $query->where(function ($subQuery) use ($employeesearch) {
-                $subQuery->where('name', 'like', '%' . $employeesearch . '%')
-                    ->orWhere('email', 'like', '%' . $employeesearch . '%');
+        if ($request->filled('employeesearch')) { // filled() checks if the input field is present and not empty. It returns true if the field has a value, and false if it's empty or not present.
+            $query->where(function ($subQuery) use ($employeesearch) { // where() adds a condition to the query. In this case, it adds a condition that will filter employees based on their name or email. The closure allows for grouping multiple conditions together. // use ($employeesearch) allows the closure to access the $employeesearch variable from the parent scope. if you didn't use use ($employeesearch), the closure wouldn't have access to that variable, and you'd get an error of undefined variable.
+                $subQuery->where('name', 'like',  $employeesearch . '%')
+                    ->orWhere('email', 'like',  $employeesearch . '%'); //$subQuery is used to build a subquery that checks if the employee's name or email starts with the value of $employeesearch. The 'like' operator is used for pattern matching, and '%' is a wildcard that matches any sequence of characters.
             });
         }
 
@@ -54,15 +54,48 @@ class EmployeeController extends Controller
             $query->where('department_id', $departmentsearch);
         }
 
-        // if (){
-
-        // }
-
         if ($request->user()->hasRole('employee')) {
             $query->where('user_id', $request->user()->id);
         }
 
-        $employees = $query->paginate(10)->withQueryString();;
+        $employees = $query->paginate(10)->withQueryString(); // withQueryString() appends the current query string parameters to the pagination links, ensuring that the search filters remain applied when navigating through paginated results.
+
+        //dd($employees->getCollection());
+
+        // Collect the role IDs from all project assignments
+        // belonging to the employees on the current page.
+        $roleIds = $employees->getCollection()
+            ->flatMap(function ($employee) {
+                return $employee->projects->map(function ($project) {
+                    return $project->pivot->role;
+                });
+            })
+            ->filter()
+            ->unique()
+            ->values(); // getCollection() retrieves the underlying collection of Employee models from the paginated result. flatMap() is used to transform each employee into a collection of their project role IDs, and then flatten those collections into a single collection. filter() removes any null or empty values, unique() ensures that each role ID appears only once, and values() reindexes the collection to have sequential keys.
+
+        // Retrieve all required roles using one query.
+        // If no roles exist on this page, skip the query.
+        $rolesById = $roleIds->isEmpty()
+            ? collect()
+            : RoleMaster::whereIn('id', $roleIds)
+            ->get()
+            ->keyBy('id');
+        // $rolesById is a collection of RoleMaster models, keyed by their ID. This allows for quick access to role details when attaching them to the pivot models later. If there are no role IDs, an empty collection is created to avoid unnecessary database queries.
+        // Attach each already-retrieved role to its pivot model.
+
+        $employees->getCollection()->each(function ($employee) use ($rolesById) {
+            $employee->projects->each(function ($project) use ($rolesById) {
+                $roleId = $project->pivot->role;
+
+                $project->pivot->setRelation(
+                    'roleMaster',
+                    $rolesById->get((int) $roleId)
+                );
+            });
+        });
+        // $employees->getCollection() retrieves the collection of Employee models from the paginated result. each() iterates over each employee, and for each employee, it iterates over their associated projects. For each project, it retrieves the role ID from the pivot table and uses it to fetch the corresponding RoleMaster model from $rolesById. The setRelation() method attaches the RoleMaster model to the pivot model under the name 'roleMaster', allowing easy access to role details when rendering views.
+
         //dd($query->toRawSql());
         // dd($queries);
 

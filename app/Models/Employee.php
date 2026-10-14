@@ -51,35 +51,79 @@ class Employee extends Model
         ];
     }
 
+
     protected function name(): Attribute
     {
         return Attribute::make(
-            get: fn(string $value) => strtolower($value),
+            // Mutator: transforms the value before Eloquent stores it.
+            set: fn(string $value) => $this->alternateCase($value),
+
+            // Accessor: transforms the stored value when you read it.
+            get: fn(string $value) => ucwords(strtolower($value)),
         );
-
-        //ucwords() capitalizes the first letter of each word.
-        //strtolower() converts all letters to lowercase.
-
-
-        // Function | What it does | Example output |
-        // |---|---|---|
-        // | `strtolower()` | Converts all letters to lowercase | `"  miss elise schaefer  "` |
-        // | `strtoupper()` | Converts all letters to uppercase | `"  MISS ELISE SCHAEFER  "` |
-        // | `ucwords()` | Capitalizes the first letter of each word | `"  MISS Elise SCHAEFER  "` |
-        // | `ucfirst()` | Capitalizes the first character of the string | `"  mISS eLISE sCHAEFER  "` |
-        // | `lcfirst()` | Converts the first character to lowercase | `"  mISS eLISE sCHAEFER  "` |
-        // | `trim()` | Removes whitespace from the beginning and end | `"mISS eLISE sCHAEFER"` |
-        // | `ltrim()` | Removes whitespace from the beginning | `"mISS eLISE sCHAEFER  "` |
-        // | `rtrim()` | Removes whitespace from the end | `"  mISS eLISE sCHAEFER"` |
-        // | `strrev()` | Reverses a string | `"  REAHCEHS eSILE SSI m"` |
-        // | `strlen()` | Returns the string's byte length | An integer |
-        // | `str_word_count()` | Counts words in a string | An integer |
-        // | `substr()` | Extracts part of a string | A substring |
-        // | `str_replace()` | Replaces specified text | Depends on the replacement |
-        // | `str_contains()` | Checks whether a string contains text | `true` or `false` |
-        // | `str_starts_with()` | Checks whether a string starts with text | `true` or `false` |
-        // | `str_ends_with()` | Checks whether a string ends with text | `true` or `false` |
     }
+
+    /**
+     * Converts letters to alternating uppercase and lowercase.
+     */
+    private function alternateCase(string $value): string
+    {
+        $result = '';
+        $uppercase = true;
+
+        foreach (str_split($value) as $character) {
+            // str_split() splits the string into an array of characters, allowing us to iterate over each character individually. eg "Hello" becomes ['H', 'e', 'l', 'l', 'o'].
+            if (ctype_alpha($character)) {
+                // ctype_alpha() checks if the character is an alphabetic letter (A-Z or a-z). It returns true for letters and false for non-letter characters (like spaces, numbers, punctuation).
+                $result .= $uppercase // checks the current case state (uppercase or lowercase) and appends the character in the appropriate case to the result string. //eg if $uppercase is true, it appends the uppercase version of the character; if false, it appends the lowercase version.
+                    ? strtoupper($character) // strtoupper() converts the character to uppercase. //eg if $character is 'a', it becomes 'A'.
+                    : strtolower($character); // strtolower() converts the character to lowercase. //eg if $character is 'A', it becomes 'a'.
+
+                $uppercase = !$uppercase; // toggles the case state for the next letter. If it was uppercase, it becomes lowercase, and vice versa. //so if the first letter is uppercase, the next letter will be lowercase, and this alternation continues for each subsequent letter. // if first letter is lowercase, the next letter will be uppercase, and this alternation continues for each subsequent letter.
+            } else {
+                $result .= $character; // else, if the character is not a letter (like a space or punctuation), it is added to the result string without changing its case. //eg if $character is ' ', it remains ' ' in the result.
+
+                // Start alternating again after a space.
+                if ($character === ' ') { // checks if the character is a space. If it is, it resets the case state to uppercase for the next letter after the space. //eg if the character is ' ', it resets $uppercase to true, so the next letter after the space will be uppercase.
+                    $uppercase = true;
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    // protected function name(): Attribute
+    // {
+    //     return Attribute::make(
+    //         get: fn(string $value) => strtolower($value),
+    //     );
+
+    //ucwords() capitalizes the first letter of each word.
+    //strtolower() converts all letters to lowercase.
+
+
+    // Function | What it does | Example output |
+    // |---|---|---|
+    // | `strtolower()` | Converts all letters to lowercase | `"  miss elise schaefer  "` |
+    // | `strtoupper()` | Converts all letters to uppercase | `"  MISS ELISE SCHAEFER  "` |
+    // | `ucwords()` | Capitalizes the first letter of each word | `"  MISS Elise SCHAEFER  "` |
+    // | `ucfirst()` | Capitalizes the first character of the string | `"  mISS eLISE sCHAEFER  "` |
+    // | `lcfirst()` | Converts the first character to lowercase | `"  mISS eLISE sCHAEFER  "` |
+    // | `trim()` | Removes whitespace from the beginning and end | `"mISS eLISE sCHAEFER"` |
+    // | `ltrim()` | Removes whitespace from the beginning | `"mISS eLISE sCHAEFER  "` |
+    // | `rtrim()` | Removes whitespace from the end | `"  mISS eLISE sCHAEFER"` |
+    // | `strrev()` | Reverses a string | `"  REAHCEHS eSILE SSI m"` |
+    // | `strlen()` | Returns the string's byte length | An integer |
+    // | `str_word_count()` | Counts words in a string | An integer |
+    // | `substr()` | Extracts part of a string | A substring |
+    // | `str_replace()` | Replaces specified text | Depends on the replacement |
+    // | `str_contains()` | Checks whether a string contains text | `true` or `false` |
+    // | `str_starts_with()` | Checks whether a string starts with text | `true` or `false` |
+    // | `str_ends_with()` | Checks whether a string ends with text | `true` or `false` |
+    // }
+
+
 
     protected function annualSalary(): Attribute
     {

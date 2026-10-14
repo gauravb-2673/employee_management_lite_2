@@ -421,7 +421,7 @@
                                             </span>
 
                                             <span class="badge role-badge ms-1">
-                                                {{ $project->pivot->roleMaster->role_name }}
+                                                {{ $project->pivot->roleMaster?->role_name ?? 'Unknown role' }}
                                             </span>
 
                                         </div>

@@ -167,7 +167,7 @@
             <div class="alert alert-danger" role="alert">
 
                 <strong>
-                    Please correct the following errors:
+                    Please correct the following:
                 </strong>
 
                 <ul class="mb-0 mt-2">
