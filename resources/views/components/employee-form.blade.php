@@ -1,182 +1,406 @@
-@php
-    // True when this component receives an existing Employee model.
-    $editing = isset($employee) && $employee->exists;
+@props([
+    'employee' => null,
+    'departments' => [],
+    'projects' => [],
+    'roles' => [],
+])
 
-    // On validation failure, submitted selections take priority.
-    // Otherwise, show the employee's saved project assignments.
-$selectedProjects = old('project_ids', $editing ? $employee->projects->pluck('id')->all() : []);
+@php
+    // True when editing an existing employee; false when creating.
+    $isEditing = $employee !== null;
+
+    // Get previously submitted project IDs, or the employee's current projects.
+$selectedProjectIds = old('project_ids', $employee?->projects->pluck('id')->toArray() ?? []);
 @endphp
 
-{{-- BASIC EMPLOYEE INFORMATION --}}
-<div class="section-title mb-3">
-    Basic Information
-</div>
 
-<div class="row g-4">
+{{-- Bootstrap 5 --}}
 
-    {{-- Employee Name --}}
-    <div class="col-md-6">
-        <label for="name" class="form-label">Name</label>
 
-        <input type="text" name="name" id="name" maxlength="100" value="{{ old('name', $employee->name ?? '') }}"
-            class="form-control @error('name') is-invalid @enderror" required>
+<style>
+    body {
+        background-color: #f8fafc;
+        color: #1e293b;
+    }
 
-        @error('name')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
+    .page-header {
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 20px;
+    }
 
-    {{-- Employee Email --}}
-    <div class="col-md-6">
-        <label for="email" class="form-label">Email</label>
+    .page-title {
+        color: #1e293b;
+        font-weight: 600;
+    }
 
-        <input type="email" name="email" id="email" maxlength="100"
-            value="{{ old('email', $employee->email ?? '') }}" class="form-control @error('email') is-invalid @enderror"
-            required>
+    .page-description {
+        color: #64748b;
+    }
 
-        @error('email')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
+    .employee-card {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background-color: #ffffff;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    }
 
-    {{-- Salary --}}
-    <div class="col-md-6">
-        <label for="salary" class="form-label">Salary</label>
+    .employee-card-header {
+        padding: 18px 20px;
+        border-bottom: 1px solid #e2e8f0;
+        background-color: #ffffff;
+    }
 
-        <input type="number" name="salary" id="salary" min="0" step="0.01"
-            value="{{ old('salary', $employee->salary ?? '') }}"
-            class="form-control @error('salary') is-invalid @enderror" required>
+    .employee-card-body {
+        padding: 24px;
+    }
 
-        @error('salary')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
+    .form-label {
+        color: #334155;
+        font-weight: 500;
+    }
 
-    {{-- Joining Date --}}
-    <div class="col-md-6">
-        <label for="joining_date" class="form-label">Joining Date</label>
+    .form-control,
+    .form-select {
+        border-color: #cbd5e1;
+    }
 
-        <input type="date" name="joining_date" id="joining_date" max="{{ now()->format('Y-m-d') }}"
-            value="{{ old('joining_date', $employee?->joining_date?->format('Y-m-d') ?? '') }}"
-            class="form-control @error('joining_date') is-invalid @enderror" required>
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.10);
+    }
 
-        @error('joining_date')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
+    .section-title {
+        color: #1e293b;
+        font-weight: 600;
+    }
 
-    {{-- Department --}}
-    <div class="col-md-6">
-        <label for="department_id" class="form-label">Department</label>
+    .project-row {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 14px 16px;
+        background-color: #ffffff;
+    }
 
-        <select name="department_id" id="department_id" class="form-select @error('department_id') is-invalid @enderror"
-            required>
-            <option value="">Select department</option>
+    .project-row:hover {
+        background-color: #f8fafc;
+    }
 
-            @foreach ($departments as $department)
-                <option value="{{ $department->id }}" @selected((string) old('department_id', $employee->department_id ?? '') === (string) $department->id)>
-                    {{ $department->department_name }}
-                </option>
-            @endforeach
-        </select>
+    .project-name {
+        color: #334155;
+        font-weight: 500;
+    }
 
-        @error('department_id')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
+    .form-check-input {
+        cursor: pointer;
+    }
 
-</div>
+    .form-check-label {
+        cursor: pointer;
+    }
 
-<hr class="my-4">
+    .form-actions {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 20px;
+    }
+</style>
 
-{{-- PROJECT ASSIGNMENTS --}}
-<div class="section-title mb-1">
-    Project Assignments
-</div>
 
-<p class="text-muted small mb-3">
-    Select the projects assigned to this employee and choose a role.
-</p>
 
-@error('project_ids')
-    <div class="text-danger mb-2">{{ $message }}</div>
-@enderror
 
-@error('project_roles')
-    <div class="text-danger mb-2">{{ $message }}</div>
-@enderror
 
-@foreach ($projects as $project)
-    @php
-        // Find this employee's existing assignment, if any.
-$assignedProject = $editing ? $employee->projects->firstWhere('id', $project->id) : null;
+<div class="container py-4">
 
-        // Preserve the submitted role after validation fails.
-        // Otherwise, use the saved pivot role, or the first available role.
-        $selectedRole = old("project_roles.{$project->id}", $assignedProject?->pivot?->role ?? $roles->first()?->id);
-    @endphp
+    {{-- ====================================================== --}}
+    {{-- SUCCESS MESSAGE --}}
+    {{-- ====================================================== --}}
 
-    <div class="project-row">
+    @if (session('success'))
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
 
-        <div class="row align-items-center g-3">
+            <strong>Success:</strong>
+            {{ session('success') }}
 
-            {{-- Project Checkbox --}}
-            <div class="col-md-6">
-                <div class="form-check">
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 
-                    <input type="checkbox" name="project_ids[]" value="{{ $project->id }}"
-                        id="project_{{ $project->id }}" class="form-check-input" @checked(in_array($project->id, $selectedProjects))>
+        </div>
+    @endif
 
-                    <label for="project_{{ $project->id }}" class="form-check-label project-name">
-                        {{ $project->project_name }}
-                    </label>
+
+    {{-- ====================================================== --}}
+    {{-- VALIDATION ERRORS --}}
+    {{-- ====================================================== --}}
+
+    @if ($errors->any())
+
+        <div class="alert alert-danger" role="alert">
+
+            <strong>
+                Please correct the following:
+            </strong>
+
+            <ul class="mb-0 mt-2">
+
+                @foreach ($errors->all() as $error)
+                    <li>
+                        {{ $error }}
+                    </li>
+                @endforeach
+
+            </ul>
+
+        </div>
+
+    @endif
+
+
+    {{-- ====================================================== --}}
+    {{-- EMPLOYEE FORM --}}
+    {{-- ====================================================== --}}
+
+    <div class="employee-card">
+
+        {{-- Card Header --}}
+
+        <div class="employee-card-header">
+
+            <h5 class="mb-1 fw-semibold">
+                Employee Information
+            </h5>
+
+            <small class="page-description">
+                Provide the basic details for the new employee.
+            </small>
+
+        </div>
+
+
+        {{-- Card Body --}}
+
+        <div class="employee-card-body">
+
+            <form method="POST"
+                action="{{ $isEditing ? route('employees.update', $employee) : route('employees.store') }}">
+
+                @csrf
+
+                @if ($isEditing)
+                    @method('PUT')
+                @endif
+                {{-- ================================================== --}}
+                {{-- BASIC INFORMATION --}}
+                {{-- ================================================== --}}
+
+                <div class="row g-4">
+
+
+                    {{-- Name --}}
+
+                    <div class="col-md-6">
+
+                        <label for="name" class="form-label">
+                            Name
+                        </label>
+
+                        <input type="text" name="name" id="name" maxlength="100"
+                            value="{{ old('name', $employee?->name) }}" class="form-control" required>
+
+                    </div>
+
+
+                    {{-- Email --}}
+
+                    <div class="col-md-6">
+
+                        <label for="email" class="form-label">
+                            Email
+                        </label>
+
+                        <input type="email" name="email" id="email" maxlength="100"
+                            value="{{ old('email', $employee?->email) }}" class="form-control" required>
+
+                    </div>
+
+
+                    {{-- salary --}}
+
+                    <div class="col-md-6">
+
+                        <label for="salary" class="form-label">
+                            salary
+                        </label>
+
+                        <input type="number" name="salary" id="salary" min="1.00" step="0.01"
+                            value="{{ old('salary', $employee?->salary) }}" class="form-control" required>
+
+                    </div>
+
+
+                    {{-- Joining Date --}}
+
+                    <div class="col-md-6">
+
+                        <label for="joining_date" class="form-label">
+                            Joining Date
+                        </label>
+
+                        <input type="date" name="joining_date" id="joining_date" max="{{ now()->format('Y-m-d') }}"
+                            value="{{ old('joining_date', $employee?->joining_date?->format('Y-m-d')) }}"
+                            class="form-control" required>
+
+                    </div>
+
+
+                    {{-- Department --}}
+
+                    <div class="col-md-6">
+
+                        <label for="department_id" class="form-label">
+                            Department
+                        </label>
+
+                        <select name="department_id" id="department_id" class="form-select" required>
+
+                            <option value="">
+                                Select department
+                            </option>
+
+                            @foreach ($departments as $department)
+                                <option value="{{ $department->id }}" @selected(old('department_id', $employee?->department_id) == $department->id)>
+                                    {{ $department->department_name }}
+                                </option>
+                            @endforeach
+
+                        </select>
+
+                    </div>
+
 
                 </div>
-            </div>
 
-            {{-- Project Role --}}
-            <div class="col-md-6">
-                <label for="project_role_{{ $project->id }}" class="form-label">
-                    Role
-                </label>
 
-                <select name="project_roles[{{ $project->id }}]" id="project_role_{{ $project->id }}"
-                    class="form-select @error('project_roles.' . $project->id) is-invalid @enderror">
-                    @foreach ($roles as $role)
-                        <option value="{{ $role->id }}" @selected((string) $selectedRole === (string) $role->id)>
-                            {{ $role->role_name }}
-                        </option>
+                {{-- ================================================== --}}
+                {{-- PROJECTS --}}
+                {{-- ================================================== --}}
+
+                <div class="mt-5">
+
+                    <div class="mb-3">
+
+                        <h6 class="section-title mb-1">
+                            Project Assignments
+                        </h6>
+
+                        <small class="page-description">
+                            Select the projects assigned to this employee
+                            and choose their role.
+                        </small>
+
+                    </div>
+
+
+                    @foreach ($projects as $project)
+                        @php
+                            $existingProjectRole = $employee?->projects->firstWhere('id', $project->id)?->pivot?->role;
+
+                            $selectedProjectRole = old("project_roles.{$project->id}", $existingProjectRole);
+                        @endphp
+                        <div class="project-row mb-2">
+
+                            <div class="row align-items-center g-3">
+
+
+                                {{-- Project Checkbox --}}
+
+                                <div class="col-md-7">
+
+                                    <div class="form-check">
+
+                                        <input type="checkbox" name="project_ids[]" value="{{ $project->id }}"
+                                            id="project_{{ $project->id }}" class="form-check-input"
+                                            @checked(in_array($project->id, $selectedProjectIds))>
+
+                                        <label for="project_{{ $project->id }}" class="form-check-label project-name">
+                                            {{ $project->project_name }}
+                                        </label>
+
+                                    </div>
+
+                                </div>
+
+
+                                {{-- Role --}}
+
+                                <div class="col-md-5">
+
+                                    <select name="project_roles[{{ $project->id }}]" class="form-select">
+                                        @foreach ($roles as $role)
+                                            <option value="{{ $role->id }}" @selected((string) $selectedProjectRole === (string) $role->id)>
+                                                {{ $role->role_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+
+                                </div>
+
+                            </div>
+
+                        </div>
                     @endforeach
-                </select>
 
-                @error('project_roles.' . $project->id)
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
+                </div>
+
+
+                {{-- ================================================== --}}
+                {{-- ACTIVE STATUS --}}
+                {{-- ================================================== --}}
+
+                <div class="mt-4">
+
+                    <div class="form-check">
+
+                        <input type="hidden" name="is_active" value="0">
+
+                        <input type="checkbox" name="is_active" id="is_active" value="1" class="form-check-input"
+                            @checked(old('is_active', $employee?->is_active ?? true))>
+
+                        <label for="is_active" class="form-check-label">
+                            Active Employee
+                        </label>
+
+                    </div>
+
+                </div>
+
+
+                {{-- ================================================== --}}
+                {{-- FORM ACTIONS --}}
+                {{-- ================================================== --}}
+
+                <div class="form-actions mt-4">
+
+                    <div class="d-flex justify-content-end gap-2">
+
+                        <a href="{{ route('employees.index') }}" class="btn btn-outline-secondary">
+                            Cancel
+                        </a>
+
+                        <button type="submit" class="btn btn-primary">
+                            {{ $employee ? 'Update Employee' : 'Create Employee' }}
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+            </form>
 
         </div>
 
     </div>
-@endforeach
 
-{{-- ACTIVE STATUS --}}
-<hr class="my-4">
-
-<div class="section-title mb-3">
-    Employee Status
 </div>
 
-<input type="hidden" name="is_active" value="0">
 
-<div class="form-check">
-    <input type="checkbox" name="is_active" id="is_active" value="1"
-        class="form-check-input @error('is_active') is-invalid @enderror" @checked((bool) old('is_active', $employee->is_active ?? true))>
-
-    <label for="is_active" class="form-check-label">
-        Active Employee
-    </label>
-
-    @error('is_active')
-        <div class="text-danger">{{ $message }}</div>
-    @enderror
-</div>
+{{-- Bootstrap JavaScript --}}

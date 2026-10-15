@@ -1,0 +1,49 @@
+Layout -
+parent layout @yield() is a placeholder in the parent layout. it defines a placeholder that can receive content from a child Blade view.
+
+parent layout :@yield('title', 'Employee Management')  child does @section('title', 'Add Employee')
+
+parent layout:@yield('styles') Suppose the create page needs some CSS that other pages do not need. so in child you can write
+ @section('styles')
+    <style>
+        .employee-form-title {
+            color: navy;
+        }
+    </style>
+@endsection
+
+
+parent: @yield('scripts') {{-- Page-specific JavaScript will be inserted here --}} 
+
+parent: @yield('content') {{-- Individual pages supply their content here --}}  @section('content')  <p class="page-description mb-0">
+                Enter the employee's information and assign projects.
+            </p> @endsection	
+
+
+
+Inside employee-form.blade.php, the @props directive declares the properties that the component accepts.
+
+@props([
+    'employee' => null,
+    'departments' => [],
+    'projects' => [],
+    'roles' => [],
+])
+
+You can then use $employee, $departments, $projects, and $roles inside the component.
+
+
+
+
+| Directive | Main purpose | Example |
+|---|---|---|
+| `@section` | Defines content in a child view | `@section('content')` |
+| `@yield` | Displays a section in a layout | `@yield('content')` |
+| `@extends` | Connects a child view to a parent layout | `@extends('layouts.app')` |
+| `@endsection` | Ends a section | `@endsection` |
+| `@show` | Ends a section and immediately displays it | `@section('sidebar') ... @show` |
+| `@parent` | Includes the parent section's content when overriding a section | `@parent` |
+| `@include` | Includes another Blade view | `@include('employees.partials.table')` |
+| `@push` | Adds content to a named stack | `@push('scripts')` |
+| `@stack` | Displays content added to a stack | `@stack('scripts')` |
+| `@prepend` | Adds content to the beginning of a stack | `@prepend('styles')` |
