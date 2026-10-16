@@ -6,401 +6,409 @@
 ])
 
 @php
-    // True when editing an existing employee; false when creating.
+    // If an employee exists, the form is in edit mode.
     $isEditing = $employee !== null;
 
-    // Get previously submitted project IDs, or the employee's current projects.
+    // Keep the submitted project selections after validation fails.
+    // Otherwise, use the employee's existing project assignments.
 $selectedProjectIds = old('project_ids', $employee?->projects->pluck('id')->toArray() ?? []);
 @endphp
 
 
-{{-- Bootstrap 5 --}}
+{{-- SUCCESS MESSAGE --}}
+@if (session('success'))
+    <div class="mb-5 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800" role="status">
 
+        <p class="font-semibold">Success</p>
 
-<style>
-    body {
-        background-color: #f8fafc;
-        color: #1e293b;
-    }
-
-    .page-header {
-        border-bottom: 1px solid #e2e8f0;
-        padding-bottom: 20px;
-    }
-
-    .page-title {
-        color: #1e293b;
-        font-weight: 600;
-    }
-
-    .page-description {
-        color: #64748b;
-    }
-
-    .employee-card {
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        background-color: #ffffff;
-        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-    }
-
-    .employee-card-header {
-        padding: 18px 20px;
-        border-bottom: 1px solid #e2e8f0;
-        background-color: #ffffff;
-    }
-
-    .employee-card-body {
-        padding: 24px;
-    }
-
-    .form-label {
-        color: #334155;
-        font-weight: 500;
-    }
-
-    .form-control,
-    .form-select {
-        border-color: #cbd5e1;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.10);
-    }
-
-    .section-title {
-        color: #1e293b;
-        font-weight: 600;
-    }
-
-    .project-row {
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 14px 16px;
-        background-color: #ffffff;
-    }
-
-    .project-row:hover {
-        background-color: #f8fafc;
-    }
-
-    .project-name {
-        color: #334155;
-        font-weight: 500;
-    }
-
-    .form-check-input {
-        cursor: pointer;
-    }
-
-    .form-check-label {
-        cursor: pointer;
-    }
-
-    .form-actions {
-        border-top: 1px solid #e2e8f0;
-        padding-top: 20px;
-    }
-</style>
-
-
-
-
-
-<div class="container py-4">
-
-    {{-- ====================================================== --}}
-    {{-- SUCCESS MESSAGE --}}
-    {{-- ====================================================== --}}
-
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-
-            <strong>Success:</strong>
+        <p class="mt-1">
             {{ session('success') }}
+        </p>
 
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-
-        </div>
-    @endif
-
-
-    {{-- ====================================================== --}}
-    {{-- VALIDATION ERRORS --}}
-    {{-- ====================================================== --}}
-
-    @if ($errors->any())
-
-        <div class="alert alert-danger" role="alert">
-
-            <strong>
-                Please correct the following:
-            </strong>
-
-            <ul class="mb-0 mt-2">
-
-                @foreach ($errors->all() as $error)
-                    <li>
-                        {{ $error }}
-                    </li>
-                @endforeach
-
-            </ul>
-
-        </div>
-
-    @endif
+    </div>
+@endif
 
 
-    {{-- ====================================================== --}}
-    {{-- EMPLOYEE FORM --}}
-    {{-- ====================================================== --}}
+{{-- VALIDATION ERRORS --}}
+@if ($errors->any())
+    <div class="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
 
-    <div class="employee-card">
+        <p class="font-semibold">
+            Please correct the following errors:
+        </p>
 
-        {{-- Card Header --}}
+        <ul class="mt-2 list-inside list-disc space-y-1">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
 
-        <div class="employee-card-header">
-
-            <h5 class="mb-1 fw-semibold">
-                Employee Information
-            </h5>
-
-            <small class="page-description">
-                Provide the basic details for the new employee.
-            </small>
-
-        </div>
+    </div>
+@endif
 
 
-        {{-- Card Body --}}
+{{-- EMPLOYEE FORM CARD --}}
+<div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
 
-        <div class="employee-card-body">
+    {{-- CARD HEADER --}}
+    <div class="border-b border-slate-200 bg-slate-50/70 px-5 py-5 sm:px-6">
 
-            <form method="POST"
-                action="{{ $isEditing ? route('employees.update', $employee) : route('employees.store') }}">
+        <h2 class="text-lg font-semibold text-slate-900">
+            Employee Information
+        </h2>
 
-                @csrf
+        <p class="mt-1 text-sm text-slate-500">
+            Provide the basic details for the employee.
+        </p>
 
-                @if ($isEditing)
-                    @method('PUT')
-                @endif
-                {{-- ================================================== --}}
-                {{-- BASIC INFORMATION --}}
-                {{-- ================================================== --}}
-
-                <div class="row g-4">
+    </div>
 
 
-                    {{-- Name --}}
+    {{-- CARD BODY --}}
+    <div class="p-5 sm:p-6">
 
-                    <div class="col-md-6">
+        <form method="POST" action="{{ $isEditing ? route('employees.update', $employee) : route('employees.store') }}"
+            enctype="multipart/form-data">
 
-                        <label for="name" class="form-label">
-                            Name
-                        </label>
+            @csrf
 
-                        <input type="text" name="name" id="name" maxlength="100"
-                            value="{{ old('name', $employee?->name) }}" class="form-control" required>
-
-                    </div>
-
-
-                    {{-- Email --}}
-
-                    <div class="col-md-6">
-
-                        <label for="email" class="form-label">
-                            Email
-                        </label>
-
-                        <input type="email" name="email" id="email" maxlength="100"
-                            value="{{ old('email', $employee?->email) }}" class="form-control" required>
-
-                    </div>
+            @if ($isEditing)
+                @method('PUT')
+            @endif
 
 
-                    {{-- salary --}}
+            {{-- BASIC INFORMATION --}}
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
 
-                    <div class="col-md-6">
+                {{-- NAME --}}
+                <div>
+                    <label for="name" class="mb-1.5 block text-sm font-medium text-slate-700">
+                        Name
+                        <span class="text-red-500">*</span>
+                    </label>
 
-                        <label for="salary" class="form-label">
-                            salary
-                        </label>
+                    <input type="text" name="name" id="name" maxlength="100"
+                        value="{{ old('name', $employee?->name) }}" required autocomplete="name"
+                        aria-invalid="{{ $errors->has('name') ? 'true' : 'false' }}"
+                        class="block w-full rounded-lg border px-3 py-2.5 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:outline-none focus:ring-2
+                        {{ $errors->has('name')
+                            ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                            : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20' }}"
+                        placeholder="Enter employee name">
 
-                        <input type="number" name="salary" id="salary" min="1.00" step="0.01"
-                            value="{{ old('salary', $employee?->salary) }}" class="form-control" required>
-
-                    </div>
-
-
-                    {{-- Joining Date --}}
-
-                    <div class="col-md-6">
-
-                        <label for="joining_date" class="form-label">
-                            Joining Date
-                        </label>
-
-                        <input type="date" name="joining_date" id="joining_date" max="{{ now()->format('Y-m-d') }}"
-                            value="{{ old('joining_date', $employee?->joining_date?->format('Y-m-d')) }}"
-                            class="form-control" required>
-
-                    </div>
-
-
-                    {{-- Department --}}
-
-                    <div class="col-md-6">
-
-                        <label for="department_id" class="form-label">
-                            Department
-                        </label>
-
-                        <select name="department_id" id="department_id" class="form-select" required>
-
-                            <option value="">
-                                Select department
-                            </option>
-
-                            @foreach ($departments as $department)
-                                <option value="{{ $department->id }}" @selected(old('department_id', $employee?->department_id) == $department->id)>
-                                    {{ $department->department_name }}
-                                </option>
-                            @endforeach
-
-                        </select>
-
-                    </div>
-
-
+                    @error('name')
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
 
-                {{-- ================================================== --}}
-                {{-- PROJECTS --}}
-                {{-- ================================================== --}}
+                {{-- EMAIL --}}
+                <div>
+                    <label for="email" class="mb-1.5 block text-sm font-medium text-slate-700">
+                        Email
+                        <span class="text-red-500">*</span>
+                    </label>
 
-                <div class="mt-5">
+                    <input type="email" name="email" id="email" maxlength="100"
+                        value="{{ old('email', $employee?->email) }}" required autocomplete="email"
+                        aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}"
+                        class="block w-full rounded-lg border px-3 py-2.5 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:outline-none focus:ring-2
+                        {{ $errors->has('email')
+                            ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                            : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20' }}"
+                        placeholder="employee@example.com">
 
-                    <div class="mb-3">
+                    @error('email')
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
 
-                        <h6 class="section-title mb-1">
-                            Project Assignments
-                        </h6>
 
-                        <small class="page-description">
-                            Select the projects assigned to this employee
-                            and choose their role.
-                        </small>
+                {{-- SALARY --}}
+                <div>
+                    <label for="salary" class="mb-1.5 block text-sm font-medium text-slate-700">
+                        Salary
+                        <span class="text-red-500">*</span>
+                    </label>
 
+                    <div class="relative">
+                        <span
+                            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-slate-500">
+                            ₹
+                        </span>
+
+                        <input type="number" name="salary" id="salary" min="0.01" step="0.01"
+                            value="{{ old('salary', $employee?->salary) }}" required
+                            aria-invalid="{{ $errors->has('salary') ? 'true' : 'false' }}"
+                            class="block w-full rounded-lg border py-2.5 pl-8 pr-3 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2
+                            {{ $errors->has('salary')
+                                ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                                : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20' }}"
+                            placeholder="50000.00">
                     </div>
 
-
-                    @foreach ($projects as $project)
-                        @php
-                            $existingProjectRole = $employee?->projects->firstWhere('id', $project->id)?->pivot?->role;
-
-                            $selectedProjectRole = old("project_roles.{$project->id}", $existingProjectRole);
-                        @endphp
-                        <div class="project-row mb-2">
-
-                            <div class="row align-items-center g-3">
+                    @error('salary')
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
 
 
-                                {{-- Project Checkbox --}}
+                {{-- JOINING DATE --}}
+                <div>
+                    <label for="joining_date" class="mb-1.5 block text-sm font-medium text-slate-700">
+                        Joining Date
+                        <span class="text-red-500">*</span>
+                    </label>
 
-                                <div class="col-md-7">
+                    <input type="date" name="joining_date" id="joining_date" max="{{ now()->format('Y-m-d') }}"
+                        value="{{ old('joining_date', $employee?->joining_date?->format('Y-m-d')) }}" required
+                        aria-invalid="{{ $errors->has('joining_date') ? 'true' : 'false' }}"
+                        class="block w-full rounded-lg border px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2
+                        {{ $errors->has('joining_date')
+                            ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                            : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20' }}">
 
-                                    <div class="form-check">
+                    @error('joining_date')
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
 
-                                        <input type="checkbox" name="project_ids[]" value="{{ $project->id }}"
-                                            id="project_{{ $project->id }}" class="form-check-input"
-                                            @checked(in_array($project->id, $selectedProjectIds))>
 
-                                        <label for="project_{{ $project->id }}" class="form-check-label project-name">
-                                            {{ $project->project_name }}
-                                        </label>
+                {{-- DEPARTMENT --}}
+                <div class="sm:col-span-2">
+                    <label for="department_id" class="mb-1.5 block text-sm font-medium text-slate-700">
+                        Department
+                        <span class="text-red-500">*</span>
+                    </label>
 
+                    <select name="department_id" id="department_id" required
+                        aria-invalid="{{ $errors->has('department_id') ? 'true' : 'false' }}"
+                        class="block w-full rounded-lg border bg-white px-3 py-2.5 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2
+                        {{ $errors->has('department_id')
+                            ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20'
+                            : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500/20' }}">
+
+                        <option value="">Select department</option>
+
+                        @foreach ($departments as $department)
+                            <option value="{{ $department->id }}" @selected((string) old('department_id', $employee?->department_id) === (string) $department->id)>
+                                {{ $department->department_name }}
+                            </option>
+                        @endforeach
+
+                    </select>
+
+                    @error('department_id')
+                        <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                {{-- EMPLOYEE DOCUMENT --}}
+                <div class="mt-8 border-t border-slate-200 pt-6">
+
+                    <h3 class="text-base font-semibold text-slate-900">
+                        Employee Document
+                    </h3>
+
+                    <p class="mt-1 text-sm text-slate-500">
+                        Upload a resume, certificate, or other employee document.
+                    </p>
+
+                    <div class="mt-4">
+                        <label for="document" class="mb-1.5 block text-sm font-medium text-slate-700">
+                            Select Document
+                        </label>
+
+                        <input type="file" name="document" id="document" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                            class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm">
+                        {{-- Show the existing document when editing --}}
+                        @if ($isEditing && $employee->documents->isNotEmpty())
+                            <div class="mt-4">
+                                <p class="mb-2 text-sm font-medium text-slate-700">
+                                    Current Document
+                                </p>
+
+                                @foreach ($employee->documents as $document)
+                                    <div
+                                        class="flex items-center justify-between rounded-lg border border-slate-200 p-3">
+                                        <span class="text-sm text-slate-700">
+                                            {{ $document->original_name }}
+                                        </span>
+
+                                        <a href="{{ route('employee-documents.download', $document) }}"
+                                            class="text-sm font-medium text-indigo-600 hover:text-indigo-800">
+                                            Download
+                                        </a>
                                     </div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @error('document')
+                            <p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+
+                        <p class="mt-1.5 text-xs text-slate-500">
+                            Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG. Maximum size: 10 MB.
+                        </p>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {{-- PROJECT ASSIGNMENTS --}}
+            <div class="mt-8 border-t border-slate-200 pt-6">
+
+                <div class="mb-4">
+                    <h3 class="text-base font-semibold text-slate-900">
+                        Project Assignments
+                    </h3>
+
+                    <p class="mt-1 text-sm text-slate-500">
+                        Select the projects assigned to this employee and choose their role.
+                    </p>
+                </div>
+
+
+                @error('project_ids')
+                    <p class="mb-3 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+
+                @error('project_roles')
+                    <p class="mb-3 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+
+
+                @forelse ($projects as $project)
+
+                    @php
+                        // Find the employee's existing assignment for this project.
+$existingProjectRole = $employee?->projects->firstWhere('id', $project->id)?->pivot?->role;
+
+                        // Prefer submitted values after a validation failure.
+                        $selectedProjectRole = old("project_roles.{$project->id}", $existingProjectRole);
+                    @endphp
+
+                    <div
+                        class="mb-3 rounded-lg border border-slate-200 bg-white p-4 transition hover:border-slate-300 hover:bg-slate-50/70">
+
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:items-center">
+
+                            {{-- PROJECT CHECKBOX --}}
+                            <div>
+                                <div class="flex items-start gap-3">
+
+                                    <input type="checkbox" name="project_ids[]" value="{{ $project->id }}"
+                                        id="project_{{ $project->id }}" @checked(in_array($project->id, $selectedProjectIds))
+                                        class="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500">
+
+                                    <label for="project_{{ $project->id }}"
+                                        class="cursor-pointer text-sm font-medium text-slate-800">
+                                        {{ $project->project_name }}
+
+                                        <span class="mt-1 block text-xs font-normal text-slate-500">
+                                            Assign this project to the employee
+                                        </span>
+                                    </label>
 
                                 </div>
+                            </div>
 
 
-                                {{-- Role --}}
+                            {{-- PROJECT ROLE --}}
+                            <div>
+                                <label for="project_role_{{ $project->id }}"
+                                    class="mb-1.5 block text-xs font-medium text-slate-600">
+                                    Project Role
+                                </label>
 
-                                <div class="col-md-5">
+                                <select name="project_roles[{{ $project->id }}]"
+                                    id="project_role_{{ $project->id }}"
+                                    class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
 
-                                    <select name="project_roles[{{ $project->id }}]" class="form-select">
-                                        @foreach ($roles as $role)
-                                            <option value="{{ $role->id }}" @selected((string) $selectedProjectRole === (string) $role->id)>
-                                                {{ $role->role_name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    @foreach ($roles as $role)
+                                        <option value="{{ $role->id }}" @selected((string) $selectedProjectRole === (string) $role->id)>
+                                            {{ $role->role_name }}
+                                        </option>
+                                    @endforeach
 
-                                </div>
+                                </select>
+
+                                @error("project_roles.{$project->id}")
+                                    <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                                @enderror
 
                             </div>
 
                         </div>
-                    @endforeach
 
-                </div>
+                    </div>
+
+                @empty
+
+                    <div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center">
+
+                        <p class="text-sm font-medium text-slate-700">
+                            No projects available
+                        </p>
+
+                        <p class="mt-1 text-sm text-slate-500">
+                            Create a project before assigning it to an employee.
+                        </p>
+
+                    </div>
+
+                @endforelse
+
+            </div>
 
 
-                {{-- ================================================== --}}
-                {{-- ACTIVE STATUS --}}
-                {{-- ================================================== --}}
+            {{-- ACTIVE STATUS --}}
+            <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
 
-                <div class="mt-4">
+                <div class="flex items-start gap-3">
 
-                    <div class="form-check">
+                    {{-- Hidden input ensures unchecked checkboxes submit 0. --}}
+                    <input type="hidden" name="is_active" value="0">
 
-                        <input type="hidden" name="is_active" value="0">
+                    <input type="checkbox" name="is_active" id="is_active" value="1"
+                        @checked((bool) old('is_active', $employee?->is_active ?? true))
+                        class="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500">
 
-                        <input type="checkbox" name="is_active" id="is_active" value="1" class="form-check-input"
-                            @checked(old('is_active', $employee?->is_active ?? true))>
-
-                        <label for="is_active" class="form-check-label">
+                    <div>
+                        <label for="is_active" class="cursor-pointer text-sm font-medium text-slate-800">
                             Active Employee
                         </label>
 
+                        <p class="mt-1 text-xs text-slate-500">
+                            Uncheck this option to mark the employee as inactive.
+                        </p>
                     </div>
 
                 </div>
 
-
-                {{-- ================================================== --}}
-                {{-- FORM ACTIONS --}}
-                {{-- ================================================== --}}
-
-                <div class="form-actions mt-4">
-
-                    <div class="d-flex justify-content-end gap-2">
-
-                        <a href="{{ route('employees.index') }}" class="btn btn-outline-secondary">
-                            Cancel
-                        </a>
-
-                        <button type="submit" class="btn btn-primary">
-                            {{ $employee ? 'Update Employee' : 'Create Employee' }}
-                        </button>
-
-                    </div>
-
-                </div>
+            </div>
 
 
-            </form>
+            {{-- FORM ACTIONS --}}
+            <div class="mt-6 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
 
-        </div>
+                <a href="{{ route('employees.index') }}"
+                    class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400">
+                    Cancel
+                </a>
+
+                <button type="submit"
+                    class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    {{ $isEditing ? 'Update Employee' : 'Create Employee' }}
+                </button>
+
+            </div>
+
+        </form>
 
     </div>
 
 </div>
-
-
-{{-- Bootstrap JavaScript --}}

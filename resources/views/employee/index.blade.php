@@ -1,251 +1,38 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+@extends('layouts.main')
 
-<head>
+@section('title', 'Employees')
 
-    <meta charset="UTF-8">
+@section('content')
 
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <div class="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
 
-    <title>Employees</title>
-
-    {{-- Bootstrap 5 --}}
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <style>
-        body {
-            background-color: #f8fafc;
-            color: #1e293b;
-        }
-
-        .page-header {
-            border-bottom: 1px solid #e2e8f0;
-            padding-bottom: 20px;
-        }
-
-        .page-title {
-            color: #1e293b;
-            font-weight: 600;
-        }
-
-        .page-description {
-            color: #64748b;
-        }
-
-        .employee-card {
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            background-color: #ffffff;
-            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
-        }
-
-        .employee-card-header {
-            padding: 18px 20px;
-            border-bottom: 1px solid #e2e8f0;
-            background-color: #ffffff;
-        }
-
-        .employee-table th {
-            background-color: #f8fafc;
-            color: #64748b;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            white-space: nowrap;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .employee-table td {
-            color: #334155;
-            border-bottom: 1px solid #f1f5f9;
-            vertical-align: middle;
-        }
-
-        .employee-table tbody tr:hover {
-            background-color: #f8fafc;
-        }
-
-        .employee-name {
-            color: #1e293b;
-            font-weight: 600;
-        }
-
-        .employee-email {
-            color: #64748b;
-        }
-
-        .department-badge {
-            background-color: #f1f5f9;
-            color: #475569;
-            border: 1px solid #e2e8f0;
-            font-weight: 500;
-        }
-
-        .project-role {
-            margin-bottom: 5px;
-        }
-
-        .project-name {
-            color: #334155;
-            font-weight: 500;
-        }
-
-        .role-badge {
-            background-color: #eff6ff;
-            color: #2563eb;
-            border: 1px solid #dbeafe;
-            font-weight: 500;
-        }
-
-        .status-active {
-            background-color: #f0fdf4;
-            color: #15803d;
-            border: 1px solid #bbf7d0;
-            font-weight: 500;
-        }
-
-        .status-inactive {
-            background-color: #fef2f2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-            font-weight: 500;
-        }
-
-        .empty-text {
-            color: #94a3b8;
-        }
-
-        .pagination-wrapper {
-            margin-top: 20px;
-        }
-
-        .custom-pagination {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            padding: 0;
-            margin: 0;
-            list-style: none;
-        }
-
-        .custom-page-item {
-            display: inline-flex;
-        }
-
-        .custom-page-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 36px;
-            height: 36px;
-            padding: 0 12px;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            background-color: #ffffff;
-            color: #475569;
-            font-size: 14px;
-            font-weight: 500;
-            text-decoration: none;
-            transition: all 0.15s ease;
-        }
-
-        .custom-page-item:not(.disabled):not(.active) .custom-page-link:hover {
-            background-color: #eff6ff;
-            border-color: #bfdbfe;
-            color: #2563eb;
-        }
-
-        .custom-page-item.active .custom-page-link {
-            background-color: #2563eb;
-            border-color: #2563eb;
-            color: #ffffff;
-        }
-
-        .custom-page-item.disabled .custom-page-link {
-            background-color: #f8fafc;
-            border-color: #e2e8f0;
-            color: #94a3b8;
-            cursor: not-allowed;
-        }
-
-        .table-responsive {
-            border-radius: 0 0 8px 8px;
-        }
-    </style>
-
-</head>
-
-
-<body>
-
-    <div class="container-fluid px-4 py-4">
-
-        {{-- ====================================================== --}}
         {{-- PAGE HEADER --}}
-        {{-- ====================================================== --}}
+        <div class="mb-6 border-b border-slate-200 pb-6">
 
-        <div class="page-header mb-4">
-
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+            <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
 
                 <div>
-
-                    <h4 class="page-title mb-1">
+                    <h1 class="text-2xl font-semibold tracking-tight text-slate-900">
                         Employees
-                    </h4>
+                    </h1>
 
-                    <p class="page-description mb-0">
+                    <p class="mt-1 text-sm text-slate-500">
                         Manage employee information, departments and projects.
                     </p>
-
-                    <div class="d-flex gap-2 mt-3 mt-md-0">
-                        <form action="{{ route('employees.index') }}" method="GET">
-                            <label for="employeesearch" placeholder="Search By Employee Name or Email">Search</label>
-                            <input type="text" name="employeesearch" id="employeesearch"
-                                value="{{ request('employeesearch') }}">
-
-
-                            <label for="departmentsearch">Filter by Department:</label>
-                            <select name="departmentsearch" id="departmentsearch">
-                                <option value="">All Departments</option>
-                                @foreach ($departments as $department)
-                                    <option value="{{ $department->id }}"
-                                        {{ request('departmentsearch') == $department->id ? 'selected' : '' }}>
-                                        {{ $department->department_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-
-
-                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                Search
-                            </button>
-
-                        </form>
-
-                        <form action="{{ route('employees.index') }}" method="GET">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                Clear Search
-                            </button>
-
-                        </form>
-                    </div>
-
                 </div>
 
+                {{-- HEADER ACTIONS --}}
+                <div class="flex flex-wrap gap-2">
 
-                <div class="d-flex gap-2 mt-3 mt-md-0">
-
-                    <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary">
+                    <a href="{{ route('dashboard') }}"
+                        class="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         Back to Dashboard
                     </a>
 
-
                     @can('create employees')
-                        <a href="{{ route('employees.create') }}" class="btn btn-primary">
-                            Add Employee
+                        <a href="{{ route('employees.create') }}"
+                            class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            + Add Employee
                         </a>
                     @endcan
 
@@ -253,246 +40,265 @@
 
             </div>
 
+            {{-- SEARCH AND FILTER --}}
+            <form action="{{ route('employees.index') }}" method="GET"
+                class="mt-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 xl:items-end">
+
+                    {{-- Employee Search --}}
+                    <div>
+                        <label for="employeesearch" class="mb-1.5 block text-sm font-medium text-slate-700">
+                            Search employees
+                        </label>
+
+                        <input type="text" name="employeesearch" id="employeesearch"
+                            value="{{ request('employeesearch') }}" placeholder="Name or email"
+                            class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                    </div>
+
+                    {{-- Department Filter --}}
+                    <div>
+                        <label for="departmentsearch" class="mb-1.5 block text-sm font-medium text-slate-700">
+                            Filter by department
+                        </label>
+
+                        <select name="departmentsearch" id="departmentsearch"
+                            class="block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                            <option value="">All Departments</option>
+
+                            @foreach ($departments as $department)
+                                <option value="{{ $department->id }}" @selected((string) request('departmentsearch') === (string) $department->id)>
+                                    {{ $department->department_name }}
+                                </option>
+                            @endforeach
+
+                        </select>
+                    </div>
+
+                    {{-- Search Button --}}
+                    <div>
+                        <button type="submit"
+                            class="inline-flex w-full items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            Search
+                        </button>
+                    </div>
+
+                    {{-- Clear Button --}}
+                    <div>
+                        <a href="{{ route('employees.index') }}"
+                            class="inline-flex w-full items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-400">
+                            Clear Filters
+                        </a>
+                    </div>
+
+                </div>
+
+            </form>
+
         </div>
 
-
-        {{-- ====================================================== --}}
         {{-- SUCCESS MESSAGE --}}
-        {{-- ====================================================== --}}
-
         @if (session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <div class="mb-5 flex items-start gap-3 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+                role="status">
 
-                <strong>Success:</strong>
-                {{ session('success') }}
-
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="min-w-0 flex-1">
+                    <p class="font-semibold">Success</p>
+                    <p class="mt-1">{{ session('success') }}</p>
+                </div>
 
             </div>
         @endif
 
-
-        {{-- ====================================================== --}}
         {{-- VALIDATION ERRORS --}}
-        {{-- ====================================================== --}}
-
         @if ($errors->any())
+            <div class="mb-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
 
-            <div class="alert alert-danger" role="alert">
-
-                <strong>
+                <p class="font-semibold">
                     Please correct the following errors:
-                </strong>
+                </p>
 
-                <ul class="mb-0 mt-2">
-
+                <ul class="mt-2 list-inside list-disc space-y-1">
                     @foreach ($errors->all() as $error)
-                        <li>
-                            {{ $error }}
-                        </li>
+                        <li>{{ $error }}</li>
                     @endforeach
-
                 </ul>
 
             </div>
-
         @endif
 
+        {{-- EMPLOYEE TABLE CARD --}}
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
 
-        {{-- ====================================================== --}}
-        {{-- EMPLOYEE TABLE --}}
-        {{-- ====================================================== --}}
+            <div
+                class="flex flex-col gap-1 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
 
-        <div class="employee-card">
+                <h2 class="text-base font-semibold text-slate-900">
+                    Employee Directory
+                </h2>
 
-            <div class="table-responsive">
+                <p class="text-sm text-slate-500">
+                    {{ $employees->total() }} employees found
+                </p>
 
-                <table class="table employee-table table-hover mb-0">
+            </div>
 
-                    <thead>
+            {{-- Horizontal scrolling keeps the table usable on mobile. --}}
+            <div class="overflow-x-auto">
+
+                <table class="min-w-[1100px] w-full divide-y divide-slate-200 text-left text-sm">
+
+                    <thead class="bg-slate-50">
 
                         <tr>
-
-                            <th class="px-4 py-3">
+                            <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
                                 Name
                             </th>
 
-                            <th class="py-3">
+                            <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
                                 Email
                             </th>
 
-                            <th class="py-3">
+                            <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
                                 Salary
                             </th>
 
-                            <th class="py-3">
+                            <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
                                 Joining Date
                             </th>
 
-                            <th class="py-3">
+                            <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
                                 Department
                             </th>
 
-                            <th class="py-3">
+                            <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
                                 Project / Role
                             </th>
 
-                            <th class="py-3">
+                            <th class="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
                                 Status
                             </th>
 
-                            <th class="text-end px-4 py-3">
+                            <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
                                 Actions
                             </th>
-
                         </tr>
 
                     </thead>
 
-
-                    <tbody>
+                    <tbody class="divide-y divide-slate-100">
 
                         @forelse ($employees as $employee)
 
-                            <tr>
+                            <tr class="transition hover:bg-slate-50/80">
 
-                                {{-- Name --}}
-
-                                <td class="px-4">
-
-                                    <span class="employee-name">
+                                {{-- NAME --}}
+                                <td class="whitespace-nowrap px-5 py-4">
+                                    <span class="font-semibold text-slate-900">
                                         {{ $employee->name }}
                                     </span>
-
                                 </td>
 
-
-                                {{-- Email --}}
-
-                                <td>
-
-                                    <span class="employee-email">
-                                        {{ $employee->email }}
-                                    </span>
-
+                                {{-- EMAIL --}}
+                                <td class="px-5 py-4 text-slate-600">
+                                    {{ $employee->email }}
                                 </td>
 
-
-                                {{-- Salary --}}
-
-                                <td>
-
-                                    ₹{{ number_format($employee->salary, 2) }}
-
+                                {{-- SALARY --}}
+                                <td class="whitespace-nowrap px-5 py-4 font-medium text-slate-700">
+                                    ₹{{ number_format((float) $employee->salary, 2) }}
                                 </td>
 
-
-                                {{-- Joining Date --}}
-
-                                <td>
-
-                                    {{ $employee->joining_date->format('d M Y') }}
-
+                                {{-- JOINING DATE --}}
+                                <td class="whitespace-nowrap px-5 py-4 text-slate-600">
+                                    {{ $employee->joining_date?->format('d M Y') ?? '—' }}
                                 </td>
 
-
-                                {{-- Department --}}
-
-                                <td>
-
-                                    <span class="badge department-badge">
-
-                                        {{ $employee->department->department_name }}
-
-                                    </span>
-
+                                {{-- DEPARTMENT --}}
+                                <td class="px-5 py-4">
+                                    @if ($employee->department)
+                                        <span
+                                            class="inline-flex whitespace-nowrap rounded-md border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                                            {{ $employee->department->department_name }}
+                                        </span>
+                                    @else
+                                        <span class="text-slate-400">
+                                            No department
+                                        </span>
+                                    @endif
                                 </td>
 
-
-                                {{-- Projects / Roles --}}
-
-                                <td>
-
+                                {{-- PROJECTS AND ROLES --}}
+                                <td class="px-5 py-4">
                                     @forelse ($employee->projects as $project)
-                                        <div class="project-role">
-
-                                            <span class="project-name">
+                                        <div class="mb-2 last:mb-0">
+                                            <p class="font-medium text-slate-700">
                                                 {{ $project->project_name }}
-                                            </span>
+                                            </p>
 
-                                            <span class="badge role-badge ms-1">
+                                            <span
+                                                class="mt-1 inline-flex rounded-md border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
                                                 {{ $project->pivot->roleMaster?->role_name ?? 'Unknown role' }}
                                             </span>
-
                                         </div>
 
                                     @empty
-
-                                        <span class="empty-text">
+                                        <span class="text-slate-400">
                                             No projects
                                         </span>
                                     @endforelse
-
                                 </td>
 
-
-                                {{-- Status --}}
-
-                                <td>
-
-                                    @if ($employee->is_active == 1)
-                                        <span class="badge status-active">
+                                {{-- STATUS --}}
+                                <td class="whitespace-nowrap px-5 py-4">
+                                    @if ($employee->is_active)
+                                        <span
+                                            class="inline-flex items-center gap-1.5 rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
                                             Active
                                         </span>
                                     @else
-                                        <span class="badge status-inactive">
+                                        <span
+                                            class="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700">
+                                            <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
                                             Inactive
                                         </span>
                                     @endif
-
                                 </td>
 
-
-                                {{-- Actions --}}
-
-                                <td class="text-end px-4">
-
-                                    <div class="d-inline-flex gap-2">
+                                {{-- ACTIONS --}}
+                                <td class="px-5 py-4">
+                                    <div class="flex items-center justify-end gap-2">
 
                                         @can('view employees')
-                                            <a href="{{ route('employees.show', ['employee' => $employee->id]) }}"
-                                                class="btn btn-sm btn-outline-primary">
+                                            <a href="{{ route('employees.show', $employee) }}"
+                                                class="rounded-md border border-indigo-200 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 transition hover:bg-indigo-50">
                                                 View
                                             </a>
                                         @endcan
 
-
                                         @can('edit employees')
-                                            <a href="{{ route('employees.edit', ['employee' => $employee->id]) }}"
-                                                class="btn btn-sm btn-outline-primary">
+                                            <a href="{{ route('employees.edit', $employee) }}"
+                                                class="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-100">
                                                 Edit
                                             </a>
                                         @endcan
 
-
                                         @can('delete employees')
-                                            <form action="{{ route('employees.destroy', ['employee' => $employee->id]) }}"
-                                                method="POST"
+                                            <form action="{{ route('employees.destroy', $employee) }}" method="POST"
                                                 onsubmit="return confirm('Are you sure you want to delete this employee?')">
-
                                                 @csrf
-
                                                 @method('DELETE')
 
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <button type="submit"
+                                                    class="rounded-md border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50">
                                                     Delete
                                                 </button>
-
                                             </form>
                                         @endcan
 
                                     </div>
-
                                 </td>
 
                             </tr>
@@ -500,15 +306,17 @@
                         @empty
 
                             <tr>
+                                <td colspan="8" class="px-5 py-16 text-center">
 
-                                <td colspan="8" class="text-center py-5">
+                                    <p class="text-base font-medium text-slate-700">
+                                        No employees found
+                                    </p>
 
-                                    <span class="empty-text">
-                                        No employees found.
-                                    </span>
+                                    <p class="mt-1 text-sm text-slate-500">
+                                        Try changing your search or department filter.
+                                    </p>
 
                                 </td>
-
                             </tr>
 
                         @endforelse
@@ -521,41 +329,31 @@
 
         </div>
 
-
-        {{-- ====================================================== --}}
         {{-- PAGINATION --}}
-        {{-- ====================================================== --}}
+        <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 
-        <div class="pagination-wrapper d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-
-            <div class="text-secondary small">
-
+            <p class="text-sm text-slate-500">
                 Showing
-                <strong>{{ $employees->firstItem() ?? 0 }}</strong>
+                <span class="font-medium text-slate-800">
+                    {{ $employees->firstItem() ?? 0 }}
+                </span>
                 to
-                <strong>{{ $employees->lastItem() ?? 0 }}</strong>
+                <span class="font-medium text-slate-800">
+                    {{ $employees->lastItem() ?? 0 }}
+                </span>
                 of
-                <strong>{{ $employees->total() }}</strong>
+                <span class="font-medium text-slate-800">
+                    {{ $employees->total() }}
+                </span>
                 employees
-
-            </div>
-
+            </p>
 
             <div>
-
-                {{ $employees->links('pagination.custom') }}
-
+                {{ $employees->withQueryString()->links() }}
             </div>
 
         </div>
 
     </div>
 
-
-    {{-- Bootstrap JavaScript --}}
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-</body>
-
-</html>
+@endsection

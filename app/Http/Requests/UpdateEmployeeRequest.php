@@ -30,13 +30,26 @@ class UpdateEmployeeRequest extends FormRequest
             'name' => 'required|string|max:100',
             'email' => ['required', 'email', Rule::unique('employees', 'email')->ignore($this->employee)],
             'department_id' => 'required|integer|exists:departments,id',
-            'salary' => 'required|decimal:2|min:0|max_digits:10',
+            'salary' => [
+                'required',
+                'numeric',
+                'min:0',
+                'max:99999999.99',
+                'decimal:2',
+            ],
             'joining_date' => 'required|date',
             'is_active' => 'required|boolean',
             'project_ids' => 'nullable|array',
             'project_ids.*' => 'integer|exists:projects,id',
             'project_roles' => 'nullable|array',
             'project_roles.*' => 'integer|exists:role_master,id',
+
+            'document' => [
+                'nullable',
+                'file',
+                'mimes:pdf,doc,docx,jpg,jpeg,png',
+                'max:10240',
+            ],
         ];
     }
     public function messages(): array
@@ -61,7 +74,7 @@ class UpdateEmployeeRequest extends FormRequest
             'salary.required' => 'Please enter the employee salary.',
             'salary.decimal' => 'Custom validation message: The salary must have exactly two decimal places.',
             'salary.min' => 'The salary cannot be negative.',
-            'salary.max_digits' => 'The salary cannot exceed 10 digits.',
+            'salary.max' => 'The salary cannot exceed 99999999.99.',
 
             // Joining date validation messages
             'joining_date.required' => 'Please select the employee joining date.',

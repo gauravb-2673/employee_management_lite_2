@@ -1,145 +1,183 @@
-<!DOCTYPE html>
-<html lang="en">
+<x-app-layout>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {{-- Page header --}}
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            Assign or Change User Role
+        </h2>
+    </x-slot>
 
-    <title>Assign or Change User Role</title>
+    {{-- Main content --}}
+    <div class="py-12">
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 650px;
-            margin: 40px auto;
-            padding: 20px;
-        }
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        label {
-            display: block;
-            margin-top: 20px;
-            margin-bottom: 8px;
-        }
+            {{-- Success message --}}
+            @if (session('success'))
+                <div class="mb-6 rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800"
+                    role="status">
+                    {{ session('success') }}
+                </div>
+            @endif
 
-        select,
-        button {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-        }
+            {{-- Validation errors --}}
+            @if ($errors->any())
+                <div class="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
 
-        button {
-            margin-top: 15px;
-            cursor: pointer;
-        }
+                    <p class="font-semibold">
+                        Please check the following:
+                    </p>
 
-        .success {
-            padding: 12px;
-            background: #e6ffed;
-            margin-bottom: 20px;
-        }
+                    <ul class="mt-2 list-inside list-disc space-y-1">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
 
-        .error {
-            padding: 12px;
-            background: #ffecec;
-            color: #b00020;
-            margin-bottom: 20px;
-        }
+                </div>
+            @endif
 
-        .help {
-            margin-top: 8px;
-            color: #555;
-            font-size: 14px;
-        }
-    </style>
-</head>
+            {{-- Assignment form card --}}
+            <div class="overflow-hidden rounded-lg bg-white shadow-sm">
 
-<body>
+                <div class="border-b border-gray-200 px-6 py-5">
 
-    <h1>Assign or Change User Role</h1>
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        User Role Management
+                    </h3>
 
-    {{-- Display a success message. --}}
-    @if (session('success'))
-        <div class="success">
-            {{ session('success') }}
+                    <p class="mt-1 text-sm text-gray-500">
+                        Assign a role to a user or replace their existing role.
+                    </p>
+
+                </div>
+
+                <div class="p-6">
+
+                    {{-- No users available --}}
+                    @if ($users->isEmpty())
+
+                        <div class="rounded-md bg-amber-50 p-4 text-sm text-amber-800">
+                            No users found. Create a user before assigning a role.
+                        </div>
+
+                        {{-- No roles available --}}
+                    @elseif ($roles->isEmpty())
+                        <div class="rounded-md bg-amber-50 p-4 text-sm text-amber-800">
+                            No roles found. Run your role and permission seeder first.
+                        </div>
+
+                        {{-- Display the form --}}
+                    @else
+                        <form action="{{ route('user-roles.store') }}" method="POST" class="space-y-6">
+
+                            @csrf
+
+                            {{-- Select user --}}
+                            <div>
+
+                                <label for="user_id" class="block text-sm font-medium text-gray-700">
+                                    Select User
+                                </label>
+
+                                <select name="user_id" id="user_id" required
+                                    class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+
+                                    <option value="">
+                                        -- Select a User --
+                                    </option>
+
+                                    @foreach ($users as $user)
+                                        <option value="{{ $user->id }}" @selected((string) old('user_id') === (string) $user->id)>
+                                            {{ $user->name }}
+                                            ({{ $user->email }})
+                                            — Current role:
+                                            {{ $user->getRoleNames()->isEmpty() ? 'None' : $user->getRoleNames()->join(', ') }}
+                                        </option>
+                                    @endforeach
+
+                                </select>
+
+                                @error('user_id')
+                                    <p class="mt-2 text-sm text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
+
+                            </div>
+
+                            {{-- Select role --}}
+                            <div>
+
+                                <label for="role" class="block text-sm font-medium text-gray-700">
+                                    Select Role
+                                </label>
+
+                                <select name="role" id="role" required
+                                    class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+
+                                    <option value="">
+                                        -- Select a Role --
+                                    </option>
+
+                                    @foreach ($roles as $role)
+                                        <option value="{{ $role->name }}" @selected(old('role') === $role->name)>
+                                            {{ ucfirst($role->name) }}
+                                        </option>
+                                    @endforeach
+
+                                </select>
+
+                                @error('role')
+                                    <p class="mt-2 text-sm text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
+
+                            </div>
+
+                            {{-- Help text --}}
+                            <div class="rounded-md bg-indigo-50 p-4">
+
+                                <p class="text-sm text-indigo-800">
+                                    <span class="font-semibold">Note:</span>
+                                    If the selected user already has a role, use
+                                    <strong>Change Existing Role</strong>
+                                    to replace it.
+                                </p>
+
+                            </div>
+
+                            {{-- Action buttons --}}
+                            <div class="flex flex-col gap-3 border-t border-gray-200 pt-5 sm:flex-row">
+
+                                <button type="submit" name="action" value="assign"
+                                    class="inline-flex w-full items-center justify-center rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto">
+                                    Assign Role
+                                </button>
+
+                                <button type="submit" name="action" value="change"
+                                    class="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:w-auto">
+                                    Change Existing Role
+                                </button>
+
+                                <a href="{{ route('dashboard') }}"
+                                    class="inline-flex w-full items-center justify-center rounded-md px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 sm:ml-auto sm:w-auto">
+                                    Back to Dashboard
+                                </a>
+
+                            </div>
+
+                        </form>
+
+                    @endif
+
+                </div>
+
+            </div>
+
         </div>
-    @endif
 
-    {{-- Display validation or role assignment errors. --}}
-    @if ($errors->any())
-        <div class="error">
-            <strong>Please check the following:</strong>
+    </div>
 
-            <ul>
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
-    @if ($users->isEmpty())
-
-        <p>No users found. Create a user before assigning a role.</p>
-    @elseif ($roles->isEmpty())
-        <p>No roles found. Run your role and permission seeder first.</p>
-    @else
-        <form action="{{ route('user-roles.store') }}" method="POST">
-
-            @csrf
-
-            {{-- Select an existing user. --}}
-            <label for="user_id">Select User</label>
-
-            <select name="user_id" id="user_id" required>
-
-                <option value="">-- Select a User --</option>
-
-                @foreach ($users as $user)
-                    <option value="{{ $user->id }}" @selected((string) old('user_id') === (string) $user->id)>
-                        {{ $user->name }}
-                        ({{ $user->email }})
-                        - Current role:
-                        {{ $user->getRoleNames()->isEmpty() ? 'None' : $user->getRoleNames()->join(', ') }}
-                    </option>
-                @endforeach
-
-            </select>
-
-            {{-- Select the new role. --}}
-            <label for="role">Select Role</label>
-
-            <select name="role" id="role" required>
-
-                <option value="">-- Select a Role --</option>
-
-                @foreach ($roles as $role)
-                    <option value="{{ $role->name }}" @selected(old('role') === $role->name)>
-                        {{ ucfirst($role->name) }}
-                    </option>
-                @endforeach
-
-            </select>
-
-            <p class="help">
-                If the selected user already has a role, use
-                Change Existing Role to replace it.
-            </p>
-
-            {{-- Assign a role only if the user has none. --}}
-            <button type="submit" name="action" value="assign">
-                Assign Role
-            </button>
-
-            {{-- Replace the user's existing role. --}}
-            <button type="submit" name="action" value="change">
-                Change Existing Role
-            </button>
-
-        </form>
-
-    @endif
-
-</body>
-
-</html>
+</x-app-layout>

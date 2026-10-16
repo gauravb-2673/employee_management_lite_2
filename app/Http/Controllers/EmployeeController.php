@@ -11,7 +11,10 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Requests\UpdateEmployeeRequest;
 use App\Models\RoleMaster;
 use Illuminate\Support\Facades\Gate;
-
+use App\Models\EmployeeDocument;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 class EmployeeController extends Controller
 {
@@ -146,17 +149,38 @@ class EmployeeController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+    /**
+     * Store a newly created employee.
+     */
+    /**
+     * Store a new employee and optionally upload their document.
+     */
     public function store(StoreEmployeeRequest $request)
     {
+        // 1. Get validated input.
         $data = $request->validated();
 
+        // 2. Retrieve the uploaded file separately.
+        $file = $request->file('document');
+        // dd([
+        //     'has_file' => $request->hasFile('document'),
+        //     'file_name' => $file?->getClientOriginalName(),
+        //     'validated_document' => isset($data['document']),
+        //     'request_keys' => array_keys($request->all()),
+        // ]);
+
+        // 3. Extract project assignments.
         $projectIds = $data['project_ids'] ?? [];
         $projectRoles = $data['project_roles'] ?? [];
 
-        unset($data['project_ids'], $data['project_roles']);
+        // 4. Remove fields that do not belong in the employees table.
+        unset(
+            $data['project_ids'],
+            $data['project_roles'],
+            $data['document']
+        );
 
-        $employee = Employee::create($data);
-
+        // 5. Prepare the employee_project pivot data.
         $syncData = [];
 
         foreach ($projectIds as $projectId) {
@@ -165,11 +189,55 @@ class EmployeeController extends Controller
             ];
         }
 
-        $employee->projects()->sync($syncData);
+        // Track the stored file so we can remove it if the DB transaction fails.
+        $newPath = null;
+
+        try {
+            // 6. Create the employee, assign projects, and save document metadata.
+            $employee = DB::transaction(function () use (
+                $data,
+                $syncData,
+                $file,
+                $request,
+                &$newPath
+            ) {
+                // Create the employee first so we have their ID.
+                $employee = Employee::create($data);
+
+                // Save project assignments.
+                $employee->projects()->sync($syncData);
+
+                // Upload the document only if the user selected one.
+                if ($file) {
+                    $newPath = $this->storeEmployeeDocumentFile(
+                        $file,
+                        $employee
+                    );
+
+                    // Insert the document's metadata into employee_documents.
+                    $employee->documents()->create([
+                        'original_name' => $file->getClientOriginalName(),
+                        'path' => $newPath,
+                        'mime_type' => $file->getMimeType(),
+                        'size' => $file->getSize(),
+                        'uploaded_by' => $request->user()->id,
+                    ]);
+                }
+
+                return $employee;
+            });
+        } catch (Throwable $exception) {
+            // A DB failure must not leave an orphaned physical file.
+            if ($newPath !== null) {
+                Storage::disk('local')->delete($newPath);
+            }
+
+            throw $exception;
+        }
 
         return redirect()
             ->route('employees.index')
-            ->with('success', 'Employee added successfully');
+            ->with('success', 'Employee added successfully.');
     }
 
     /**
@@ -196,7 +264,7 @@ class EmployeeController extends Controller
     {
         //dd($employee);
         Gate::authorize('update', $employee);
-        $employee = $employee->load('department', 'projects');
+        $employee = $employee->load('department', 'projects', 'documents');
         $departments = Department::all();
         $projects = Project::all();
         $roles = RoleMaster::all();
@@ -210,22 +278,32 @@ class EmployeeController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateEmployeeRequest $request, Employee $employee)
-    {
-        // Step 1: Check whether the authenticated user can update this employee.
+    /**
+     * Update an employee and optionally replace their document.
+     */
+    public function update(
+        UpdateEmployeeRequest $request,
+        Employee $employee
+    ) {
+        // 1. Check whether the user is authorized to update this employee.
         Gate::authorize('update', $employee);
 
-        // Step 2: Retrieve only the data that passed validation.
+        // 2. Get validated input and the optional uploaded file.
         $data = $request->validated();
+        $file = $request->file('document');
 
-        // Step 3: Extract project IDs and their corresponding role IDs.
+        // 3. Extract project assignments.
         $projectIds = $data['project_ids'] ?? [];
         $projectRoles = $data['project_roles'] ?? [];
 
-        // Step 4: Remove project-specific data from the employee's attributes.
-        unset($data['project_ids'], $data['project_roles']);
+        // 4. Remove fields that do not belong in the employees table.
+        unset(
+            $data['project_ids'],
+            $data['project_roles'],
+            $data['document']
+        );
 
-        // Step 5: Prepare the pivot-table data before starting the transaction.
+        // 5. Prepare project pivot data.
         $syncData = [];
 
         foreach ($projectIds as $projectId) {
@@ -234,20 +312,80 @@ class EmployeeController extends Controller
             ];
         }
 
-        // Step 6: Update the employee and synchronize projects atomically.
-        DB::transaction(function () use ($employee, $data, $syncData) {
+        // 6. Find the existing document, if one exists.
+        $existingDocument = $employee->documents()->first();
 
-            // Update the employee record in the employees table.
-            $employee->update($data);
+        // Keep the old physical path until the update succeeds.
+        $oldPath = $existingDocument?->path;
 
-            // Synchronize project assignments in the employee_project table.
-            $employee->projects()->sync($syncData);
-        });
+        // Track the newly uploaded file for error cleanup.
+        $newPath = null;
 
-        // Step 7: Redirect after the transaction has completed successfully.
+        try {
+            DB::transaction(function () use (
+                $employee,
+                $data,
+                $syncData,
+                $file,
+                $request,
+                $existingDocument,
+                &$newPath
+            ) {
+                // Update employee details.
+                $employee->update($data);
+
+                // Synchronize project assignments.
+                $employee->projects()->sync($syncData);
+
+                // No new file selected: leave the document unchanged.
+                if (!$file) {
+                    return;
+                }
+
+                // Store the replacement file.
+                $newPath = $this->storeEmployeeDocumentFile(
+                    $file,
+                    $employee
+                );
+
+                // Prepare the new document metadata.
+                $documentData = [
+                    'original_name' => $file->getClientOriginalName(),
+                    'path' => $newPath,
+                    'mime_type' => $file->getMimeType(),
+                    'size' => $file->getSize(),
+                    'uploaded_by' => $request->user()->id,
+                ];
+
+                if ($existingDocument) {
+                    // Update the existing row. Its document ID stays the same.
+                    $existingDocument->update($documentData);
+                } else {
+                    // No document existed, so create the first record.
+                    $employee->documents()->create($documentData);
+                }
+            });
+        } catch (Throwable $exception) {
+            // Remove the new physical file if the DB transaction fails.
+            if ($newPath !== null) {
+                Storage::disk('local')->delete($newPath);
+            }
+
+            throw $exception;
+        }
+
+        // Delete the old physical file only after the DB transaction succeeds.
+        if (
+            $file &&
+            $oldPath &&
+            $oldPath !== $newPath
+        ) {
+            Storage::disk('local')->delete($oldPath);
+        }
+
         return redirect()
             ->route('employees.index')
-            ->with('success', 'Employee data updated successfully');
+            ->with('success', 'Employee data updated successfully.');
     }
 
     /**
@@ -263,5 +401,56 @@ class EmployeeController extends Controller
         return redirect()
             ->route('employees.index')
             ->with('success', 'Employee deleted successfully');
+    }
+
+    private function storeEmployeeDocumentFile(
+        UploadedFile $file,
+        Employee $employee
+    ): string {
+        // Get the original filename without its extension.
+        $originalName = pathinfo(
+            $file->getClientOriginalName(),
+            PATHINFO_FILENAME
+        );
+
+        // Replace spaces and special characters with underscores.
+        $originalName = preg_replace(
+            '/[^A-Za-z0-9_-]/',
+            '_',
+            $originalName
+        );
+
+        $originalName = trim($originalName ?? '', '_');
+
+        if ($originalName === '') {
+            $originalName = 'document';
+        }
+
+        // Get the uploaded file extension.
+        $extension = $file->getClientOriginalExtension();
+
+        // Generate a timestamp including microseconds.
+        $timestamp = now()->format('Y-m-d_H-i-s-u');
+
+        // Create the custom filename.
+        $fileName = $originalName
+            . '_employee_' . $employee->id
+            . '_' . $timestamp
+            . '.' . $extension;
+
+        // Save the file on Laravel's local disk.
+        $path = $file->storeAs(
+            'employee-documents',
+            $fileName,
+            'local'
+        );
+
+        if ($path === false) {
+            throw new \RuntimeException(
+                'Unable to store the employee document.'
+            );
+        }
+
+        return $path;
     }
 }

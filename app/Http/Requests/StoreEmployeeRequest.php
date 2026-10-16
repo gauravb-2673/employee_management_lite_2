@@ -26,7 +26,13 @@ class StoreEmployeeRequest extends FormRequest
             'name' => 'required|string|max:100',
             'email' => 'required|email|unique:employees,email',
             'department_id' => 'required|integer|exists:departments,id',
-            'salary' => 'required|decimal:2|min:0',
+            'salary' => [
+                'required',
+                'numeric',
+                'min:0',
+                'max:99999999.99',
+                'decimal:2',
+            ],
             'joining_date' => 'required|date|before_or_equal:today',
             'is_active' => 'required|boolean',
 
@@ -35,6 +41,13 @@ class StoreEmployeeRequest extends FormRequest
 
             'project_roles' => 'nullable|array',
             'project_roles.*' => 'integer|exists:role_master,id',
+
+            'document' => [
+                'nullable',
+                'file',
+                'mimes:pdf,doc,docx,jpg,jpeg,png',
+                'max:10240',
+            ],
         ];
     }
 

@@ -4,6 +4,8 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\UserRoleController;
+use App\Http\Controllers\EmployeeDocumentController;
+
 
 Route::get('/', function () {
     return view('welcome');
@@ -53,6 +55,26 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])
         ->middleware('permission:delete employees')
         ->name('employees.destroy');
+
+    Route::post(
+        '/employees/{employee}/documents',
+        [EmployeeDocumentController::class, 'store']
+    )->name('employees.documents.store');
+
+    Route::get(
+        '/employee-documents/{document}/download',
+        [EmployeeDocumentController::class, 'download']
+    )->name('employee-documents.download');
+
+    Route::delete(
+        '/employee-documents/{document}',
+        [EmployeeDocumentController::class, 'destroy']
+    )->name('employee-documents.destroy');
+
+    Route::get(
+        '/employee-documents/{document}/view',
+        [EmployeeDocumentController::class, 'view']
+    )->name('employee-documents.view');
 });
 
 require __DIR__ . '/auth.php';
