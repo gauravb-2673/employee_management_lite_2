@@ -1,0 +1,70 @@
+server@PARASIGHT-SERVER:~/Desktop/mini-employee-auth$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+> \Spatie\Permission\Models\Role::pluck('name');
+
+= Illuminate\Support\Collection {#7910
+    all: [
+      "admin",
+      "employee",
+      "hr",
+    ],
+  }
+
+> \Spatie\Permission\Models\Permission::pluck('name');
+
+= Illuminate\Support\Collection {#7942
+    all: [
+      "create employees",
+      "delete employees",
+      "edit employees",
+      "view employees",
+    ],
+  }
+
+> \Spatie\Permission\Models\Role::findByName('admin')->permissions->pluck('name');
+
+= Illuminate\Support\Collection {#7419
+    all: [
+      "view employees",
+      "create employees",
+      "edit employees",
+      "delete employees",
+    ],
+  }
+
+> \Spatie\Permission\Models\Role::findByName('hr')->permissions->pluck('name');
+
+= Illuminate\Support\Collection {#7923
+    all: [
+      "view employees",
+      "create employees",
+      "edit employees",
+    ],
+  }
+
+> \Spatie\Permission\Models\Role::findByName('employee')->permissions->pluck('na
+me');
+
+= Illuminate\Support\Collection {#7943
+    all: [],
+  }
+
+> \Spatie\Permission\Models\Role::findByName('admin')->hasPermissionTo('delete employees');
+
+= true
+
+> \Spatie\Permission\Models\Role::findByName('hr')->hasPermissionTo('edit employees');
+
+= true
+
+> \Spatie\Permission\Models\Role::findByName('hr')->hasPermissionTo('delete employees');
+
+= false
+
+> \Spatie\Permission\Models\Role::findByName('employee')->hasPermissionTo('view employees');
+
+= false
+
+> 
+

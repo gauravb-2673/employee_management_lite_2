@@ -1,0 +1,4642 @@
+PM
+
+
+
+# LARAVEL COMMANDS CHEAT SHEET
+
+This is a practical collection of commonly used Laravel commands for
+day-to-day development.
+
+---
+
+1. STARTING / BASIC LARAVEL COMMANDS
+
+---
+
+1. Check Laravel version
+
+php artisan --version
+
+Explanation:
+Shows the installed Laravel version.
+
+---
+
+2. Show all Artisan commands
+
+php artisan list
+
+Explanation:
+Displays all available Laravel Artisan commands.
+
+---
+
+3. Get help for a command
+
+php artisan help migrate
+
+Explanation:
+Shows available options and arguments for the "migrate" command.
+
+You can replace "migrate" with any Artisan command.
+
+Example:
+
+php artisan help make:model
+
+---
+
+4. Start Laravel development server
+
+php artisan serve
+
+Explanation:
+Starts Laravel's built-in development server.
+
+Usually available at:
+
+http://127.0.0.1:8000
+
+---
+
+5. Start server on another port
+
+php artisan serve --port=8080
+
+Explanation:
+Starts the Laravel server on port 8080.
+
+---
+
+==================================================
+2. ROUTES
+=========
+
+6. Display all routes
+
+php artisan route:list
+
+Explanation:
+Shows all registered routes, HTTP methods, URIs, route names,
+controllers, and middleware.
+
+Very useful for debugging routes.
+
+---
+
+7. Display routes with more information
+
+php artisan route:list -v
+
+Explanation:
+Shows additional route and middleware information.
+
+---
+
+8. Show API routes
+
+php artisan route:list --path=api
+
+Explanation:
+Displays routes whose URL starts with /api.
+
+---
+
+9. Filter routes by name
+
+php artisan route:list --name=users
+
+Explanation:
+Displays routes whose names contain "users".
+
+---
+
+10. Clear route cache
+
+php artisan route:clear
+
+Explanation:
+Clears cached routes.
+
+Useful when route changes are not being reflected.
+
+---
+
+11. Cache routes
+
+php artisan route:cache
+
+Explanation:
+Caches routes for better production performance.
+
+Do not use this casually during development if you frequently
+change routes.
+
+---
+
+==================================================
+3. CONTROLLERS
+==============
+
+12. Create a controller
+
+php artisan make:controller UserController
+
+Explanation:
+Creates:
+
+app/Http/Controllers/UserController.php
+
+---
+
+13. Create a resource controller
+
+php artisan make:controller UserController --resource
+
+Explanation:
+Creates a controller containing methods commonly used for
+CRUD operations:
+
+index()
+create()
+store()
+show()
+edit()
+update()
+destroy()
+
+---
+
+14. Create an API controller
+
+php artisan make:controller UserController --api
+
+Explanation:
+Creates a controller intended for API CRUD operations.
+
+It does not include create() and edit(), since those are generally
+used for HTML forms.
+
+---
+
+15. Create controller with model
+
+php artisan make:controller UserController --model=User
+
+Explanation:
+Creates a controller associated with the User model.
+
+---
+
+==================================================
+4. MODELS
+=========
+
+16. Create a model
+
+php artisan make:model Product
+
+Explanation:
+Creates:
+
+app/Models/Product.php
+
+---
+
+17. Create model + migration
+
+php artisan make:model Product -m
+
+Explanation:
+Creates:
+
+app/Models/Product.php
+database/migrations/xxxx_xx_xx_create_products_table.php
+
+---
+
+18. Create model + factory + migration + seeder
+
+php artisan make:model Product -mfs
+
+Explanation:
+Creates:
+
+Model
+Migration
+Factory
+Seeder
+
+---
+
+19. Create model with most related files
+
+php artisan make:model Product -a
+
+Explanation:
+Creates the model and several related files such as:
+
+Model
+Factory
+Migration
+Seeder
+Controller
+Form Request
+
+This is useful when starting a new CRUD resource.
+
+---
+
+==================================================
+5. MIGRATIONS
+=============
+
+20. Create a migration
+
+php artisan make:migration create_products_table
+
+Explanation:
+Creates a new migration file inside:
+
+database/migrations/
+
+---
+
+21. Run migrations
+
+php artisan migrate
+
+Explanation:
+Runs all pending database migrations.
+
+---
+
+22. Check migration status
+
+php artisan migrate:status
+
+Explanation:
+Shows which migrations have already been executed.
+
+---
+
+23. Roll back the last migration batch
+
+php artisan migrate:rollback
+
+Explanation:
+Reverses the most recent batch of migrations.
+
+---
+
+24. Roll back one migration
+
+php artisan migrate:rollback --step=1
+
+Explanation:
+Rolls back one migration step.
+
+---
+
+25. Roll back multiple migrations
+
+php artisan migrate:rollback --step=3
+
+Explanation:
+Rolls back the last 3 migration steps.
+
+---
+
+26. Reset all migrations
+
+php artisan migrate:reset
+
+Explanation:
+Rolls back all migrations.
+
+The database tables are removed according to the migration
+rollback definitions.
+
+---
+
+27. Refresh migrations
+
+php artisan migrate:refresh
+
+Explanation:
+Rolls back all migrations and runs them again.
+
+Useful during development.
+
+---
+
+28. Refresh migrations with seeders
+
+php artisan migrate:refresh --seed
+
+Explanation:
+Refreshes the database and then runs the seeders.
+
+---
+
+29. Delete all tables and migrate again
+
+php artisan migrate:fresh
+
+Explanation:
+Drops all tables and runs all migrations again.
+
+WARNING:
+This deletes existing database data.
+
+Use mainly for local development.
+
+---
+
+30. Fresh database + seed
+
+php artisan migrate:fresh --seed
+
+Explanation:
+Drops all tables, runs migrations, and runs database seeders.
+
+Very useful when rebuilding a development database.
+
+WARNING:
+Do NOT use this on a production database.
+
+---
+
+==================================================
+6. SEEDERS
+==========
+
+31. Create a seeder
+
+php artisan make:seeder ProductSeeder
+
+Explanation:
+Creates:
+
+database/seeders/ProductSeeder.php
+
+---
+
+32. Run all seeders
+
+php artisan db:seed
+
+Explanation:
+Runs the DatabaseSeeder.
+
+---
+
+33. Run a specific seeder
+
+php artisan db:seed --class=ProductSeeder
+
+Explanation:
+Runs only ProductSeeder.
+
+---
+
+34. Migration + seed
+
+php artisan migrate --seed
+
+Explanation:
+Runs pending migrations and then runs seeders.
+
+---
+
+35. Fresh database + seed
+
+php artisan migrate:fresh --seed
+
+Explanation:
+Drops all tables, recreates them, and inserts seed data.
+
+Very useful during local development.
+
+---
+
+==================================================
+7. FACTORIES
+============
+
+36. Create a factory
+
+php artisan make:factory ProductFactory
+
+Explanation:
+Creates:
+
+database/factories/ProductFactory.php
+
+Factories are used to generate fake/test data.
+
+---
+
+37. Open Laravel Tinker
+
+php artisan tinker
+
+Explanation:
+Opens an interactive Laravel/PHP shell.
+
+Useful for testing models, database queries, relationships,
+and application code.
+
+---
+
+Example inside Tinker:
+
+User::count();
+
+Explanation:
+Returns the number of users.
+
+---
+
+Example:
+
+User::factory()->count(10)->create();
+
+Explanation:
+Creates 10 fake users in the database.
+
+---
+
+Example:
+
+Product::factory()->create();
+
+Explanation:
+Creates one fake product.
+
+---
+
+==================================================
+8. FORM REQUEST VALIDATION
+==========================
+
+38. Create a Form Request
+
+php artisan make:request StoreProductRequest
+
+Explanation:
+Creates:
+
+app/Http/Requests/StoreProductRequest.php
+
+Used for validation and authorization of incoming requests.
+
+---
+
+Example use case:
+
+POST /products
+
+The request class can contain validation such as:
+
+'name' => 'required|string|max:255'
+'price' => 'required|numeric'
+
+---
+
+==================================================
+9. MIDDLEWARE
+=============
+
+39. Create middleware
+
+php artisan make:middleware CheckAdmin
+
+Explanation:
+Creates:
+
+app/Http/Middleware/CheckAdmin.php
+
+Middleware can be used for authentication, authorization,
+logging, request filtering, etc.
+
+---
+
+40. Clear route cache
+
+php artisan route:clear
+
+Explanation:
+Useful when route or middleware changes are not reflected
+because of cached routes.
+
+---
+
+==================================================
+10. API RESOURCES
+=================
+
+41. Create API resource
+
+php artisan make:resource ProductResource
+
+Explanation:
+Creates:
+
+app/Http/Resources/ProductResource.php
+
+Used to control how models are converted into API responses.
+
+---
+
+Example:
+
+return new ProductResource($product);
+
+---
+
+42. Create resource collection
+
+php artisan make:resource ProductCollection
+
+Explanation:
+Creates a resource collection for formatting multiple
+models in API responses.
+
+---
+
+==================================================
+11. JOBS / QUEUES
+=================
+
+43. Create a job
+
+php artisan make:job ProcessOrder
+
+Explanation:
+Creates a queued/background job.
+
+Example uses:
+
+Sending emails
+Processing payments
+Generating reports
+Processing images
+Calling external APIs
+
+---
+
+44. Start queue worker
+
+php artisan queue:work
+
+Explanation:
+Starts a worker that processes queued jobs.
+
+---
+
+45. Process one queued job
+
+php artisan queue:work --once
+
+Explanation:
+Processes one job and then stops.
+
+Useful for testing.
+
+---
+
+46. Listen for queue jobs
+
+php artisan queue:listen
+
+Explanation:
+Starts a queue listener that reloads the application for each
+job.
+
+Generally, queue:work is preferred for production workers.
+
+---
+
+47. Restart queue workers
+
+php artisan queue:restart
+
+Explanation:
+Requests running queue workers to restart gracefully.
+
+Useful after deploying new application code.
+
+---
+
+48. Show failed jobs
+
+php artisan queue:failed
+
+Explanation:
+Lists jobs that failed.
+
+---
+
+49. Retry all failed jobs
+
+php artisan queue:retry all
+
+Explanation:
+Attempts to process all failed jobs again.
+
+---
+
+50. Retry a specific failed job
+
+php artisan queue:retry 5
+
+Explanation:
+Retries the failed job with ID 5.
+
+---
+
+==================================================
+12. EVENTS / LISTENERS
+======================
+
+51. Create an event
+
+php artisan make:event OrderCreated
+
+Explanation:
+Creates an event class.
+
+Events represent something that happened in the application.
+
+---
+
+52. Create a listener
+
+php artisan make:listener SendOrderNotification
+
+Explanation:
+Creates a listener that can respond to an event.
+
+---
+
+==================================================
+13. MAIL
+========
+
+53. Create a Mailable
+
+php artisan make:mail OrderConfirmation
+
+Explanation:
+Creates a class used to build and send an email.
+
+---
+
+54. Create a Mailable with Markdown
+
+php artisan make:mail OrderConfirmation --markdown=emails.orders.confirmation
+
+Explanation:
+Creates a Markdown-based email template.
+
+---
+
+==================================================
+14. NOTIFICATIONS
+=================
+
+55. Create a notification
+
+php artisan make:notification OrderShipped
+
+Explanation:
+Creates a Laravel notification.
+
+Notifications can be sent through channels such as:
+
+Mail
+Database
+Broadcast
+Slack
+etc.
+
+---
+
+==================================================
+15. STORAGE
+===========
+
+56. Create public storage link
+
+php artisan storage:link
+
+Explanation:
+Creates a symbolic link from:
+
+public/storage
+
+to:
+
+storage/app/public
+
+Useful for displaying uploaded files.
+
+---
+
+57. Remove storage link
+
+php artisan storage:unlink
+
+Explanation:
+Removes the public storage symbolic link.
+
+---
+
+==================================================
+16. CONFIGURATION
+=================
+
+58. Clear configuration cache
+
+php artisan config:clear
+
+Explanation:
+Clears cached configuration.
+
+Useful after changing .env values.
+
+---
+
+59. Cache configuration
+
+php artisan config:cache
+
+Explanation:
+Caches configuration for better production performance.
+
+---
+
+60. Show configuration
+
+php artisan config:show app
+
+Explanation:
+Displays the application's configuration values.
+
+You can replace "app" with another configuration file.
+
+Example:
+
+php artisan config:show database
+
+---
+
+==================================================
+17. APPLICATION CACHE
+=====================
+
+61. Clear application cache
+
+php artisan cache:clear
+
+Explanation:
+Clears application cache.
+
+---
+
+62. Clear everything Laravel can optimize/cache
+
+php artisan optimize:clear
+
+Explanation:
+Clears common Laravel
+
+
+
+
+=============================================================================
+
+
+
+
+
+
+
+
+
+Laravel debug guide
+
+
+Browser
+   ↓
+JavaScript
+   ↓
+Network request
+   ↓
+Laravel Route
+   ↓
+Middleware
+   ↓
+Controller
+   ↓
+Validation
+   ↓
+Service / Model
+   ↓
+Database
+   ↓
+Laravel Response
+   ↓
+JavaScript
+   ↓
+Browser UI			
+
+
+
+
+# LARAVEL FRONTEND AND BACKEND DEBUGGING GUIDE
+
+This guide explains how to debug both the frontend and backend
+of a Laravel application.
+
+The main idea is:
+
+Browser
+↓
+JavaScript
+↓
+Network Request
+↓
+Laravel Route
+↓
+Middleware
+↓
+Controller
+↓
+Validation
+↓
+Service / Model
+↓
+Database
+↓
+Laravel Response
+↓
+JavaScript
+↓
+Browser UI
+
+==================================================
+
+1. BACKEND DEBUGGING - LARAVEL / PHP
+   ==================================================
+
+Laravel backend debugging usually involves:
+
+* Laravel logs
+* dd()
+* dump()
+* Laravel exceptions
+* Database queries
+* Routes
+* Validation
+* Authentication
+* Xdebug
+* Laravel Telescope
+
+---
+
+## 1.1 CHECK LARAVEL LOGS
+
+Laravel commonly writes logs to:
+
+storage/logs/laravel.log
+
+Explanation:
+
+This file contains application errors, warnings, information,
+exceptions, and other log messages depending on your logging
+configuration.
+
+---
+
+WATCH LOGS LIVE ON LINUX / MACOS:
+
+tail -f storage/logs/laravel.log
+
+Explanation:
+
+Continuously displays new log entries as Laravel writes them.
+
+---
+
+WATCH LOGS ON WINDOWS POWERSHELL:
+
+Get-Content storage/logs/laravel.log -Wait
+
+Explanation:
+
+Continuously displays new Laravel log entries in PowerShell.
+
+==================================================
+2. ADD LOGGING TO LARAVEL
+=========================
+
+Use Laravel's Log facade:
+
+use Illuminate\Support\Facades\Log;
+
+---
+
+INFO LOG:
+
+Log::info('Product store method called');
+
+Explanation:
+
+Writes an informational message to the Laravel log.
+
+---
+
+LOG DATA:
+
+Log::info('Product data', [
+'name' => $request->name,
+'price' => $request->price,
+]);
+
+Explanation:
+
+Useful when you want to inspect specific values without
+stopping the application.
+
+---
+
+WARNING:
+
+Log::warning('Product price is unusually high', [
+'price' => $request->price,
+]);
+
+Explanation:
+
+Used for conditions that are not necessarily application
+errors but should be investigated.
+
+---
+
+ERROR:
+
+Log::error('Product creation failed', [
+'message' => $e->getMessage(),
+]);
+
+Explanation:
+
+Used for errors and exceptions.
+
+---
+
+DEBUG:
+
+Log::debug('Debugging product request', [
+'request' => $request->all(),
+]);
+
+Explanation:
+
+Useful during development for detailed debugging information.
+
+==================================================
+3. dd() - DUMP AND DIE
+======================
+
+Use:
+
+dd($request->all());
+
+Explanation:
+
+"dd" means:
+
+DUMP + DIE
+
+It displays the value and immediately stops execution.
+
+---
+
+Example:
+
+public function store(Request $request)
+{
+dd($request->all());
+
+```
+// This code will NOT execute
+```
+
+}
+
+Explanation:
+
+When the request reaches this point, Laravel displays the
+request data and stops.
+
+Very useful for quick debugging.
+
+---
+
+Multiple values:
+
+dd($request->all(), $user, $product);
+
+Explanation:
+
+Displays multiple variables at once.
+
+==================================================
+4. dump() - DISPLAY WITHOUT STOPPING
+====================================
+
+Use:
+
+dump($request->all());
+
+Explanation:
+
+Displays the value but allows the application to continue.
+
+Difference:
+
+dd()
+= dump + stop execution
+
+dump()
+= dump + continue execution
+
+Log::info()
+= write information to log without stopping request
+
+==================================================
+5. DEBUG INCOMING REQUEST
+=========================
+
+Example:
+
+public function store(Request $request)
+{
+dd([
+'method' => $request->method(),
+'url' => $request->url(),
+'headers' => $request->headers->all(),
+'data' => $request->all(),
+]);
+}
+
+Explanation:
+
+This lets you inspect:
+
+* HTTP method
+* Request URL
+* Headers
+* Request data
+
+---
+
+## GET REQUEST DATA
+
+dd($request->all());
+
+Explanation:
+
+Displays all incoming request data.
+
+---
+
+## GET ONE VALUE
+
+dd($request->input('name'));
+
+Explanation:
+
+Displays only the "name" input.
+
+---
+
+## GET JSON DATA
+
+dd($request->json()->all());
+
+Explanation:
+
+Useful when the frontend sends JSON.
+
+==================================================
+6. DEBUG VALIDATION
+===================
+
+Example:
+
+$request->validate([
+'name' => 'required',
+'email' => 'required|email',
+]);
+
+Explanation:
+
+Laravel validates the incoming request.
+
+If validation fails, Laravel normally returns a validation
+error response or redirects back depending on the request type.
+
+---
+
+Before validation, inspect the request:
+
+dd($request->all());
+
+Explanation:
+
+This helps determine whether the frontend actually sent
+the fields Laravel expects.
+
+---
+
+Example problem:
+
+Laravel expects:
+
+'name'
+'email'
+
+But frontend sends:
+
+'username'
+'emailAddress'
+
+The validation will fail because the field names do not match.
+
+==================================================
+7. FORM REQUEST DEBUGGING
+=========================
+
+Create a Form Request:
+
+php artisan make:request StoreProductRequest
+
+Explanation:
+
+Creates:
+
+app/Http/Requests/StoreProductRequest.php
+
+You can place validation rules there.
+
+---
+
+Example:
+
+public function rules(): array
+{
+return [
+'name' => ['required', 'string'],
+'email' => ['required', 'email'],
+];
+}
+
+Explanation:
+
+The Form Request keeps validation logic separate from
+the controller.
+
+==================================================
+8. DEBUG ROUTES
+===============
+
+Show all routes:
+
+php artisan route:list
+
+Explanation:
+
+Displays registered routes.
+
+Useful for checking:
+
+* URL
+* HTTP method
+* Controller
+* Route name
+* Middleware
+
+---
+
+Show API routes:
+
+php artisan route:list --path=api
+
+Explanation:
+
+Shows routes beginning with /api.
+
+---
+
+Filter routes by name:
+
+php artisan route:list --name=users
+
+Explanation:
+
+Shows routes containing "users" in their route name.
+
+---
+
+Example:
+
+php artisan route:list
+
+You may see:
+
+GET       /products
+POST      /products
+GET       /products/{product}
+PUT       /products/{product}
+DELETE    /products/{product}
+
+Explanation:
+
+This allows you to verify whether the frontend is calling
+the correct URL and HTTP method.
+
+==================================================
+9. COMMON ROUTE DEBUGGING PROBLEMS
+==================================
+
+PROBLEM:
+
+Frontend calls:
+
+POST /api/products
+
+But Laravel has:
+
+POST /products
+
+Result:
+
+404 Not Found
+
+Explanation:
+
+The requested URL does not match the Laravel route.
+
+---
+
+PROBLEM:
+
+Frontend sends:
+
+GET /products
+
+But Laravel only has:
+
+POST /products
+
+Result:
+
+405 Method Not Allowed
+
+Explanation:
+
+The URL exists, but the HTTP method is incorrect.
+
+==================================================
+10. DEBUG DATABASE QUERIES
+==========================
+
+Use:
+
+DB::enableQueryLog();
+
+$products = Product::where('active', true)->get();
+
+dd(DB::getQueryLog());
+
+Explanation:
+
+Laravel stores the queries executed after query logging
+is enabled.
+
+Make sure to import DB:
+
+use Illuminate\Support\Facades\DB;
+
+---
+
+11. INSPECT SQL WITHOUT EXECUTING QUERY
+
+---
+
+$query = Product::where('active', true);
+
+dd($query->toSql(), $query->getBindings());
+
+Explanation:
+
+toSql()
+Shows the SQL query.
+
+getBindings()
+Shows the values that will be inserted into the query
+placeholders.
+
+Example output:
+
+select * from products where active = ?
+
+Bindings:
+
+[true]
+
+==================================================
+12. LOG DATABASE QUERIES
+========================
+
+Example:
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+DB::listen(function ($query) {
+Log::info('SQL Query', [
+'sql' => $query->sql,
+'bindings' => $query->bindings,
+'time' => $query->time,
+]);
+});
+
+Explanation:
+
+Laravel will log executed database queries.
+
+Useful when investigating:
+
+* Slow queries
+* Incorrect WHERE conditions
+* Unexpected queries
+* N+1 problems
+* Incorrect bindings
+
+==================================================
+13. FRONTEND DEBUGGING
+======================
+
+For frontend debugging, use browser Developer Tools.
+
+Open DevTools:
+
+F12
+
+OR:
+
+Ctrl + Shift + I
+
+Important tabs:
+
+Console
+Network
+Elements
+Sources
+Application
+
+==================================================
+14. CONSOLE DEBUGGING
+=====================
+
+JavaScript:
+
+console.log("Button clicked");
+
+Explanation:
+
+Displays a message in the browser Console.
+
+---
+
+Display an object:
+
+console.log(user);
+
+Explanation:
+
+Displays the user object.
+
+---
+
+Display multiple values:
+
+console.log({
+productId,
+price,
+quantity
+});
+
+Explanation:
+
+Useful for inspecting several variables together.
+
+---
+
+Warning:
+
+console.warn("Product price is missing");
+
+Explanation:
+
+Displays a warning in the Console.
+
+---
+
+Error:
+
+console.error("Failed to load products");
+
+Explanation:
+
+Displays an error message.
+
+==================================================
+15. DEBUG API REQUESTS USING NETWORK TAB
+========================================
+
+Open:
+
+F12
+↓
+Network
+
+Then perform an action in the application.
+
+Example:
+
+Click "Save Product"
+
+The browser sends:
+
+POST /api/products
+
+Click the request inside Network.
+
+Check:
+
+Headers
+Payload
+Response
+Preview
+Status
+
+---
+
+Example:
+
+Request URL:
+
+http://localhost:8000/api/products
+
+Request Method:
+
+POST
+
+Status Code:
+
+422
+
+Explanation:
+
+The request reached Laravel, but validation failed.
+
+---
+
+Check Response:
+
+{
+"message": "The name field is required.",
+"errors": {
+"name": [
+"The name field is required."
+]
+}
+}
+
+Explanation:
+
+The backend is telling the frontend that the "name"
+field is missing.
+
+==================================================
+16. IMPORTANT HTTP STATUS CODES
+===============================
+
+200
+Request successful.
+
+201
+Resource successfully created.
+
+204
+Successful request with no response body.
+
+400
+Bad request.
+
+401
+Unauthenticated.
+
+403
+Forbidden.
+
+404
+Resource/route not found.
+
+405
+HTTP method not allowed.
+
+419
+CSRF/session-related problem.
+
+422
+Validation failed.
+
+429
+Too many requests.
+
+500
+Internal server error.
+
+502
+Bad gateway.
+
+503
+Service unavailable.
+
+==================================================
+17. DEBUG FRONTEND -> LARAVEL API
+=================================
+
+Example frontend request:
+
+fetch('/api/products', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Accept': 'application/json'
+},
+body: JSON.stringify({
+name: 'Laptop',
+price: 50000
+})
+});
+
+Explanation:
+
+The frontend sends JSON data to Laravel.
+
+---
+
+Better debugging version:
+
+const data = {
+name: 'Laptop',
+price: 50000
+};
+
+console.log('Sending:', data);
+
+const response = await fetch('/api/products', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Accept': 'application/json'
+},
+body: JSON.stringify(data)
+});
+
+console.log('Status:', response.status);
+
+const result = await response.json();
+
+console.log('Response:', result);
+
+Explanation:
+
+This lets you see:
+
+1. What frontend is sending.
+2. HTTP response status.
+3. What Laravel returned.
+
+==================================================
+18. DEBUG THE SAME REQUEST IN LARAVEL
+=====================================
+
+Controller:
+
+public function store(Request $request)
+{
+dd([
+'headers' => $request->headers->all(),
+'data' => $request->all(),
+]);
+}
+
+Explanation:
+
+Now compare:
+
+Frontend data
+↓
+Browser Network Payload
+↓
+Laravel received data
+
+If the data is already wrong when it reaches Laravel,
+the problem is likely in the frontend/request.
+
+If the data is correct, continue debugging the backend.
+
+==================================================
+19. DEBUG BLADE
+===============
+
+Inside Blade:
+
+{{ dd($products) }}
+
+Explanation:
+
+Displays the value and stops execution.
+
+---
+
+Without stopping:
+
+{{ dump($products) }}
+
+Explanation:
+
+Displays the value and continues execution.
+
+---
+
+Display structured data:
+
+<pre>
+    {{ print_r($products, true) }}
+</pre>
+
+Explanation:
+
+Useful for visually inspecting arrays/objects in a Blade page.
+
+---
+
+Display JSON:
+
+<pre>
+    {{ json_encode($products, JSON_PRETTY_PRINT) }}
+</pre>
+
+Explanation:
+
+Useful for seeing data in JSON format.
+
+==================================================
+20. DEBUG PHP DATA PASSED TO JAVASCRIPT
+=======================================
+
+Example:
+
+<script>
+    const products = @json($products);
+
+    console.log('Products:', products);
+</script>
+
+Explanation:
+
+Laravel/PHP data is converted into JavaScript data.
+
+Then you can inspect it using:
+
+console.log(products);
+
+---
+
+Alternative:
+
+<script>
+    const products = {{ Js::from($products) }};
+
+    console.log(products);
+</script>
+
+Explanation:
+
+Useful for safely passing Laravel data into JavaScript.
+
+==================================================
+21. DEBUG AXIOS REQUESTS
+========================
+
+Example:
+
+axios.post('/api/products', {
+name: 'Laptop',
+price: 50000
+})
+.then(response => {
+console.log('Success:', response.data);
+})
+.catch(error => {
+console.error('Status:', error.response?.status);
+console.error('Data:', error.response?.data);
+});
+
+Explanation:
+
+If the request succeeds:
+
+response.data
+
+contains Laravel's response.
+
+If the request fails:
+
+error.response.status
+
+contains the HTTP status.
+
+error.response.data
+
+contains the server response.
+
+---
+
+DEBUG VALIDATION ERRORS:
+
+.catch(error => {
+if (error.response?.status === 422) {
+console.log(error.response.data.errors);
+}
+});
+
+Explanation:
+
+This specifically detects Laravel validation errors.
+
+==================================================
+22. DEBUG AUTHENTICATION
+========================
+
+Use:
+
+use Illuminate\Support\Facades\Auth;
+
+dd(Auth::user());
+
+Explanation:
+
+Displays the currently authenticated user.
+
+If it returns:
+
+null
+
+the request is not authenticated according to the
+current authentication setup.
+
+---
+
+Check authentication:
+
+dd([
+'authenticated' => Auth::check(),
+'user' => Auth::user(),
+]);
+
+Explanation:
+
+Shows:
+
+authenticated
+Whether the user is authenticated.
+
+user
+The authenticated user.
+
+---
+
+Using the request:
+
+dd($request->user());
+
+Explanation:
+
+Returns the authenticated user associated with the request.
+
+==================================================
+23. DEBUG API TOKEN AUTHENTICATION
+==================================
+
+Open browser:
+
+F12
+↓
+Network
+↓
+Your API request
+↓
+Headers
+
+Check whether the request contains the expected
+authentication information.
+
+For token-based APIs, this may look like:
+
+Authorization: Bearer YOUR_TOKEN
+
+Explanation:
+
+If authentication is failing, inspect the actual request
+being sent by the browser.
+
+==================================================
+24. DEBUG CSRF / 419 ERRORS
+===========================
+
+If you receive:
+
+419 Page Expired
+
+Check CSRF/session handling.
+
+For a Blade form:
+
+<form method="POST" action="/products">
+
+```
+@csrf
+
+...
+```
+
+</form>
+
+Explanation:
+
+@csrf generates the CSRF token required for protected
+web form requests.
+
+---
+
+IMPORTANT:
+
+Do NOT simply disable CSRF protection to solve a 419 error.
+
+Instead, investigate:
+
+* CSRF token
+* Session
+* Cookies
+* Request headers
+* Route type
+* Authentication
+* Domain configuration
+
+==================================================
+25. DEBUG WITH BREAKPOINTS
+==========================
+
+For more advanced debugging, use Xdebug with your IDE.
+
+Instead of:
+
+dd($user);
+
+you can place a breakpoint:
+
+public function store(Request $request)
+{
+$user = $request->user();
+
+```
+// BREAKPOINT HERE
+
+$product = Product::create([
+    'name' => $request->name,
+]);
+```
+
+}
+
+Explanation:
+
+When execution reaches the breakpoint, your debugger pauses
+the PHP application.
+
+You can inspect:
+
+$request
+$user
+$product
+
+---
+
+Common debugger actions:
+
+Step Over
+Execute the current line and move to the next line.
+
+Step Into
+Enter the function being called.
+
+Step Out
+Exit the current function.
+
+Continue
+Continue execution until another breakpoint or the
+request finishes.
+
+==================================================
+26. LARAVEL TELESCOPE
+=====================
+
+Laravel Telescope is a development/debugging tool.
+
+It can help inspect:
+
+Requests
+Commands
+Queries
+Jobs
+Exceptions
+Logs
+Cache
+Mail
+Notifications
+
+Explanation:
+
+Telescope gives you a centralized way to inspect what Laravel
+is doing during development.
+
+It can be particularly useful for complex applications.
+
+==================================================
+27. PRACTICAL DEBUGGING FLOW
+============================
+
+Suppose you click:
+
+"Create Product"
+
+and nothing happens.
+
+Follow these steps:
+
+STEP 1:
+Check browser Console.
+
+Look for:
+
+JavaScript errors
+Reference errors
+Syntax errors
+Network-related errors
+
+---
+
+STEP 2:
+Open:
+
+F12
+↓
+Network
+
+Click "Create Product" again.
+
+---
+
+STEP 3:
+Check whether a request was created.
+
+Example:
+
+POST /api/products
+
+---
+
+STEP 4:
+Check request URL.
+
+Is it:
+
+/api/products
+
+or:
+
+/products
+
+---
+
+STEP 5:
+Check HTTP method.
+
+Is frontend sending:
+
+POST
+
+while Laravel expects:
+
+PUT
+
+or:
+
+GET?
+
+---
+
+STEP 6:
+Check request Payload.
+
+Example:
+
+{
+"name": "Laptop",
+"price": 50000
+}
+
+---
+
+STEP 7:
+Check HTTP status.
+
+Example:
+
+422
+
+---
+
+STEP 8:
+Open Response.
+
+Example:
+
+{
+"message": "The price field is required.",
+"errors": {
+"price": [
+"The price field is required."
+]
+}
+}
+
+---
+
+STEP 9:
+If status is 500:
+
+Check:
+
+storage/logs/laravel.log
+
+---
+
+STEP 10:
+Check Laravel route:
+
+php artisan route:list
+
+---
+
+STEP 11:
+Check controller.
+
+Example:
+
+public function store(Request $request)
+{
+dd($request->all());
+}
+
+---
+
+STEP 12:
+Check validation.
+
+Example:
+
+$request->validate([
+'name' => 'required',
+'price' => 'required|numeric',
+]);
+
+---
+
+STEP 13:
+Check database query.
+
+Example:
+
+$query = Product::where('active', true);
+
+dd($query->toSql(), $query->getBindings());
+
+---
+
+STEP 14:
+Check database data.
+
+Use:
+
+php artisan tinker
+
+Example:
+
+Product::count();
+
+Product::latest()->first();
+
+==================================================
+28. EXAMPLE: DEBUGGING A 422 ERROR
+==================================
+
+Frontend sends:
+
+{
+"name": "Laptop"
+}
+
+Laravel validation expects:
+
+'name' => 'required',
+'price' => 'required|numeric'
+
+---
+
+Network response:
+
+422 Unprocessable Entity
+
+Response:
+
+{
+"message": "The price field is required.",
+"errors": {
+"price": [
+"The price field is required."
+]
+}
+}
+
+---
+
+Diagnosis:
+
+The frontend did not send "price".
+
+Fix the frontend request:
+
+const data = {
+name: 'Laptop',
+price: 50000
+};
+
+==================================================
+29. EXAMPLE: DEBUGGING A 404 ERROR
+==================================
+
+Frontend:
+
+fetch('/api/products')
+
+Laravel route:
+
+POST /api/products
+
+Problem:
+
+Frontend used GET.
+
+Laravel expects POST.
+
+---
+
+Fix:
+
+fetch('/api/products', {
+method: 'POST'
+});
+
+---
+
+Also verify:
+
+php artisan route:list --path=api
+
+==================================================
+30. EXAMPLE: DEBUGGING A 500 ERROR
+==================================
+
+Frontend:
+
+POST /api/products
+
+Network:
+
+500 Internal Server Error
+
+---
+
+First check:
+
+storage/logs/laravel.log
+
+---
+
+Suppose log says:
+
+SQLSTATE[42S22]: Column not found
+
+---
+
+Diagnosis:
+
+Laravel is trying to use a database column that does not
+exist or is incorrectly named.
+
+---
+
+Next steps:
+
+Check migration.
+
+Check model.
+
+Check controller.
+
+Check database schema.
+
+Check query.
+
+==================================================
+31. DEBUGGING DATABASE DATA WITH TINKER
+=======================================
+
+Open:
+
+php artisan tinker
+
+---
+
+Count users:
+
+User::count();
+
+---
+
+Get first user:
+
+User::first();
+
+---
+
+Find user:
+
+User::find(1);
+
+---
+
+Get latest user:
+
+User::latest()->first();
+
+---
+
+Find product:
+
+Product::where('id', 1)->first();
+
+---
+
+Count products:
+
+Product::count();
+
+---
+
+Create test data:
+
+User::factory()->count(10)->create();
+
+==================================================
+32. USEFUL LARAVEL DEBUGGING COMMANDS
+=====================================
+
+Show routes:
+
+php artisan route:list
+
+---
+
+Show API routes:
+
+php artisan route:list --path=api
+
+---
+
+Check migration status:
+
+php artisan migrate:status
+
+---
+
+Clear Laravel caches:
+
+php artisan optimize:clear
+
+---
+
+Clear configuration cache:
+
+php artisan config:clear
+
+---
+
+Clear route cache:
+
+php artisan route:clear
+
+---
+
+Clear Blade cache:
+
+php artisan view:clear
+
+---
+
+Open Tinker:
+
+php artisan tinker
+
+---
+
+Run tests:
+
+php artisan test
+
+---
+
+Start queue:
+
+php artisan queue:work
+
+==================================================
+33. FRONTEND DEBUGGING CHECKLIST
+================================
+
+When frontend is not working:
+
+[ ] Open Browser Console
+
+[ ] Look for JavaScript errors
+
+[ ] Open Network tab
+
+[ ] Check whether API request was sent
+
+[ ] Check Request URL
+
+[ ] Check HTTP method
+
+[ ] Check Request Headers
+
+[ ] Check Request Payload
+
+[ ] Check Response Status
+
+[ ] Check Response Body
+
+[ ] Check authentication headers/cookies
+
+[ ] Check CSRF configuration if applicable
+
+[ ] Check CORS if frontend/backend are on different origins
+
+[ ] Check browser storage/cookies if authentication depends
+on them
+
+==================================================
+34. BACKEND DEBUGGING CHECKLIST
+===============================
+
+When Laravel backend is not working:
+
+[ ] Check storage/logs/laravel.log
+
+[ ] Use dd()
+
+[ ] Use dump()
+
+[ ] Add Log::info()
+
+[ ] Run php artisan route:list
+
+[ ] Check route URL
+
+[ ] Check HTTP method
+
+[ ] Check middleware
+
+[ ] Check authentication
+
+[ ] Check validation
+
+[ ] Check controller
+
+[ ] Check service/business logic
+
+[ ] Check Eloquent query
+
+[ ] Check database
+
+[ ] Check migration status
+
+[ ] Use Tinker
+
+[ ] Use Xdebug for complex problems
+
+==================================================
+35. FULL REQUEST DEBUGGING FLOW
+===============================
+
+The complete flow is:
+
+BROWSER
+|
+| User clicks button
+v
+JAVASCRIPT
+|
+| fetch() / Axios
+v
+NETWORK REQUEST
+|
+| URL
+| Method
+| Headers
+| Payload
+v
+LARAVEL ROUTE
+|
+v
+MIDDLEWARE
+|
+| Authentication
+| Authorization
+| CSRF
+v
+CONTROLLER
+|
+v
+FORM REQUEST / VALIDATION
+|
+v
+SERVICE / BUSINESS LOGIC
+|
+v
+MODEL / ELOQUENT
+|
+v
+DATABASE
+|
+v
+LARAVEL RESPONSE
+|
+v
+JAVASCRIPT
+|
+v
+UI UPDATE
+
+Explanation:
+
+At each step, inspect the data.
+
+Find the FIRST step where the data becomes incorrect.
+
+That is usually where the problem is.
+
+==================================================
+36. THE MOST IMPORTANT DEBUGGING TOOLS
+======================================
+
+1. Browser Console
+
+Use for:
+
+JavaScript errors
+Variables
+Frontend logic
+
+---
+
+2. Browser Network Tab
+
+Use for:
+
+API requests
+Request payload
+Headers
+HTTP status
+Response
+
+---
+
+3. dd()
+
+Use for:
+
+Quick PHP/Laravel debugging.
+
+---
+
+4. dump()
+
+Use for:
+
+Inspecting values without stopping execution.
+
+---
+
+5. Laravel Logs
+
+File:
+
+storage/logs/laravel.log
+
+Use for:
+
+Exceptions
+Errors
+Application logs
+
+---
+
+6. Tinker
+
+Command:
+
+php artisan tinker
+
+Use for:
+
+Database inspection
+Model testing
+Eloquent queries
+
+---
+
+7. Xdebug
+
+Use for:
+
+Breakpoints
+Step-by-step execution
+Variable inspection
+Complex backend debugging
+
+---
+
+8. Laravel Telescope
+
+Use for:
+
+Inspecting Laravel application activity during development.
+
+==================================================
+37. GOLDEN DEBUGGING RULE
+=========================
+
+DO NOT GUESS.
+
+TRACE THE REQUEST.
+
+Browser
+↓
+Console
+↓
+Network
+↓
+Request
+↓
+Route
+↓
+Middleware
+↓
+Controller
+↓
+Validation
+↓
+Service
+↓
+Model
+↓
+Database
+↓
+Response
+↓
+Frontend
+↓
+UI
+
+Ask at every step:
+
+"What data entered this step?"
+
+"What data came out of this step?"
+
+"Where did it first become incorrect?"
+
+==================================================
+38. QUICK DEBUGGING CHEAT SHEET
+===============================
+
+BACKEND:
+
+php artisan route:list
+
+php artisan migrate:status
+
+php artisan tinker
+
+php artisan optimize:clear
+
+tail -f storage/logs/laravel.log
+
+---
+
+PHP:
+
+dd($variable);
+
+dump($variable);
+
+Log::info('message');
+
+Log::error('message');
+
+---
+
+DATABASE:
+
+DB::enableQueryLog();
+
+$query->toSql();
+
+$query->getBindings();
+
+---
+
+FRONTEND:
+
+console.log(data);
+
+console.warn(data);
+
+console.error(error);
+
+---
+
+BROWSER:
+
+F12
+
+Ctrl + Shift + I
+
+---
+
+NETWORK:
+
+F12
+↓
+Network
+↓
+Request
+↓
+Headers
+↓
+Payload
+↓
+Response
+↓
+Status
+
+---
+
+## END OF LARAVEL FRONTEND AND BACKEND DEBUGGING GUIDE
+
+
+
+# LARAVEL DEBUGGING
+
+WHERE TO PUT DEBUGGING CODE IN MODEL, CONTROLLER,
+SERVICE, MIDDLEWARE, BLADE, JAVASCRIPT, ETC.
+
+==================================================
+
+1. LARAVEL REQUEST FLOW
+   ==================================================
+
+A typical Laravel request flows like this:
+
+Browser
+|
+v
+JavaScript
+|
+v
+Network Request
+|
+v
+Laravel Route
+|
+v
+Middleware
+|
+v
+Form Request / Validation
+|
+v
+Controller
+|
+v
+Service
+|
+v
+Model / Eloquent
+|
+v
+Database
+|
+v
+Laravel Response
+|
+v
+JavaScript
+|
+v
+Browser UI
+
+IMPORTANT:
+
+Put debugging code at the layer where you are trying to
+find the problem.
+
+==================================================
+2. FRONTEND / JAVASCRIPT
+========================
+
+Location:
+
+resources/js/
+
+OR:
+
+Blade <script> sections
+
+OR:
+
+Vue / React components
+
+---
+
+## USE:
+
+console.log()
+
+console.warn()
+
+console.error()
+
+---
+
+## EXAMPLE:
+
+const data = {
+name: 'Laptop',
+price: 50000
+};
+
+console.log('Sending data:', data);
+
+---
+
+## EXPLANATION:
+
+Use JavaScript console debugging for:
+
+* Button clicks
+* Form values
+* JavaScript variables
+* API request data
+* API responses
+* Frontend logic
+* Conditional statements
+
+---
+
+## OPEN BROWSER DEBUGGER:
+
+F12
+
+OR:
+
+Ctrl + Shift + I
+
+Then open:
+
+Console
+
+==================================================
+3. BLADE VIEW DEBUGGING
+=======================
+
+Location:
+
+resources/views/
+
+---
+
+## USE:
+
+{{ dd($products) }}
+
+---
+
+## EXPLANATION:
+
+Displays the value and stops execution.
+
+Useful for checking:
+
+* Data passed from controller
+* Blade variables
+* Database results
+* Conditional rendering
+
+---
+
+## USE DUMP IF YOU DON'T WANT TO STOP:
+
+{{ dump($products) }}
+
+---
+
+## EXPLANATION:
+
+Displays the value but allows execution to continue.
+
+---
+
+## EXAMPLE:
+
+Controller:
+
+return view('products.index', [
+'products' => $products,
+]);
+
+Blade:
+
+{{ dd($products) }}
+
+This answers:
+
+"Did the controller send the correct data to Blade?"
+
+==================================================
+4. ROUTE DEBUGGING
+==================
+
+Location:
+
+routes/web.php
+
+routes/api.php
+
+---
+
+## MAIN COMMAND:
+
+php artisan route:list
+
+---
+
+## EXPLANATION:
+
+Shows registered Laravel routes.
+
+You can check:
+
+* URL
+* HTTP method
+* Controller
+* Route name
+* Middleware
+
+---
+
+## API ROUTES:
+
+php artisan route:list --path=api
+
+---
+
+## EXAMPLE:
+
+POST    /api/products
+
+This means the frontend should send:
+
+POST /api/products
+
+---
+
+## COMMON PROBLEM:
+
+Frontend sends:
+
+GET /api/products
+
+Laravel expects:
+
+POST /api/products
+
+Result:
+
+405 Method Not Allowed
+
+==================================================
+5. MIDDLEWARE DEBUGGING
+=======================
+
+Location:
+
+app/Http/Middleware/
+
+---
+
+## EXAMPLE:
+
+public function handle($request, Closure $next)
+{
+dd($request->user());
+
+```
+return $next($request);
+```
+
+}
+
+---
+
+## EXPLANATION:
+
+Use middleware debugging for:
+
+* Authentication
+* Authorization
+* Roles
+* Permissions
+* Request filtering
+* Middleware execution
+
+---
+
+## LOGGING EXAMPLE:
+
+Log::info('CheckAdmin middleware', [
+'user_id' => $request->user()?->id,
+]);
+
+return $next($request);
+
+---
+
+## QUESTION THIS ANSWERS:
+
+"Is the user authenticated?"
+
+"Did this middleware execute?"
+
+"Is the request being blocked by middleware?"
+
+==================================================
+6. FORM REQUEST DEBUGGING
+=========================
+
+Location:
+
+app/Http/Requests/
+
+---
+
+## CREATE FORM REQUEST:
+
+php artisan make:request StoreProductRequest
+
+---
+
+## EXAMPLE:
+
+class StoreProductRequest extends FormRequest
+{
+public function rules(): array
+{
+return [
+'name' => ['required', 'string'],
+'price' => ['required', 'numeric'],
+];
+}
+}
+
+---
+
+## DEBUG REQUEST DATA:
+
+public function authorize(): bool
+{
+dd($this->all());
+
+```
+return true;
+```
+
+}
+
+---
+
+## EXPLANATION:
+
+Form Requests are mainly used for:
+
+* Validation
+* Authorization
+* Incoming request data
+
+IMPORTANT:
+
+Normally, you should first debug the request in the
+controller and inspect the 422 validation response before
+adding debugging code to the Form Request.
+
+==================================================
+7. CONTROLLER DEBUGGING
+=======================
+
+Location:
+
+app/Http/Controllers/
+
+---
+
+## THIS IS USUALLY THE FIRST BACKEND PLACE TO DEBUG.
+
+Example:
+
+public function store(Request $request)
+{
+dd($request->all());
+
+```
+// Rest of code...
+```
+
+}
+
+---
+
+## EXPLANATION:
+
+This checks:
+
+* Did the request reach the controller?
+* What data came from the frontend?
+* Are all expected fields present?
+* Is the request data correct?
+
+---
+
+## CHECK AUTHENTICATED USER:
+
+dd($request->user());
+
+---
+
+## CHECK MULTIPLE VALUES:
+
+dd(
+$request->all(),
+$request->user()
+);
+
+---
+
+## LOG REQUEST:
+
+Log::info('Product store called', [
+'user_id' => $request->user()?->id,
+'data' => $request->all(),
+]);
+
+---
+
+## CONTROLLER DEBUGGING IS GOOD FOR:
+
+* Request data
+* Authenticated user
+* Controller flow
+* Service calls
+* Response data
+* Conditions
+* Variables
+
+==================================================
+8. SERVICE DEBUGGING
+====================
+
+Location:
+
+app/Services/
+
+Example:
+
+app/Services/ProductService.php
+
+---
+
+## EXAMPLE:
+
+class ProductService
+{
+public function createProduct(array $data)
+{
+dd($data);
+
+```
+    return Product::create($data);
+}
+```
+
+}
+
+---
+
+## EXPLANATION:
+
+Use Service debugging for business logic.
+
+Examples:
+
+* Calculations
+* Business rules
+* Data transformation
+* Payment logic
+* External API logic
+* Complex conditions
+
+---
+
+## LOGGING EXAMPLE:
+
+Log::info('Creating product', [
+'data' => $data,
+]);
+
+---
+
+## QUESTION THIS ANSWERS:
+
+"Did the controller send the correct data to the service?"
+
+"Did the business logic modify the data correctly?"
+
+==================================================
+9. MODEL DEBUGGING
+==================
+
+Location:
+
+app/Models/
+
+Example:
+
+app/Models/Product.php
+
+---
+
+## IMPORTANT:
+
+Do not normally put lots of temporary dd() statements
+inside your models.
+
+Instead, inspect the query from:
+
+* Controller
+* Service
+* Tinker
+
+---
+
+## EXAMPLE QUERY:
+
+$query = Product::where('active', true);
+
+dd(
+$query->toSql(),
+$query->getBindings()
+);
+
+---
+
+## EXPLANATION:
+
+toSql()
+Shows the SQL query.
+
+getBindings()
+Shows the values that will be inserted into the
+query placeholders.
+
+---
+
+## EXAMPLE:
+
+$query = Product::where('active', true)
+->where('price', '>', 1000);
+
+dd(
+$query->toSql(),
+$query->getBindings()
+);
+
+==================================================
+10. DEBUG MODEL RESULTS
+=======================
+
+Example:
+
+$products = Product::where('active', true)->get();
+
+dd($products);
+
+---
+
+## EXPLANATION:
+
+Use this when you want to know:
+
+* Did the query return records?
+* Did the WHERE condition work?
+* Is the database returning expected data?
+
+==================================================
+11. DEBUG ELOQUENT RELATIONSHIPS
+================================
+
+Suppose User has Orders:
+
+class User extends Model
+{
+public function orders()
+{
+return $this->hasMany(Order::class);
+}
+}
+
+---
+
+## DEBUG RELATIONSHIP:
+
+$user = User::find(1);
+
+dd($user->orders);
+
+---
+
+## DEBUG RELATIONSHIP QUERY:
+
+dd($user->orders()->toSql());
+
+---
+
+## EXPLANATION:
+
+Useful for checking:
+
+* Relationship definition
+* Foreign keys
+* Returned records
+* Eloquent relationship queries
+
+==================================================
+12. DATABASE DEBUGGING
+======================
+
+Instead of putting debugging code directly inside the
+model, use Laravel Tinker.
+
+---
+
+## OPEN TINKER:
+
+php artisan tinker
+
+---
+
+## COUNT USERS:
+
+User::count();
+
+---
+
+## GET FIRST USER:
+
+User::first();
+
+---
+
+## FIND USER:
+
+User::find(1);
+
+---
+
+## GET LATEST USER:
+
+User::latest()->first();
+
+---
+
+## COUNT PRODUCTS:
+
+Product::count();
+
+---
+
+## GET PRODUCTS:
+
+Product::where('active', true)->get();
+
+---
+
+## CREATE TEST DATA:
+
+User::factory()->count(10)->create();
+
+---
+
+## EXPLANATION:
+
+Tinker is useful for checking:
+
+* Database records
+* Eloquent queries
+* Relationships
+* Model behavior
+* Factory data
+* Database state
+
+==================================================
+13. DATABASE QUERY DEBUGGING
+============================
+
+Use:
+
+use Illuminate\Support\Facades\DB;
+
+---
+
+## ENABLE QUERY LOG:
+
+DB::enableQueryLog();
+
+$products = Product::where('active', true)->get();
+
+dd(DB::getQueryLog());
+
+---
+
+## EXPLANATION:
+
+This shows SQL queries executed after query logging
+was enabled.
+
+---
+
+## USEFUL FOR:
+
+* Incorrect SQL
+* Incorrect WHERE conditions
+* Unexpected queries
+* N+1 query investigation
+* Query debugging
+
+==================================================
+14. LOGGING DEBUGGING
+=====================
+
+Location:
+
+Any backend PHP class where you need diagnostic information.
+
+---
+
+## IMPORT:
+
+use Illuminate\Support\Facades\Log;
+
+---
+
+## INFO:
+
+Log::info('Product store called');
+
+---
+
+## INFO WITH DATA:
+
+Log::info('Product data', [
+'name' => $request->name,
+'price' => $request->price,
+]);
+
+---
+
+## WARNING:
+
+Log::warning('Product price is unusually high', [
+'price' => $request->price,
+]);
+
+---
+
+## ERROR:
+
+Log::error('Product creation failed', [
+'message' => $e->getMessage(),
+]);
+
+---
+
+## DEBUG:
+
+Log::debug('Debugging product request', [
+'request' => $request->all(),
+]);
+
+---
+
+## LOG FILE:
+
+storage/logs/laravel.log
+
+---
+
+## WATCH LOGS:
+
+Linux / macOS:
+
+tail -f storage/logs/laravel.log
+
+Windows PowerShell:
+
+Get-Content storage/logs/laravel.log -Wait
+
+==================================================
+15. JOB / QUEUE DEBUGGING
+=========================
+
+Location:
+
+app/Jobs/
+
+---
+
+## EXAMPLE:
+
+Log::info('Processing order job', [
+'order_id' => $this->orderId,
+]);
+
+---
+
+## EXPLANATION:
+
+Useful for debugging:
+
+* Queue jobs
+* Background processing
+* Job data
+* External API calls
+* Email processing
+
+---
+
+## START QUEUE WORKER:
+
+php artisan queue:work
+
+---
+
+## CHECK FAILED JOBS:
+
+php artisan queue:failed
+
+==================================================
+16. JAVASCRIPT API DEBUGGING
+============================
+
+Example:
+
+const data = {
+name: 'Laptop',
+price: 50000
+};
+
+console.log('Frontend sending:', data);
+
+---
+
+## SEND REQUEST:
+
+const response = await fetch('/api/products', {
+method: 'POST',
+headers: {
+'Content-Type': 'application/json',
+'Accept': 'application/json'
+},
+body: JSON.stringify(data)
+});
+
+---
+
+## CHECK RESPONSE:
+
+console.log('HTTP status:', response.status);
+
+const result = await response.json();
+
+console.log('Backend response:', result);
+
+---
+
+## EXPLANATION:
+
+This lets you check:
+
+1. What the frontend sends.
+2. Which URL it calls.
+3. HTTP status.
+4. What Laravel returns.
+
+==================================================
+17. BROWSER NETWORK DEBUGGING
+=============================
+
+Open:
+
+F12
+↓
+Network
+
+Then perform the action.
+
+Example:
+
+Click:
+
+Create Product
+
+Look for:
+
+POST /api/products
+
+Click the request and inspect:
+
+Headers
+Payload
+Response
+Preview
+Status
+
+---
+
+## EXPLANATION:
+
+The Network tab is one of the most important tools for
+Laravel API debugging.
+
+==================================================
+18. DEBUGGING AXIOS
+===================
+
+Example:
+
+axios.post('/api/products', {
+name: 'Laptop',
+price: 50000
+})
+.then(response => {
+console.log('Success:', response.data);
+})
+.catch(error => {
+console.error(
+'Status:',
+error.response?.status
+);
+
+```
+console.error(
+    'Data:',
+    error.response?.data
+);
+```
+
+});
+
+---
+
+## VALIDATION ERROR:
+
+.catch(error => {
+if (error.response?.status === 422) {
+console.log(
+error.response.data.errors
+);
+}
+});
+
+---
+
+## EXPLANATION:
+
+Use Axios debugging to inspect:
+
+* Request response
+* HTTP status
+* Validation errors
+* Backend error responses
+
+==================================================
+19. AUTHENTICATION DEBUGGING
+============================
+
+Import:
+
+use Illuminate\Support\Facades\Auth;
+
+---
+
+## CHECK CURRENT USER:
+
+dd(Auth::user());
+
+---
+
+## CHECK AUTHENTICATION:
+
+dd([
+'authenticated' => Auth::check(),
+'user' => Auth::user(),
+]);
+
+---
+
+## REQUEST USER:
+
+dd($request->user());
+
+---
+
+## EXPLANATION:
+
+Useful when:
+
+* User is unexpectedly logged out.
+* API returns 401.
+* Middleware doesn't recognize the user.
+* Authorization isn't behaving as expected.
+
+==================================================
+20. CSRF / 419 DEBUGGING
+========================
+
+If you get:
+
+419 Page Expired
+
+Check:
+
+* CSRF token
+* Session
+* Cookies
+* Request headers
+* Route type
+* Authentication
+* Domain configuration
+
+---
+
+## BLADE FORM:
+
+<form method="POST" action="/products">
+
+```
+@csrf
+
+...
+```
+
+</form>
+
+---
+
+## IMPORTANT:
+
+Do NOT simply disable CSRF protection to solve a 419 error.
+
+Investigate why the CSRF/session information is missing
+or incorrect.
+
+==================================================
+21. BREAKPOINT DEBUGGING WITH XDEBUG
+====================================
+
+For complex backend debugging, use Xdebug with your IDE.
+
+---
+
+## INSTEAD OF:
+
+dd($user);
+
+---
+
+## USE A BREAKPOINT:
+
+public function store(Request $request)
+{
+$user = $request->user();
+
+```
+// BREAKPOINT HERE
+
+$product = Product::create([
+    'name' => $request->name,
+]);
+```
+
+}
+
+---
+
+## EXPLANATION:
+
+The debugger pauses execution at the breakpoint.
+
+You can inspect:
+
+$request
+$user
+$product
+
+---
+
+## COMMON DEBUGGER ACTIONS:
+
+Step Over
+
+Executes the current line and moves to the next line.
+
+---
+
+Step Into
+
+Enters the function being called.
+
+---
+
+Step Out
+
+Exits the current function.
+
+---
+
+Continue
+
+Continues execution until the next breakpoint.
+
+==================================================
+22. LARAVEL TELESCOPE
+=====================
+
+Laravel Telescope can help inspect:
+
+* Requests
+* Commands
+* Queries
+* Jobs
+* Exceptions
+* Logs
+* Cache
+* Mail
+* Notifications
+
+---
+
+## EXPLANATION:
+
+Telescope provides a centralized way to inspect application
+activity during development.
+
+It is especially useful for larger applications where using
+dd() everywhere becomes difficult.
+
+==================================================
+23. WHERE SHOULD YOU PUT dd()?
+==============================
+
+FRONTEND:
+
+Use:
+
+console.log()
+
+NOT:
+
+dd()
+
+---
+
+BLADE:
+
+Use:
+
+{{ dd($variable) }}
+
+---
+
+CONTROLLER:
+
+Use:
+
+dd($request->all());
+
+or:
+
+dd($result);
+
+---
+
+SERVICE:
+
+Use:
+
+dd($data);
+
+or:
+
+Log::info(...);
+
+---
+
+MIDDLEWARE:
+
+Use:
+
+dd($request->user());
+
+or:
+
+Log::info(...);
+
+---
+
+MODEL:
+
+Prefer:
+
+$query->toSql()
+
+$query->getBindings()
+
+Then inspect the query from controller/service/Tinker.
+
+---
+
+DATABASE:
+
+Use:
+
+php artisan tinker
+
+---
+
+QUEUE:
+
+Use:
+
+Log::info(...)
+
+and:
+
+storage/logs/laravel.log
+
+==================================================
+24. WHAT TO DEBUG IN EACH LAYER
+===============================
+
+## FRONTEND / JAVASCRIPT
+
+Debug:
+
+* Button clicks
+* Form values
+* JavaScript variables
+* API requests
+* API responses
+* UI state
+
+---
+
+## BLADE
+
+Debug:
+
+* Variables passed from controller
+* Rendered data
+* Conditions
+* Loops
+
+---
+
+## ROUTES
+
+Debug:
+
+* URL
+* HTTP method
+* Controller
+* Middleware
+
+Command:
+
+php artisan route:list
+
+---
+
+## MIDDLEWARE
+
+Debug:
+
+* Authentication
+* Authorization
+* Roles
+* Permissions
+* Request filtering
+
+---
+
+## FORM REQUEST
+
+Debug:
+
+* Validation
+* Authorization
+* Request data
+
+---
+
+## CONTROLLER
+
+Debug:
+
+* Incoming request
+* Authenticated user
+* Controller flow
+* Service calls
+* Response
+
+---
+
+## SERVICE
+
+Debug:
+
+* Business logic
+* Calculations
+* Data transformation
+* External API logic
+
+---
+
+## MODEL
+
+Debug:
+
+* Eloquent queries
+* Relationships
+* Scopes
+* Attributes
+* Database behavior
+
+---
+
+## DATABASE
+
+Debug:
+
+* Actual records
+* SQL queries
+* Relationships
+* Data consistency
+
+Tool:
+
+php artisan tinker
+
+---
+
+## QUEUE / JOB
+
+Debug:
+
+* Job execution
+* Job data
+* Background processing
+* Failed jobs
+
+==================================================
+25. EXAMPLE - COMPLETE PRODUCT REQUEST
+======================================
+
+Suppose you have:
+
+Create Product button
+↓
+JavaScript
+↓
+POST /api/products
+↓
+ProductController
+↓
+ProductService
+↓
+Product Model
+↓
+Database
+
+---
+
+## STEP 1 - FRONTEND
+
+const data = {
+name: 'Laptop',
+price: 50000
+};
+
+console.log('Frontend data:', data);
+
+Question:
+
+Did JavaScript create the correct data?
+
+---
+
+## STEP 2 - NETWORK
+
+Open:
+
+F12
+↓
+Network
+↓
+POST /api/products
+
+Check:
+
+Request URL
+Request Method
+Headers
+Payload
+Response
+Status
+
+Question:
+
+Did the browser send the correct request?
+
+---
+
+## STEP 3 - ROUTE
+
+Run:
+
+php artisan route:list --path=api
+
+Question:
+
+Does Laravel have the expected route?
+
+---
+
+## STEP 4 - MIDDLEWARE
+
+Check:
+
+$request->user()
+
+Question:
+
+Is the request authenticated?
+
+---
+
+## STEP 5 - CONTROLLER
+
+public function store(Request $request)
+{
+dd($request->all());
+}
+
+Question:
+
+Did Laravel receive the correct data?
+
+---
+
+## STEP 6 - FORM REQUEST
+
+Check validation:
+
+'name' => ['required', 'string'],
+'price' => ['required', 'numeric']
+
+Question:
+
+Does the request contain all required fields?
+
+---
+
+## STEP 7 - SERVICE
+
+Log:
+
+Log::info('Creating product', [
+'data' => $data,
+]);
+
+Question:
+
+Did the controller send the correct data to the service?
+
+---
+
+## STEP 8 - MODEL / QUERY
+
+$query = Product::where('active', true);
+
+dd(
+$query->toSql(),
+$query->getBindings()
+);
+
+Question:
+
+Is Eloquent generating the expected query?
+
+---
+
+## STEP 9 - DATABASE
+
+Run:
+
+php artisan tinker
+
+Then:
+
+Product::latest()->first();
+
+Question:
+
+Was the record actually created?
+
+---
+
+## STEP 10 - RESPONSE
+
+Check browser:
+
+F12
+↓
+Network
+↓
+POST /api/products
+↓
+Response
+
+Question:
+
+Did Laravel return what the frontend expects?
+
+==================================================
+26. DEBUGGING A 422 ERROR
+=========================
+
+Suppose frontend sends:
+
+{
+"name": "Laptop"
+}
+
+But Laravel expects:
+
+'name' => 'required'
+'price' => 'required|numeric'
+
+---
+
+## NETWORK RESPONSE:
+
+HTTP 422
+
+Response:
+
+{
+"message": "The price field is required.",
+"errors": {
+"price": [
+"The price field is required."
+]
+}
+}
+
+---
+
+## DIAGNOSIS:
+
+The frontend did not send "price".
+
+---
+
+## FIX:
+
+const data = {
+name: 'Laptop',
+price: 50000
+};
+
+==================================================
+27. DEBUGGING A 404 ERROR
+=========================
+
+Frontend calls:
+
+/api/products
+
+But Laravel route is:
+
+POST /products
+
+---
+
+## DIAGNOSIS:
+
+The URL is incorrect.
+
+---
+
+## CHECK:
+
+php artisan route:list
+
+---
+
+## FOR API ROUTES:
+
+php artisan route:list --path=api
+
+---
+
+## EXPLANATION:
+
+Compare:
+
+Frontend URL
+
+with:
+
+Laravel route URL
+
+==================================================
+28. DEBUGGING A 405 ERROR
+=========================
+
+Frontend sends:
+
+GET /api/products
+
+Laravel has:
+
+POST /api/products
+
+---
+
+## DIAGNOSIS:
+
+The URL exists, but the HTTP method is incorrect.
+
+---
+
+## FIX:
+
+Change the frontend request to:
+
+POST
+
+==================================================
+29. DEBUGGING A 500 ERROR
+=========================
+
+Frontend:
+
+POST /api/products
+
+Network:
+
+500 Internal Server Error
+
+---
+
+## STEP 1:
+
+Check:
+
+storage/logs/laravel.log
+
+---
+
+## EXAMPLE ERROR:
+
+SQLSTATE[42S22]: Column not found
+
+---
+
+CHECK:
+
+* Migration
+* Database table
+* Model
+* Controller
+* Query
+* Column names
+
+==================================================
+30. DO NOT LEAVE dd() EVERYWHERE
+================================
+
+During development:
+
+dd($request->all());
+
+is useful.
+
+But before committing code, remove temporary dd()
+statements.
+
+---
+
+## INSTEAD OF PERMANENT dd():
+
+Use:
+
+Log::info(...)
+
+Log::warning(...)
+
+Log::error(...)
+
+or use:
+
+Xdebug
+
+Laravel Telescope
+
+---
+
+## IMPORTANT:
+
+Do not leave sensitive request data, passwords, tokens,
+authentication headers, or personal information in logs.
+
+==================================================
+31. FRONTEND DEBUGGING CHECKLIST
+================================
+
+[ ] Open Browser Console
+
+[ ] Check JavaScript errors
+
+[ ] Open Network tab
+
+[ ] Check whether request was sent
+
+[ ] Check Request URL
+
+[ ] Check HTTP method
+
+[ ] Check Request Headers
+
+[ ] Check Request Payload
+
+[ ] Check Response
+
+[ ] Check HTTP Status
+
+[ ] Check authentication
+
+[ ] Check cookies if applicable
+
+[ ] Check CSRF if applicable
+
+[ ] Check CORS if applicable
+
+==================================================
+32. BACKEND DEBUGGING CHECKLIST
+===============================
+
+[ ] Check storage/logs/laravel.log
+
+[ ] Check php artisan route:list
+
+[ ] Check route URL
+
+[ ] Check HTTP method
+
+[ ] Check middleware
+
+[ ] Check authentication
+
+[ ] Check Form Request validation
+
+[ ] Check controller
+
+[ ] Check service
+
+[ ] Check model
+
+[ ] Check Eloquent query
+
+[ ] Check database
+
+[ ] Run php artisan tinker
+
+[ ] Check migrations
+
+[ ] Check queue if applicable
+
+[ ] Use Xdebug for complex problems
+
+==================================================
+33. GOLDEN DEBUGGING RULE
+=========================
+
+DO NOT GUESS.
+
+TRACE THE REQUEST.
+
+Browser
+↓
+Console
+↓
+Network
+↓
+Request
+↓
+Route
+↓
+Middleware
+↓
+Controller
+↓
+Validation
+↓
+Service
+↓
+Model
+↓
+Database
+↓
+Response
+↓
+Frontend
+↓
+UI
+
+At every step ask:
+
+1. What data entered this step?
+
+2. What data came out of this step?
+
+3. Is the data correct?
+
+4. If not, is this the FIRST place where it became incorrect?
+
+The first place where the data becomes incorrect is usually
+where you should start fixing the problem.
+
+==================================================
+34. QUICK REFERENCE
+===================
+
+FRONTEND:
+
+console.log(data);
+
+BLADE:
+
+{{ dd($data) }}
+
+CONTROLLER:
+
+dd($request->all());
+
+MIDDLEWARE:
+
+dd($request->user());
+
+FORM REQUEST:
+
+dd($this->all());
+
+SERVICE:
+
+dd($data);
+
+MODEL / QUERY:
+
+dd($query->toSql(), $query->getBindings());
+
+DATABASE:
+
+php artisan tinker
+
+ROUTES:
+
+php artisan route:list
+
+LOGS:
+
+storage/logs/laravel.log
+
+WATCH LOGS:
+
+tail -f storage/logs/laravel.log
+
+CLEAR CACHE:
+
+php artisan optimize:clear
+
+QUEUE:
+
+php artisan queue:work
+
+TESTS:
+
+php artisan test
+
+BROWSER DEBUGGER:
+
+F12
+
+==================================================
+END OF LARAVEL DEBUGGING GUIDE
+==============================
+
+
+
+

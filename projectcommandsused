@@ -1,0 +1,161 @@
+1) Creating a Laravel Project
+
+
+composer create-project laravel/laravel:^12.0 task-manager
+
+We used ^12.0 becuase the latest laravel version would have got installed which requires the php verion 8.3+ 
+
+
+2) In the project directory run the php artisan list command to list all the artisan commands and its use.	
+
+
+What is Artisan -  you are running Laravel's command-line interface (CLI). 
+
+the basic syntax php artisan COMMAND [OPTIONS] [ARGUMENTS]
+
+
+1) Migrations -
+
+to make migrations use: make command
+
+php artisan migration:status to which migration has run and which are pending
+
+php artisan make:migrations filename
+eg php artisan make:migrations create_state_master_table  this will creat the table name state_master
+
+php artisan migrate to run the database migrations for all the tables.
+
+for single table use path + migration file name with extension
+php artisan migrate --path-/database/migrations/migrationfilename.php
+php artisan migrate --path=/database/migrations/2026_09_24_062404_create_state_master_table.php
+
+
+once the migration has run and the is no longer pending i.e the table has been created you cannot change the migration file if you for example add unique constraint or add a new column in creatin table after the migration was run
+
+then you have to create new migration
+
+using - php artisan make:migration add_department_id_to_employee_table
+another eg - php artisan make:migration add_unique_constraint_to_department_name_to_department_master_table
+
+php artisan migrate:rollback to reverse the migrations according to the down method of each migration table/file.
+
+
+check the pendig migration :  php artisan migrate:status which are not run/are not in the database migrationstable.
+
+2) Models -
+
+php artisan make:model Employee
+
+
+using the model i.e the equloent properties using the command line i.e using the php artisan tinker
+$city = App\Models\CityMaster::create(['city_name'=>'mumbai',]);
+note without assigning the city_name in the $fillable it cannot be used in the model it will give the error if you try to assign without assigning it in the fillable.
+
+
+
+
+=====================================================================================================
+
+
+Equolent Model commands and their use - Php artisan tinker for learing Equolent commands
+
+Php artisan tinker 
+
+1) ::create   - This command is used to create one Eloquent record
+
+For eg  with model related to a database 
+
+App\Models\Employee::create(['fullname'=>'test',''=>'email'=>'test@gmail.com','address'=>'add line 1','citystatemap_id'=>'1', 'phone_no'=>'7845754854'],);
+
+you can create record for that table directly through command line.
+
+2) ::insert - This command is used for creating multiple records unlike create which only allows you to create a single record.
+
+App\Models\CityMaster::create([ (['city_name'='Mumbai']), (['city_name'='Pune']), (['city_name'='Kolkata']), (['city_name'='Noida']),]);
+
+3)  :: all - This command is used for finding all the records in the table/model
+App\Models\DepartmentMaster::all;
+Give me a collection containing all departments.
+select * from department
+
+4) ::find - This command is used to find the record using the primary key column and finds the exact primary key id that we passed
+App\Models\DepartmentMaster::find(2);
+Find the DepartmentMaster whose primary key is 2 if the id=2 not exist it will return null.
+Select id from department_master where id=2 limit 1; 
+
+4) ::findorfail(1) - This command is used for finding the primary key value from the model/table but while the find returns null if not found findorfail returns ModelNotFoundException error.
+App\Models\DepartmentMaster::findorfail(2);
+Find the DepartmentMaster whose primary key is 2 if id=2 not exist it will return ModelNotFoundException error
+Select id from department_master where id=2 limit 1; 
+
+5) ::where - Used query using the where condition
+
+App\Models\DepartmentMaster::where('department_name','Human Resource')->get();
+select * from department where department_name='Human Resource'  also ->get is used to run the query
+
+App\Models\DepartmentMaster::wherein('department_name',['Human Resource','UI UX','IT'])->get();
+select * from department where department_name='Human Resource'
+
+App\Models\DepartmentMaster::where('department_name', 'like', 'Hum%' )->get(); 
+select * from department where department_name='Human Resource'
+
+
+App\Models\DepartmentMaster::where('department_name', '!=', ' ')->get();
+select * from department where department_name!=' ';
+
+App\Models\DepartmentMaster::where('created_at', '>=', '2026-09-25')->get();
+select * from department where created_at >= '2026-09-25';
+
+App\Models\DepartmentMaster::whereNotNull('department_name')
+    ->where('created_at', '<=', '2026-09-25')
+    ->get();
+
+
+6) get() vs first()  - get will execute your query and return all records but first will only return the first record for eg
+
+App\Models\DepartmentMaster::where('department_name', 'like', 'I%' )->get();
+This will return all the records.
+select * from department_master where department_name like 'I%'
+
+App\Models\DepartmentMaster::where('department_name', 'like', 'I%' )->first();
+This will return only first matching record.
+select * from department_master where department_name like 'I%' limit 1
+
+7) ::whereNotNull -
+$departments = App\Models\DepartmentMaster::whereNotNull('department_name')->get();
+
+========================================================================================
+
+To build the api endpoints - php artisan install:api
+
+then api.php will get added in the routes folder.
+
+=========================================================================================
+for debugging
+
+BLADE:
+
+{{ dd($data) }}
+
+CONTROLLER:
+
+dd($request->all());
+
+MIDDLEWARE:
+
+dd($request->user());
+
+FORM REQUEST:
+
+dd($this->all());
+
+SERVICE:
+
+dd($data);
+
+MODEL / QUERY:
+
+dd($query->toSql(), $query->getBindings());
+
+
+

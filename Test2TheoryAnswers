@@ -1,0 +1,190 @@
+Q1) Eloquent basics (10 marks)
+
+1)Explain $fillable, $guarded and $hidden in one line each.
+
+$fillable is used to define the mass assignable fields/attributes. 
+$guarded is used to define the fields/attributes which are only required, mostly you should use either fillable or guarded.
+$hidden is used to define the fields which should not show in the request. 
+
+
+2) A form sends an extra field is_admin=1 that is not in $fillable. What happens with Employee::create($request->all())? Why is $request->validated() safer?
+if the field/attribute is_admin is not in the $fillable in the model file then when trying to create the employee will $request->all() will still save the data. $request->validated() is used instead in order to first validate the data according to the set of rules written in the http/request which is called in this controller function. If the validation fails laravel will throw an error.
+
+3)Why cast joining_date to date? What do you get back with and without the cast?
+We cast the value of joining_date to date because we only want to store the date instead of date and time and in order to make to easily show to he frontend.
+
+Q2). N+1 queries (10 marks)
+
+1)@foreach ($employees as $employee)
+    {{ $employee->department->name }} ({{ $employee->projects->count() }} projects)
+@endforeach
+How many queries does this run for 50 employees, and why?
+
+  this would run and solve the n+1 query probelm if we use eager loading and use - with or load.
+  without it query runs 50 + 1 times
+
+2)Rewrite the controller query so the number of queries stays fixed.
+public function index(Request $request)
+    {
+        $query = Employee::with('department', 'projects');
+
+        if ($request->user()->hasRole('employee')) {
+            $query->where('user_id', $request->user()->id);
+        }
+
+        $employees = $query->paginate(10);
+
+        return view('employee.index', [
+            'employees' => $employees
+        ]);
+    }
+
+3)What is the difference between with() and load()?
+
+with() is used to get the relationshipwise data while we are building the query 
+load() is used when we already have the model returning the data and want to modify the existing query further. 
+
+Q3). Request flow and authorization (10 marks)
+
+For PUT /employees/5, put these in order: controller, middleware, Form Request, route model binding, Policy check.
+What does the user see if employee 5 does not exist?
+
+route model binding, middleware, Policy check, Form Request, Controller
+sql will give the error employee with id 5 does not exist.
+
+An employee-role user must edit only their own record. Why must this check be in a Policy and not just hidden in Blade?
+You added a new Spatie permission but users still get 403. What is the likely cause and the fix?
+Policy as applicable throughout the program and cannot be manipulated unlike blade and the drawback in blade is that you have to keep managing the same rule across all the new forms which are going to be created. 403 status code stands for unauthorized that means the user has not been assigned the permisson even they though they may have been assigned a role. you need to check the roles ->  then permissons assigned to that roles and also cross verify is the correct role is assigned to the user. if all this is correct then check if the correct middleware permisson logic is written on the route in the web.php or api.php route files.
+
+
+
+
+Db Listen before seach filter 
+
+array:4 [▼ // app/Http/Controllers/EmployeeController.php:43
+  0 => array:2 [▼
+    "sql" => "select count(*) as aggregate from `employees` where `employees`.`deleted_at` is null"
+    "bindings" => []
+  ]
+  1 => array:2 [▼
+    "sql" => "select * from `employees` where `employees`.`deleted_at` is null limit 10 offset 0"
+    "bindings" => []
+  ]
+  2 => array:2 [▼
+    "sql" => "select * from `departments` where `departments`.`id` in (1, 2, 3)"
+    "bindings" => []
+  ]
+  3 => array:2 [▼
+    "sql" => "select `projects`.*, `employee_project`.`employee_id` as `pivot_employee_id`, `employee_project`.`project_id` as `pivot_project_id`, `employee_project`.`role` a ▶"
+    "bindings" => []
+  ]
+]
+
+
+Db listen after search filter 
+array:4 [▼ // app/Http/Controllers/EmployeeController.php:202
+  0 => array:2 [▼
+    "sql" => "select count(*) as aggregate from `employees` where `name` like ? and `employees`.`deleted_at` is null"
+    "bindings" => array:1 [▼
+      0 => "ss"
+    ]
+  ]
+  1 => array:2 [▼
+    "sql" => "select * from `employees` where `name` like ? and `employees`.`deleted_at` is null limit 10 offset 0"
+    "bindings" => array:1 [▼
+      0 => "ss"
+    ]
+  ]
+  2 => array:2 [▼
+    "sql" => "select * from `departments` where `departments`.`id` in (1)"
+    "bindings" => []
+  ]
+  3 => array:2 [▼
+    "sql" => "select `projects`.*, `employee_project`.`employee_id` as `pivot_employee_id`, `employee_project`.`project_id` as `pivot_project_id`, `employee_project`.`role` a ▶"
+    "bindings" => []
+  ]
+]
+
+
+Spatie setup after db fresh - 
+$createrole = Spatie\Permission\Models\Role::create([
+'name' => 'guest',
+]);
+
+$createrole = Spatie\Permission\Models\Role::create([
+'name' => 'employee',
+]);
+
+
+$createrole = Spatie\Permission\Models\Role::create([
+'name' => 'hr',
+]);
+
+
+$createrole = Spatie\Permission\Models\Role::create([
+'name' => 'admin',
+]);
+
+$permissioncreate = Spatie\Permission\Models\Permission::create([
+    'name' => 'view employees',
+]);
+$permissioncreate = Spatie\Permission\Models\Permission::create([
+    'name' => 'create employees',
+]);
+
+$permissioncreate = Spatie\Permission\Models\Permission::create([
+    'name' => 'edit employees',
+]);
+
+$permissioncreate = Spatie\Permission\Models\Permission::create([
+    'name' => 'delete employees',
+]);
+
+
+// assign user to a role 
+
+$user = App\Models\User::first();
+
+// assign role to the user 
+
+$user->assignRole('admin');
+
+$user1 = App\Models\User::find(2);
+
+$user1->assignRole('hr');
+
+$user2 = App\Models\User::find(3);
+
+$user2->assignRole('employee');
+
+$role = Spatie\Permission\Models\Role::where('name', 'admin')->first();
+
+// assign a permisson to a role
+
+$role->givePermissionTo([
+    'create employees',
+    'view employees',
+    'edit employees',
+    'delete employees',
+]);
+
+
+$role2 = Spatie\Permission\Models\Role::where('name', 'hr')->first();
+
+// assign a permisson to a role
+
+$role2->givePermissionTo([
+    'create employees',
+    'view employees',
+    'edit employees',
+]);
+
+$role3 = Spatie\Permission\Models\Role::where('name', 'employee')->first();
+
+// assign a permisson to a role
+
+$role3->givePermissionTo([
+    'view employees',
+]);
+
+

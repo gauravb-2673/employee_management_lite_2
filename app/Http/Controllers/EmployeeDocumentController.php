@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
+
 class EmployeeDocumentController extends Controller
 {
     /**
@@ -118,34 +119,37 @@ class EmployeeDocumentController extends Controller
             ->with('success', 'Document deleted successfully.');
     }
 
+
+
     public function view(EmployeeDocument $document)
     {
-        // Authorize access to the employee associated with this document.
+        // Authorize access to the employee's document.
         Gate::authorize('view', $document->employee);
 
-        // Only allow supported image types.
-        $allowedMimeTypes = [
+        // Use the private local storage disk.
+        $disk = Storage::disk('local');
+
+        // Return 404 if the file does not exist.
+        abort_unless($disk->exists($document->path), 404);
+
+        $absolutePath = $disk->path($document->path);
+
+        // Detect the actual file type.
+        $mimeType = mime_content_type($absolutePath)
+            ?: 'application/octet-stream';
+
+        // Only allow image formats and PDF previews.
+        $allowedTypes = [
             'image/jpeg',
             'image/png',
+            'application/pdf',
         ];
 
-        abort_unless(
-            in_array($document->mime_type, $allowedMimeTypes, true),
-            404
-        );
+        abort_unless(in_array($mimeType, $allowedTypes, true), 415);
 
-        // Check whether the physical file exists.
-        abort_unless(
-            Storage::disk('local')->exists($document->path),
-            404
-        );
-
-        // Get the absolute path to the private file.
-        $absolutePath = Storage::disk('local')->path($document->path);
-
-        // Display the image in the browser instead of downloading it.
+        // Display the file in the browser instead of downloading it.
         return response()->file($absolutePath, [
-            'Content-Type' => $document->mime_type,
+            'Content-Type' => $mimeType,
             'X-Content-Type-Options' => 'nosniff',
         ]);
     }

@@ -1,0 +1,1504 @@
+    
+     composer require spatie/laravel-permission:^6.0
+      php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+      
+      php artisan migrate
+      
+      use Spatie\Permission\Traits\HasRoles;
+      
+      use HasRoles; in User.php Model  
+      
+      composer require laravel/breeze --dev
+php artisan breeze:install
+php artisan migrate
+npm install
+npm run build
+        
+$user=  App\Models\User::create(['name'=>'Test User 3','email'=>'test3@gmail.com','password'=>'User@123']);
+
+$createrole = Spatie\Permission\Models\Role::create([
+'name' => 'admin',
+]);        
+	        
+$createrole = Spatie\Permission\Models\Role::create([
+'name' => 'employee',
+]);
+
+
+   
+$createrole = Spatie\Permission\Models\Role::create([
+'name' => 'user',
+]);
+
+
+$createrole = Spatie\Permission\Models\Role::create([
+'name' => 'guest',
+]);
+
+$createrole = Spatie\Permission\Models\Role::create([
+'name' => 'employee',
+]);
+
+
+$createrole = Spatie\Permission\Models\Role::create([
+'name' => 'hr',
+]);
+
+
+$createrole = Spatie\Permission\Models\Role::create([
+'name' => 'admin',
+]);
+
+$permissioncreate = Spatie\Permission\Models\Permission::create([
+    'name' => 'view employees',
+]);
+$permissioncreate = Spatie\Permission\Models\Permission::create([
+    'name' => 'create employees',
+]);
+
+$permissioncreate = Spatie\Permission\Models\Permission::create([
+    'name' => 'edit employees',
+]);
+
+$permissioncreate = Spatie\Permission\Models\Permission::create([
+    'name' => 'delete employees',
+]);
+
+
+// assign user to a role 
+
+$user = App\Models\User::first();
+
+// assign role to the user 
+
+$user->assignRole('admin');
+
+$user1 = App\Models\User::find(2);
+
+$user1->assignRole('hr');
+
+$user2 = App\Models\User::find(3);
+
+$user2->assignRole('employee');
+
+$role = Spatie\Permission\Models\Role::where('name', 'admin')->first();
+
+// assign a permisson to a role
+
+$role->givePermissionTo([
+    'create employees',
+    'view employees',
+    'edit employees',
+    'delete employees',
+]);
+
+
+$role2 = Spatie\Permission\Models\Role::where('name', 'hr')->first();
+
+// assign a permisson to a role
+
+$role2->givePermissionTo([
+    'create employees',
+    'view employees',
+    'edit employees',
+]);
+
+$role3 = Spatie\Permission\Models\Role::where('name', 'employee')->first();
+
+// assign a permisson to a role
+
+$role3->givePermissionTo([
+    'view employees',
+]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+$role->givePermissionTo('view employees');
+
+// assign permisson to the role
+
+$permissioncreate = Spatie\Permission\Models\Permission::create([
+    'name' => 'employees.view',
+]);
+
+$role = Spatie\Permission\Models\Role::where('name', 'superadmin')->first();
+
+// assign a permisson to a role
+$role->givePermissionTo('employee.view');
+$role->givePermissionTo([
+    'view employees',
+    'employee.create',
+    'employee.update',
+    'employee.delete',
+]);
+
+// view permission assigned to the role
+$role->permissions;
+
+// remove permisson assigned to the role
+$role->revokePermissionTo('employee.view');
+
+=============================================================================================
+
+
+============================================================
+LARAVEL SANCTUM + LARAVEL BREEZE
+COMPLETE SETUP GUIDE
+============================================================
+
+GOAL
+------------------------------------------------------------
+
+We will configure both:
+
+1. Laravel Sanctum
+   -> API authentication
+   -> Mobile applications
+   -> API clients
+   -> Token-based authentication
+
+2. Laravel Breeze
+   -> Normal website authentication
+   -> Login
+   -> Register
+   -> Logout
+   -> Password reset
+   -> Browser/session authentication
+
+
+FINAL ARCHITECTURE
+------------------------------------------------------------
+
+                    LARAVEL APPLICATION
+                           |
+             +-------------+-------------+
+             |                           |
+          WEBSITE                       API
+             |                           |
+          BREEZE                      SANCTUM
+             |                           |
+          Session                      Token
+             |                           |
+        Browser users            Mobile/API clients
+
+
+============================================================
+PART 1 — CREATE LARAVEL PROJECT
+============================================================
+
+STEP 1: Create project
+------------------------------------------------------------
+
+Run:
+
+composer create-project laravel/laravel myapp
+
+Go inside:
+
+cd myapp
+
+
+============================================================
+PART 2 — DATABASE CONFIGURATION
+============================================================
+
+STEP 2: Configure .env
+------------------------------------------------------------
+
+Open:
+
+.env
+
+For MySQL use:
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=myapp
+DB_USERNAME=root
+DB_PASSWORD=
+
+
+Create the MySQL database:
+
+myapp
+
+
+============================================================
+PART 3 — INSTALL SANCTUM FIRST
+============================================================
+
+STEP 3: Install Sanctum/API authentication
+------------------------------------------------------------
+
+Run:
+
+php artisan install:api
+
+
+This installs/configures Laravel's API authentication support
+including Sanctum.
+
+
+STEP 4: Run migrations
+------------------------------------------------------------
+
+Run:
+
+php artisan migrate
+
+
+This creates your normal Laravel tables and the Sanctum
+personal access token table.
+
+Important Sanctum table:
+
+personal_access_tokens
+
+
+============================================================
+PART 4 — CONFIGURE USER MODEL FOR SANCTUM
+============================================================
+
+STEP 5: Open User model
+------------------------------------------------------------
+
+Open:
+
+app/Models/User.php
+
+
+Make sure it contains:
+
+<?php
+
+namespace App\Models;
+
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, Notifiable;
+
+    // ...
+}
+
+
+IMPORTANT:
+
+This import is required:
+
+use Laravel\Sanctum\HasApiTokens;
+
+
+And this trait is required:
+
+use HasApiTokens, Notifiable;
+
+
+HasApiTokens gives the User model methods such as:
+
+$user->createToken(...)
+
+
+============================================================
+PART 5 — CREATE SANCTUM API AUTHENTICATION
+============================================================
+
+STEP 6: Create API Auth Controller
+------------------------------------------------------------
+
+Run:
+
+php artisan make:controller Api/AuthController
+
+
+File created:
+
+app/Http/Controllers/Api/AuthController.php
+
+
+Replace the contents with:
+
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class AuthController extends Controller
+{
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (!Auth::attempt($credentials)) {
+            return response()->json([
+                'message' => 'Invalid credentials'
+            ], 401);
+        }
+
+        $user = Auth::user();
+
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful',
+            'user' => $user,
+            'token' => $token,
+        ]);
+    }
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Logout successful'
+        ]);
+    }
+}
+
+
+============================================================
+PART 6 — CONFIGURE SANCTUM API ROUTES
+============================================================
+
+STEP 7: Open API routes
+------------------------------------------------------------
+
+Open:
+
+routes/api.php
+
+
+Put:
+
+<?php
+
+use App\Http\Controllers\Api\AuthController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+Route::post('/login', [AuthController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+});
+
+
+You now have:
+
+POST /api/login
+GET  /api/user
+POST /api/logout
+
+
+============================================================
+PART 7 — HOW SANCTUM LOGIN WORKS
+============================================================
+
+STEP 8: API LOGIN
+------------------------------------------------------------
+
+Request:
+
+POST http://127.0.0.1:8000/api/login
+
+
+JSON body:
+
+{
+    "email": "john@gmail.com",
+    "password": "password"
+}
+
+
+Laravel executes:
+
+Auth::attempt($credentials)
+
+
+If successful:
+
+$user = Auth::user();
+
+
+Then:
+
+$token = $user->createToken('api-token')->plainTextToken;
+
+
+Response:
+
+{
+    "message": "Login successful",
+    "user": {
+        "id": 1,
+        "name": "John",
+        "email": "john@gmail.com"
+    },
+    "token": "1|xxxxxxxxxxxxxxxx"
+}
+
+
+IMPORTANT:
+
+The token is used by the API client for future requests.
+
+
+============================================================
+PART 8 — SANCTUM PROTECTED ROUTE
+============================================================
+
+STEP 9: Protect an API route
+------------------------------------------------------------
+
+This:
+
+Route::middleware('auth:sanctum')->group(function () {
+
+});
+
+
+means:
+
+Only authenticated Sanctum users can access these routes.
+
+
+Example:
+
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+
+    return $request->user();
+
+});
+
+
+The request must contain:
+
+Authorization: Bearer YOUR_TOKEN
+
+
+Example:
+
+Authorization: Bearer 1|xxxxxxxxxxxxxxxx
+
+
+Without a valid token:
+
+401 Unauthorized
+
+
+With a valid token:
+
+The authenticated user is returned.
+
+
+============================================================
+PART 9 — SANCTUM LOGOUT
+============================================================
+
+STEP 10: Logout API
+------------------------------------------------------------
+
+Request:
+
+POST /api/logout
+
+
+Header:
+
+Authorization: Bearer YOUR_TOKEN
+
+
+Controller:
+
+public function logout(Request $request)
+{
+    $request->user()->currentAccessToken()->delete();
+
+    return response()->json([
+        'message' => 'Logout successful'
+    ]);
+}
+
+
+This deletes the current Sanctum token.
+
+
+============================================================
+PART 10 — SANCTUM TOKEN MANAGEMENT
+============================================================
+
+Create token:
+
+$token = $user->createToken('api-token')->plainTextToken;
+
+
+Create token for mobile:
+
+$token = $user->createToken('mobile-app')->plainTextToken;
+
+
+Create token for Android:
+
+$token = $user->createToken('android')->plainTextToken;
+
+
+Create token with abilities:
+
+$token = $user->createToken(
+    'mobile-app',
+    ['orders:read']
+)->plainTextToken;
+
+
+Get current authenticated user:
+
+$request->user();
+
+
+or:
+
+auth()->user();
+
+
+Delete current token:
+
+$request->user()->currentAccessToken()->delete();
+
+
+Delete all user tokens:
+
+$request->user()->tokens()->delete();
+
+
+============================================================
+PART 11 — PROTECT API ROUTES WITH SANCTUM
+============================================================
+
+Example:
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    Route::get('/orders', function () {
+        return 'Orders';
+    });
+
+    Route::get('/products', function () {
+        return 'Products';
+    });
+
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+});
+
+
+Everything inside this group requires Sanctum authentication.
+
+
+============================================================
+PART 12 — NOW INSTALL BREEZE
+============================================================
+
+STEP 11: Install Breeze
+------------------------------------------------------------
+
+Run:
+
+composer require laravel/breeze --dev
+
+
+STEP 12: Install Breeze with Blade
+------------------------------------------------------------
+
+Run:
+
+php artisan breeze:install blade
+
+
+STEP 13: Install frontend packages
+------------------------------------------------------------
+
+Run:
+
+npm install
+
+
+STEP 14: Build frontend
+------------------------------------------------------------
+
+Run:
+
+npm run build
+
+
+STEP 15: Run migrations if necessary
+------------------------------------------------------------
+
+Run:
+
+php artisan migrate
+
+
+============================================================
+PART 13 — WHAT BREEZE ADDS
+============================================================
+
+Breeze provides:
+
+Login
+Register
+Logout
+Forgot password
+Reset password
+Password confirmation
+Email verification support
+Profile functionality
+Authentication controllers
+Authentication views
+Authentication routes
+
+
+Important files:
+
+routes/web.php
+
+routes/auth.php
+
+resources/views/auth/
+
+resources/views/dashboard.blade.php
+
+app/Http/Controllers/Auth/
+
+
+============================================================
+PART 14 — BREEZE WEB ROUTES
+============================================================
+
+STEP 16: Open:
+
+routes/web.php
+
+
+Example:
+
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    });
+
+});
+
+
+IMPORTANT:
+
+Breeze web authentication uses:
+
+auth
+
+
+NOT:
+
+auth:sanctum
+
+
+============================================================
+PART 15 — BREEZE LOGIN
+============================================================
+
+Open:
+
+http://127.0.0.1:8000/register
+
+
+Create:
+
+Name:
+John
+
+Email:
+john@gmail.com
+
+Password:
+password
+
+
+Breeze handles the registration.
+
+
+Then open:
+
+http://127.0.0.1:8000/login
+
+
+Breeze handles the login.
+
+
+============================================================
+PART 16 — BREEZE PROTECTED ROUTES
+============================================================
+
+Use:
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    });
+
+});
+
+
+Only logged-in website users can access:
+
+/dashboard
+
+
+If the user is not logged in, Laravel sends the user
+through the normal authentication flow.
+
+
+============================================================
+PART 17 — GET BREEZE LOGGED-IN USER
+============================================================
+
+Inside a controller:
+
+use Illuminate\Support\Facades\Auth;
+
+public function dashboard()
+{
+    $user = Auth::user();
+
+    return view('dashboard', compact('user'));
+}
+
+
+You can also use:
+
+$user = auth()->user();
+
+
+Inside Blade:
+
+{{ auth()->user()->name }}
+
+
+Email:
+
+{{ auth()->user()->email }}
+
+
+ID:
+
+{{ auth()->user()->id }}
+
+
+============================================================
+PART 18 — BREEZE LOGOUT
+============================================================
+
+Breeze provides the logout route.
+
+Example Blade form:
+
+<form method="POST" action="{{ route('logout') }}">
+
+    @csrf
+
+    <button type="submit">
+        Logout
+    </button>
+
+</form>
+
+
+IMPORTANT:
+
+Use:
+
+@csrf
+
+
+for POST forms.
+
+
+============================================================
+PART 19 — WEB VS API AUTHENTICATION
+============================================================
+
+WEB:
+
+routes/web.php
+
+
+Uses:
+
+Route::middleware('auth')
+
+
+Authentication:
+
+Laravel session
+
+
+Client:
+
+Browser
+
+
+Example:
+
+Route::middleware('auth')->get('/dashboard', function () {
+
+    return view('dashboard');
+
+});
+
+
+------------------------------------------------------------
+
+API:
+
+routes/api.php
+
+
+Uses:
+
+Route::middleware('auth:sanctum')
+
+
+Authentication:
+
+Sanctum token
+
+
+Client:
+
+Mobile app / API client / appropriate SPA setup
+
+
+Example:
+
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+
+    return $request->user();
+
+});
+
+
+============================================================
+PART 20 — COMPLETE API ROUTES
+============================================================
+
+routes/api.php
+
+
+<?php
+
+use App\Http\Controllers\Api\AuthController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+Route::post('/login', [AuthController::class, 'login']);
+
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+
+    Route::post('/logout', [AuthController::class, 'logout']);
+
+});
+
+
+============================================================
+PART 21 — COMPLETE WEB ROUTES
+============================================================
+
+routes/web.php
+
+
+<?php
+
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    return view('welcome');
+});
+
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    });
+
+});
+
+
+============================================================
+PART 22 — COMPLETE SANCTUM AUTH CONTROLLER
+============================================================
+
+app/Http/Controllers/Api/AuthController.php
+
+
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class AuthController extends Controller
+{
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (!Auth::attempt($credentials)) {
+            return response()->json([
+                'message' => 'Invalid credentials'
+            ], 401);
+        }
+
+        $user = Auth::user();
+
+        $token = $user->createToken('api-token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Login successful',
+            'user' => $user,
+            'token' => $token,
+        ]);
+    }
+
+
+    public function logout(Request $request)
+    {
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json([
+            'message' => 'Logout successful'
+        ]);
+    }
+}
+
+
+============================================================
+PART 23 — COMPLETE USER MODEL
+============================================================
+
+app/Models/User.php
+
+
+<?php
+
+namespace App\Models;
+
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, Notifiable;
+
+    // ...
+}
+
+
+============================================================
+PART 24 — OPTIONAL API CONTROLLER
+============================================================
+
+Create:
+
+php artisan make:controller Api/ProductController
+
+
+File:
+
+app/Http/Controllers/Api/ProductController.php
+
+
+Example:
+
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Product;
+
+class ProductController extends Controller
+{
+    public function index()
+    {
+        return response()->json([
+            'products' => Product::all()
+        ]);
+    }
+}
+
+
+Then in routes/api.php:
+
+use App\Http\Controllers\Api\ProductController;
+
+
+Inside Sanctum middleware:
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::get('/products', [ProductController::class, 'index']);
+
+});
+
+
+Now:
+
+GET /api/products
+
+
+requires Sanctum authentication.
+
+
+============================================================
+PART 25 — TEST WITH POSTMAN
+============================================================
+
+1. Start Laravel:
+
+php artisan serve
+
+
+2. Breeze registration:
+
+POST/browser:
+
+http://127.0.0.1:8000/register
+
+
+Create a user.
+
+
+3. Sanctum API login:
+
+POST:
+
+http://127.0.0.1:8000/api/login
+
+
+Body -> raw -> JSON:
+
+{
+    "email": "john@gmail.com",
+    "password": "password"
+}
+
+
+4. Copy the returned token.
+
+
+5. Test protected API:
+
+GET:
+
+http://127.0.0.1:8000/api/user
+
+
+Header:
+
+Authorization: Bearer YOUR_TOKEN
+
+
+Example:
+
+Authorization: Bearer 1|xxxxxxxxxxxxxxxx
+
+
+6. Test logout:
+
+POST:
+
+http://127.0.0.1:8000/api/logout
+
+
+Header:
+
+Authorization: Bearer YOUR_TOKEN
+
+
+============================================================
+PART 26 — WHEN TO USE WHAT
+============================================================
+
+USE BREEZE WHEN:
+
+You have a normal Laravel website.
+
+Examples:
+
+Admin panel
+Blog
+CRM
+E-commerce website
+Dashboard
+Customer website
+
+
+Use:
+
+Route::middleware('auth')
+
+
+Example:
+
+/login
+/register
+/dashboard
+/profile
+/orders
+
+
+------------------------------------------------------------
+
+USE SANCTUM WHEN:
+
+You need API authentication.
+
+Examples:
+
+Mobile application
+Flutter application
+Android application
+iOS application
+API client
+External application
+
+
+Use:
+
+Route::middleware('auth:sanctum')
+
+
+Example:
+
+/api/login
+/api/user
+/api/products
+/api/orders
+/api/logout
+
+
+============================================================
+PART 27 — SAME USER TABLE
+============================================================
+
+You do NOT need two user tables.
+
+Both Breeze and Sanctum can use:
+
+users
+
+
+Both use:
+
+App\Models\User
+
+
+Example:
+
+users
+------------------------------------------------
+id | name | email | password
+------------------------------------------------
+1  | John | john@gmail.com | hashed-password
+
+
+Sanctum additionally uses:
+
+personal_access_tokens
+
+
+Example:
+
+personal_access_tokens
+------------------------------------------------
+id | tokenable_id | name | token
+------------------------------------------------
+1  | 1            | mobile | ...
+
+
+So:
+
+Breeze
+    ↓
+users table
+    ↓
+web session
+
+
+Sanctum
+    ↓
+users table
+    ↓
+personal_access_tokens
+    ↓
+API token
+
+
+============================================================
+PART 28 — MOST IMPORTANT DIFFERENCE
+============================================================
+
+BREEZE:
+
+Route::middleware('auth')
+
+
+Means:
+
+"Protect my normal web page using Laravel's
+web/session authentication."
+
+
+SANCTUM:
+
+Route::middleware('auth:sanctum')
+
+
+Means:
+
+"Protect my API route using Sanctum authentication."
+
+
+============================================================
+PART 29 — COMPLETE COMMAND LIST
+============================================================
+
+Copy and run these commands in order:
+
+composer create-project laravel/laravel myapp
+
+cd myapp
+
+php artisan install:api
+
+php artisan migrate
+
+composer require laravel/breeze --dev
+
+php artisan breeze:install blade
+
+npm install
+
+npm run build
+
+php artisan migrate
+
+php artisan make:controller Api/AuthController
+
+php artisan serve
+
+
+============================================================
+PART 30 — FINAL PROJECT STRUCTURE
+============================================================
+
+myapp/
+│
+├── .env
+│
+├── app/
+│   │
+│   ├── Models/
+│   │   └── User.php
+│   │
+│   └── Http/
+│       └── Controllers/
+│           │
+│           ├── Auth/
+│           │   ├── AuthenticatedSessionController.php
+│           │   ├── RegisteredUserController.php
+│           │   └── ...
+│           │
+│           └── Api/
+│               └── AuthController.php
+│
+├── database/
+│   └── migrations/
+│       └── ...personal_access_tokens...
+│
+├── resources/
+│   └── views/
+│       ├── auth/
+│       │   ├── login.blade.php
+│       │   ├── register.blade.php
+│       │   └── ...
+│       │
+│       └── dashboard.blade.php
+│
+├── routes/
+│   ├── web.php
+│   ├── auth.php
+│   └── api.php
+│
+└── package.json
+
+
+============================================================
+FINAL FLOW
+============================================================
+
+
+NORMAL WEBSITE:
+
+Browser
+   |
+   | GET /login
+   ↓
+Breeze
+   |
+   | email + password
+   ↓
+Laravel Authentication
+   |
+   ↓
+Session
+   |
+   ↓
+GET /dashboard
+   |
+   ↓
+middleware('auth')
+   |
+   ↓
+Dashboard
+
+
+------------------------------------------------------------
+
+
+MOBILE / API:
+
+Mobile App
+   |
+   | POST /api/login
+   | email + password
+   ↓
+AuthController
+   |
+   ↓
+Auth::attempt()
+   |
+   ↓
+$user->createToken()
+   |
+   ↓
+Sanctum Token
+   |
+   ↓
+Mobile App stores token
+
+
+Then:
+
+
+Mobile App
+   |
+   | GET /api/products
+   | Authorization: Bearer TOKEN
+   ↓
+auth:sanctum
+   |
+   ↓
+Laravel
+   |
+   ↓
+Products
+
+
+------------------------------------------------------------
+
+
+THE GOLDEN RULE:
+
+Breeze = WEB AUTHENTICATION
+
+Sanctum = API AUTHENTICATION
+
+Breeze:
+
+middleware('auth')
+
+
+Sanctum:
+
+middleware('auth:sanctum')
+
+
+Both can use:
+
+App\Models\User
+
+and:
+
+users table
+
+
+============================================================
+END
+============================================================
+
+
+for api resource --
+php artisan install:api

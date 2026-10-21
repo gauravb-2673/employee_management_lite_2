@@ -1,0 +1,309 @@
+index 
+
+Primary Key Index $table->id();
+Unique Key Index $table->string('email')->unique();
+Regular Index $table->index('department_id');
+Composite index $table->index(['department_id', 'is_active']);
+
+use Illuminate\Support\Facades\Schema;
+
+Schema::getIndexes('employees');
+
+server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+> use Illuminate\Support\Facades\Schema;
+
+> Schema::getIndexes('employees');
+
+= [
+    [
+      "name" => "employees_department_id_foreign",
+      "columns" => [
+        "department_id",
+      ],
+      "type" => "btree",
+      "unique" => false,
+      "primary" => false,
+    ],
+    [
+      "name" => "employees_email_unique",
+      "columns" => [
+        "email",
+      ],
+      "type" => "btree",
+      "unique" => true,
+      "primary" => false,
+    ],
+    [
+      "name" => "employees_user_id_unique",
+      "columns" => [
+        "user_id",
+
+> Schema::getIndexes('departments');
+
+= [
+    [
+      "name" => "departments_department_name_unique",
+      "columns" => [
+        "department_name",
+      ],
+      "type" => "btree",
+      "unique" => true,
+      "primary" => false,
+    ],
+    [
+      "name" => "primary",
+      "columns" => [
+        "id",
+      ],
+      "type" => "btree",
+      "unique" => true,
+      "primary" => true,
+    ],
+  ]
+
+> Schema::getIndexes('projects');
+
+= [
+    [
+      "name" => "primary",
+      "columns" => [
+        "id",
+      ],
+      "type" => "btree",
+      "unique" => true,
+      "primary" => true,
+    ],
+  ]
+
+> Schema::getIndexes('employee_project');
+
+= [
+    [
+      "name" => "employee_project_employee_id_foreign",
+      "columns" => [
+        "employee_id",
+      ],
+      "type" => "btree",
+      "unique" => false,
+      "primary" => false,
+    ],
+    [
+      "name" => "employee_project_project_id_foreign",
+      "columns" => [
+        "project_id",
+      ],
+      "type" => "btree",
+      "unique" => false,
+      "primary" => false,
+    ],
+    [
+      "name" => "employee_project_role_foreign",
+      "columns" => [
+        "role",
+      ],
+      "type" => "btree",
+      "unique" => false,
+      "primary" => false,
+    ],
+  ]
+
+> Schema::getIndexListing('employees');
+
+= [
+    "employees_department_id_foreign",
+    "employees_email_unique",
+    "employees_user_id_unique",
+    "primary",
+  ]
+
+> DB::select(
+.     "EXPLAIN SELECT * FROM employees WHERE email = ?",
+.     ['gaurav@example.com']
+. );
+
+= [
+    {#7496
+      +"id": 1,
+      +"select_type": "SIMPLE",
+      +"table": null,
+      +"partitions": null,
+      +"type": null,
+      +"possible_keys": null,
+      +"key": null,
+      +"key_len": null,
+      +"ref": null,
+      +"rows": null,
+      +"filtered": null,
+      +"Extra": "no matching row in const table",
+    },
+  ]
+
+> DB::select(
+.     "EXPLAIN SELECT * FROM employees WHERE name LIKE ?",
+.     ['Gaur%']
+. );
+
+= [
+    {#7443
+      +"id": 1,
+      +"select_type": "SIMPLE",
+      +"table": "employees",
+      +"partitions": null,
+      +"type": "ALL",
+      +"possible_keys": null,
+      +"key": null,
+      +"key_len": null,
+      +"ref": null,
+      +"rows": 20,
+      +"filtered": 11.110000610352,
+      +"Extra": "Using where",
+    },
+  ]
+
+> DB::select(
+.     "EXPLAIN SELECT * FROM employees WHERE name LIKE ?",
+.     ['%aur%']
+. );
+
+= [
+    {#7478
+      +"id": 1,
+      +"select_type": "SIMPLE",
+      +"table": "employees",
+      +"partitions": null,
+      +"type": "ALL",
+      +"possible_keys": null,
+      +"key": null,
+      +"key_len": null,
+      +"ref": null,
+      +"rows": 20,
+      +"filtered": 11.110000610352,
+      +"Extra": "Using where",
+    },
+  ]
+
+> DB::table('employees')->value('email');
+
+= "agorczany@example.org"
+
+> server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+> DB::select(
+.     "EXPLAIN SELECT * FROM employees WHERE email = ?",
+.     ['agorczany@example.org']
+. );
+
+= [
+    {#7499
+      +"id": 1,
+      +"select_type": "SIMPLE",
+      +"table": "employees",
+      +"partitions": null,
+      +"type": "const",
+      +"possible_keys": "employees_email_unique",
+      +"key": "employees_email_unique",
+      +"key_len": "1022",
+      +"ref": "const",
+      +"rows": 1,
+      +"filtered": 100.0,
+      +"Extra": null,
+    },
+  ]
+
+> DB::select(
+.     "EXPLAIN SELECT * FROM employees WHERE department_id = ?",
+.     [1]
+. );
+
+= [
+    {#7466
+      +"id": 1,
+      +"select_type": "SIMPLE",
+      +"table": "employees",
+      +"partitions": null,
+      +"type": "ref",
+      +"possible_keys": "employees_department_id_foreign",
+      +"key": "employees_department_id_foreign",
+      +"key_len": "9",
+      +"ref": "const",
+      +"rows": 9,
+      +"filtered": 100.0,
+      +"Extra": null,
+    },
+  ]
+
+> DB::select(
+.     "EXPLAIN SELECT * FROM employee_project WHERE employee_id = ?",
+.     [1]
+. );
+
+= [
+    {#7469
+      +"id": 1,
+      +"select_type": "SIMPLE",
+      +"table": "employee_project",
+      +"partitions": null,
+      +"type": "ref",
+      +"possible_keys": "employee_project_employee_id_foreign",
+      +"key": "employee_project_employee_id_foreign",
+      +"key_len": "8",
+      +"ref": "const",
+      +"rows": 6,
+      +"filtered": 100.0,
+      +"Extra": null,
+    },
+  ]
+
+> DB::select(
+.     "EXPLAIN SELECT * FROM employee_project WHERE project_id = ?",
+.     [2]
+. );
+
+= [
+    {#7461
+      +"id": 1,
+      +"select_type": "SIMPLE",
+      +"table": "employee_project",
+      +"partitions": null,
+      +"type": "ref",
+      +"possible_keys": "employee_project_project_id_foreign",
+      +"key": "employee_project_project_id_foreign",
+      +"key_len": "8",
+      +"ref": "const",
+      +"rows": 5,
+      +"filtered": 100.0,
+      +"Extra": null,
+    },
+  ]
+
+
+
+
+
+$start = hrtime(true);DB::table('employees')->where('email', 'agorczany@example.org')->first();$elapsedMs = (hrtime(true) - $start) / 1_000_000;$elapsedMs;
+
+
+> DB::select('explain select * from employees where name like?',['m%'])
+
+= [
+    {#7470
+      +"id": 1,
+      +"select_type": "SIMPLE",
+      +"table": "employees",
+      +"partitions": null,
+      +"type": "range",
+      +"possible_keys": "employees_name_index",
+      +"key": "employees_name_index",
+      +"key_len": "1022",
+      +"ref": null,
+      +"rows": 5,
+      +"filtered": 100.0,
+      +"Extra": "Using index condition",
+    },
+  ]
+
+> 
+

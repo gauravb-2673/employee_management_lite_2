@@ -10,20 +10,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class Department extends Model
 {
     use HasFactory;
-    protected $table='departments';
-    
-    protected $fillable =[
+    protected $table = 'departments';
+
+    protected $fillable = [
         'department_name',
     ];
 
-   
-  
-  public function employees(): HasMany
-  {
-      
-          return $this->hasMany(Employee::class);
-      
-      
-  }
 
+
+    public function employees(): HasMany
+    {
+
+        return $this->hasMany(Employee::class);
+    }
 }

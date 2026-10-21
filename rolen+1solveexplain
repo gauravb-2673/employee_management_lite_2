@@ -1,0 +1,149 @@
+3. getCollection() — get the employees
+$employees->getCollection()
+
+Your $employees variable contains a paginator. We use getCollection() to access the employee models on the current page.
+$employees (Paginator)
+        │
+        ▼
+getCollection()
+        │
+        ▼
+Collection
+  ├── Employee 1
+  └── Employee 2
+
+Why? We want to iterate over the employees currently displayed, rather than all employees in the database.
+4. flatMap() — process each employee
+->flatMap(function ($employee) {
+    return $employee->projects->map(function ($project) {
+        return $project->pivot->role;
+    });
+})
+
+There are two nested operations here.
+First: the outer flatMap()
+flatMap(function ($employee) {
+    // Process this employee.
+})
+
+Laravel passes one employee at a time into $employee.
+Employee collection
+       │
+       ├──────────────┐
+       ▼              ▼
+  Employee 1      Employee 2
+       │              │
+       ▼              ▼
+  Process its     Process its
+   projects        projects
+
+Second: the inner map()
+$employee->projects->map(function ($project) {
+    return $project->pivot->role;
+});
+
+For each employee, map() processes their projects and extracts the role ID from each pivot model.
+For example:
+Employee 1
+    │
+    ├── Project A → pivot->role = 1
+    ├── Project B → pivot->role = 1
+    └── Project C → pivot->role = 4
+                       │
+                       ▼
+                 [1, 1, 4]
+
+For Employee 2:
+Employee 2
+    │
+    ├── Project D → pivot->role = 3
+    ├── Project E → pivot->role = 4
+    └── Project F → pivot->role = 1
+                       │
+                       ▼
+                  [3, 4, 1]
+
+If we only used map() on the employees, we'd have a collection of collections:
+[
+    [1, 1, 4],
+    [3, 4, 1]
+]
+
+But flatMap() flattens these results into one collection:
+[1, 1, 4, 3, 4, 1]
+
+Remember:
+- map() transforms each item.
+- flatMap() transforms each item and flattens the resulting collections by one level.
+5. filter() — remove false-like values
+->filter()
+
+Suppose the extracted collection were:
+[1, 1, null, 4, 0, 3, 4]
+
+After filter():
+[1, 1, 4, 3, 4]
+
+It removes false-like values such as null, false, 0, and empty strings.
+In your project, valid role IDs should be positive integers, so filtering these values helps avoid unnecessary role lookups.
+6. unique() — remove duplicate role IDs
+->unique()
+
+Before:
+[1, 1, 4, 3, 4, 1]
+
+After:
+[1, 4, 3]
+
+Why is this useful?
+Because several project assignments may use the same role. We only need to retrieve each distinct role record once.
+For example, we don't need to query role ID 1 three times.
+7. values() — reset the collection indexes
+->values();
+
+Laravel collections can retain their original keys after unique().
+For example, the collection might look like this:
+Key 0 → 1
+Key 2 → 4
+Key 3 → 3
+
+After values():
+Key 0 → 1
+Key 1 → 4
+Key 2 → 3
+
+The values haven't changed. Only the indexes have been reset.
+
+
+
+
+
+
+
+Step A: The loop reaches Employee 1
+$employees->getCollection()->each(function ($employee) use ($rolesById) {
+
+The current $employee represents Employee 1.
+Step B: The loop reaches the project
+$employee->projects->each(function ($project) use ($rolesById) {
+
+The current $project represents one of Employee 1's projects.
+Step C: Extract the role ID
+$roleId = $project->pivot->role;
+
+Result:
+$roleId = 4;
+
+Step D: Retrieve the corresponding role model from memory
+$rolesById->get((int) $roleId);
+
+Result:
+RoleMaster model with id = 4
+
+Step E: Attach the role model to the pivot
+$project->pivot->setRelation(
+    'roleMaster',
+    $rolesById->get((int) $roleId)
+);
+
+Now the pivot model has its roleMaster relationship loaded.

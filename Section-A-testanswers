@@ -1,0 +1,161 @@
+Q1. Request lifecycle (10 marks) A user submits a form that sends PUT /employees/5. Walk through what Laravel does from the moment the request hits public/index.php until the response is sent back. Name where each of these comes in: routes/web.php, middleware, route model binding, the Form Request, the controller, and the model.
+
+Answer: 
+
+
+Public/index.php is the entry point of the software where all the publically avalilable data like assets and images are stored
+this is the entry point configured on the webservers
+then it loads the required packages of using autoload and bootstrap app.php
+
+bootstrap app.php this is where the actual booting of the project happens, routing files, middleware, exceptions are all configured here before the project starts.
+
+then the request travels and finds the route which is mentioned in the wep.php or the api.php and finds the metioned controller and method where the actual request and response is written.   before the request reaches the controller it can be valided using the http/requests files so the validated data reaches the controller where it gets valided before moving ahead of other insert update operations. also before controller if middleware is setup it checks the request before it reaches the controller.
+
+for eg PUT /employees/5
+
+first it will find the route /employees/{empid}
+
+PUT method is used when we need to update the data. if the view page tries to send request with other method other then the method which is mentioned in the route the request give invalid method error. therefore the method send through the form should be according to the method configured to the route.
+
+suppose edit page of particular employee we are need that the user can update the individual employee data 
+
+then user should define the route like Route::put('/employee/{empid}', [EmployeeController, 'update']) 
+]
+and while call the route in the form action route{{ 'employees/empid' }}
+
+but in your form you have to define @method='PUT' in this case as the route method requires the put method to move forward with the request.
+by default the POST or GET method are defined in the from so you have to specify the PUT or delete types of routes instead of the form specifically for this types of cases.
+
+<form method='POST' action="route{{ 'employees/empid' }}">
+@method='PUT' // this is how you have to manually define the method i.e the provisoin which laravel provides
+
+PUT, Patch , Delete are the cases where you have to follow this method. PUT is used for update and patch is used for partial update.
+
+models are used to define the relation between the migration/tables and this provides us with the feature to use i.e Eloquent ORM.
+Eqolent provides us with using the database queries directly withing controller etc for eg to create 
+a new entry we will first define in the model what parameters we are going to recieve and what we are going to all further.
+
+in the model we define the first define to which table the model is referenceing by defaul laravel references the table like 
+users for it the model should be named Users.php and if we want to custom define the which table the model is referencing the we can 
+do it using $protected $table='users';
+
+
+we then define which request attributes we have to allow in the mass assignment using the $fillable.
+
+in $ fillable we define the attributes/parameters which we are going to require from the user request the paramters not provided in it or if extra parameters are provided then the request fails.
+
+
+$hidden it is used to keep the attributes/parameters which should not be visible in the requst 
+
+
+$casts is used to change the data before it is stored in the database for eg password as hashed using casts before they are stored in the database.
+
+$accessor and $mutator are used to change the data type of the data the only difference is $acessor is used when the database record should not be effected for example if you have to show the username test in upper case when it reaches to the php after database then you can use accessor to show it using upper case GAURAV while the database record stays unaffected.
+
+$mutator is same as $acessor but here it affects the data in the database.
+
+Middle ware is used to validate the user request for eg Auth:user() this is the in build authentication provided by the laravel sanctum package to authenticate the users. we can make custom expceptions also and after defining the custom expections we have to define it in the bootstrap app.php too.
+
+route model binding is used to map a model directly to a route and before the model opertions i.e the Eloquent queries in the web.php or api.php itself for eg the Employee:create , Employee:find(1) , Employee::findorfai(1) , Employee::where('name','testuser') 
+
+
+Q2. Migrations on a live database (10 marks) The employees table migration has already run on the live server. You now need to add a nullable phone column and rename name to full_name.
+Why should you not edit the original migration file?
+How would you make this change correctly?
+Explain the difference between migrate:rollback, migrate:refresh and migrate:fresh. Which one must never be run on production, and why?
+
+Migrations are used in for defining and maintaining the database table structrus and the updates.
+
+We pass the field names, relationships, constraints , references etc to the $table to create the necessary migrations according to our table structure.
+
+for eg $table->String('fieldname', 50);  this defines the Datatype as String i.e Varchar and sets the limit to 50
+similarly we can assign $table->Int('number'); $table->text('fieldname'); all differnt types of datatypes we can define direclty in the migrations to create the tables instead of using raw sql queries.
+
+Migration files are created through php artisan make:migration migrationfilename   and after we define the table schema in the up() function we write the equalient rollback we would use for remove the changes or structure when have added in the up fucntion this is used for rolling back the stage of the table structure and use artisan migration commands like php artisan migration:fresh, php artisan migration:rollback, php artisan migration:referesh
+
+for identifying which migration have been already run we can do php artisan migration:status all the migrations that we have run already are stored in the migration table in the database and it is not a standard to delete a migration file once it has been run it is adviced that we create another migration file and define the migration changes just like how we do  in the alter command in mysql we have to define the table name in the artisan command for whom we are going to add new migrations.
+
+in this case where the employee table is already migrated we will do 
+
+
+php artisan make:migration add migrationfilename in tablename
+php artisan make:migration add adding_phone_no_and_renaming_fullname in employee
+
+then we have to define in the up fucntion the fields we are going to add or change
+
+$table->int('phone_no')->nullable(); // we can use nullable, defaults etc just like mysql database.
+$table->String('full_name'); //equivelent syntax will be used here not able to recall.
+
+
+there we should not make change to the orginal migration file as we will have no history of the table structure changes which would effect all parts of the program and the relations and hard to keep track of anything. added a new migrations is the standard by defining correct rollback in the down fuction which is equivalent what we have added the table structure in the up function.
+
+
+migrate:rollback, migrate:refresh and migrate:fresh
+
+rollback is used to revert the changes which were ran in the last added migration whatever is written in the down fuction, referesh fresh is used to drop all the tables and fresh migrations again and referesh is used to run all the down and delete all the tables and run migration again.
+
+
+fresh and referesh should not be used in production databases. rollback can be used subject the developer has the track of the history and the correct down methods of the all existing migrations of that table.
+
+
+Q3. Eloquent behaviour (10 marks)
+What is the N+1 query problem? Show a small example that causes it and the fix.
+What is the difference between with() and load()?
+What do $fillable and $guarded protect against? What happens if you call Employee::create($request->all()) without either set?
+
+Eloquent orm is used to run/execute the quries throught the program itself instead of raw sql queries in the database.
+
+it provides us the with() , ModelClass::Create , ModelClass:insert, Modelclass:with, load() etc
+
+
+through load we can load the data into a json api using multiple relationships we have defined across the models
+
+the hasOne, hasMany, BelongTo, BelongToMany etc this relationships we directly define withing each model and eloquoent provides us easy way to manipulate the data for created apis rather tha using joins etc.
+
+with is used to get the data with the existing model + the realted models realtion wise data in a single response.
+
+
+
+N+1 query problem arises when two queries which are heavey get executed one after the other and slow down the performance to avoid N+1 quries we have to  make proper use of Eloquent and relationships.
+
+the $fillable is used in the model file to define what fields are required to travel through the request the attributes/parameters which are not added in the $fillable are not allowed for futher operations in the controller if they are tried to access.
+
+
+$guarded is used to hide the importand details fromt he request while keeping it in the request this makes attacking such attributes/parameters difficult for the attacker.
+
+Employee::create($request->all())  this will create the insert data in the databse subject to it passes the request validation in http folder, middleware if auth or other middleware is present, and also if the attributes and parameters which are passed in the request are corrected added in the $fillable, $guarded and $hidden fields.
+
+
+
+
+Q4. Configuration and .env (10 marks)
+What is the difference between the .env file and the files in the config/ folder?
+Why is it bad practice to call env('MAIL_HOST') directly inside a controller? What breaks after php artisan config:cache?
+You changed DB_DATABASE in .env but the app still connects to the old database. List two likely reasons and how to fix them.
+Why must .env never be committed to Git, and what file is committed instead?
+
+
+the main difference between the .env file and the config folder is that the config folder provides the base and default paramters and the default settings of each and every config file/setting that we will use in our project.  the env file provides the actual values that we want to use instead of the default settings the env is given the prority follwed by the default config in the config folder for eg if the database name and the connection is defined in the env file then the env files connection will be used by the laravel or the by default database setting in the config database file will be used.
+
+ 
+It is not advisiable to use assing the env variables direclty in the program as we can do it in the .env file which if done directy in the program it exposes the risk of the creadentials and private data to be get stolen or attacked and stole by the attacker there .env should be considered instead of hardcoding the credentials directly in the database.
+
+the php artisan config:cache is used to clear the configuration cache i.e all related to sessions and the .env file the draw back is that 
+the sessions and all the connections and the cache data clears in this case.
+
+
+if the database is changed in the .env file and the database is still connecting to the database in the either it might be using the config default database as fallback if the new database connection is set by wrong credentials or paramters or the cache of existing config settings might be still present in such case we have to use the config clear database.
+
+
+we should never commit the .env file to the github as it contains all the important credentails that we are going to use in the live system.
+If someone finds this credentials it would be a blunder as it can be exploited in many was like using the services and does the service charge goes higher and higer also the important data might get theft i.e in all cases commiting the .env file in the github is not advisiable but instead we can commit the .env.example file with the fake creadentials so that the user might know how the configure the actual .env file by looking at the .env.example file.
+
+
+
+
+
+
+
+
+
+

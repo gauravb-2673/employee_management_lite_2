@@ -1,0 +1,2219 @@
+Project Architecture -
+app -
+
+app/exception(used for defining exceptions in the laravel project)
+
+app/console(used to create customized artisian commands which you can use throught he artisian command line.), app/http - inside http lives the 
+
+app/http/request( all the requests before reaching the controller get checked here if validation is present and if the request is used in the controller) 
+
+app/http/resource (used for giving api only the needed fields of the database in the json response instead of giving acess of full model fields.), 
+
+app/http/middleware (checks if the request are valid or not before reaching the controller)
+
+app/http/controller which handle the incoming request and their responses and controllers should not have heavy database logic instead the business logic code should be distributed, the request part can be used to validate the request parameters eg length etc before reaching the controller that is why we use app/http/request in controller.
+
+app/models - (Equolent model concepts)then- models use concepts like -
+a)relationship(hasone(for eg user has one profile), hasmany(user has many orders), belongto(order belongs to one user), belogstomany(user has multiple roles, roles can have multiple users so a piviot table is created with user_id and role_id and both the user and role will user the belongs to many relationship),hasManyThrough(a country has many users and users have many order so we can get the country and orders without using piviot table.) )
+b)casts - cast are used to convert the attribute datatype from one to another but does not effect the database it is only for showing in php side.
+ like showing 1 from database as boolean true in php side.
+c)scopes - scopes are used to write store and reuse the repetative queries which will be required at many places.
+acessor - used to modify the attribute value before showing to the user in php, for eg if the value is a name we can convert the name to upper case or lower case before showing it to the user , while the database value will remain unchanged.
+d)Mutator - Mutator does the opposite of the acessor, it can modify the attribute value using set and it will also get changed in the database unlike acessor.
+e)model events - we can make the model events in cases such as creating, created, updating, updated, deleting, deleted or retrieving.
+for eg creating - if the insert is not exected it is at creating stage, if the insert is over it is at created stage, same for others.
+we can place model events between this stages.
+f)query behaviour - 
+query shortcuts used for quering the data, like get, save, find, all, findorfail etc.
+
+app/Providers - (Providers participate in Laravel's bootstrapping process. A Service Provider tells Laravel how to register or initialize a service. It uses the register method to register the services that will be used by the service container and it uses the boot method to boot/start the services metioned in the register method.)
+a) Service container - the Service Container is a Laravel system responsible for creating and resolving objects/services.
+we call the service using the service container using the app
+use App\Services\PaymentService;
+
+class OrderController extends Controller
+{
+    public function pay(PaymentService $payment)
+    {
+        return $payment->pay();
+    }
+} it directly resolves 
+class PaymentService
+{
+    public function pay()
+    {
+        return "Payment successful";
+    }
+}
+b)bind - bind is used to create something for eg - 
+	use App\Services\PaymentService;
+
+	public function register(): void
+	{
+	    $this->app->bind(
+		PaymentService::class,
+		function () {
+		    return new PaymentService();
+		}
+	    );
+	}
+	Now you're telling Laravel:Whenever someone asks the container for PaymentService, create it using this function.
+	then this : $payment = app(PaymentService::class); will
+	app(PaymentService::class)
+		↓
+	Container checks binding
+		↓
+	Runs:
+	new PaymentService()
+		↓
+	returns object
+	 
+	another eg - 
+	$this->app->bind(
+	    PaymentGateway::class,
+	    StripePaymentGateway::class
+	);
+	if $payment = app(PaymentService::class); is called then 
+	PaymentService
+	      ↓
+	needs PaymentGateway
+	      ↓
+	Container checks binding
+	      ↓
+	PaymentGateway → StripePaymentGateway
+	      ↓
+	creates StripePaymentGateway
+	      ↓
+	passes it to PaymentService
+
+c)singleton-
+	the only difference between bind and singleton is The container keeps the resolved instance and reuses it within the applicable application lifecycle and in bind it creates new every time it is called.
+	$a = app(PaymentService::class);
+	$b = app(PaymentService::class);
+
+	$a === $b;
+
+
+Folder Name - 
+A) App
+
+	This is where the majority of your Laravel application's PHP code that you write lives.  
+
+Sub folders - 
+
+1) app/Console/ -  
+		This is related to Artisan/console application code. If you want to create custom Artisan commands: for example php artisan make:command 	CleanupCompletedTasks 
+		then you could have something like:
+
+		app/
+		└── Console/
+		    └── Commands/
+			└── CleanupCompletedTasks.php
+
+		you might run:
+		php artisan tasks:cleanup
+
+
+
+
+2) app/Exceptions/ - 
+
+	This is where application-specific exception handling can live.
+	For example, conceptually:  
+	TaskNotFoundException
+	UnauthorizedTaskAccessException
+	PaymentFailedException
+
+
+
+3) app/Http/ - This contains code related to HTTP requests and responses.
+
+
+
+4) app/Http/Controllers/ - 
+
+	Controllers coordinate HTTP requests. Controllers should generally coordinate rather than contain your entire business system.
+	eg flow - 
+	GET /tasks
+	       ↓
+	routes/web.php
+	       ↓
+	TaskController@index()
+	       ↓
+	Task model
+	       ↓
+	MySQL
+	       ↓
+	Response
+
+
+
+5) app/Http/Middleware/  - 
+
+	Middleware sits in the HTTP request pipeline.
+	Example: 
+
+	Browser
+	   ↓
+	Middleware
+	   ↓
+	Controller
+
+	Middleware can perform things such as:
+
+	authentication checks
+	authorization-related checks
+	rate limiting
+	request modification
+	logging
+	maintenance mode checks
+
+	For example: 
+
+	GET /admin/tasks
+
+		↓
+
+	Authenticate user
+
+		↓
+
+	Check admin permission
+
+		↓
+
+	Controller
+
+
+
+6) app/Http/Requests/  - 
+
+	This is where Form Request classes can live.Instead of putting all validation inside the controller:
+	$request->validate([
+	    'title' => 'required|string|max:255',
+	]);
+
+	we can eventually have: 
+	public function store(StoreTaskRequest $request)
+	{
+	    // ...
+	}
+
+	The request class can contain:
+
+	validation rules
+	authorization logic
+	preparation of input
+	sometimes custom validation behavior
+
+
+
+7) app/Http/Resources/  - 
+
+	API Resources control how Eloquent models are transformed into API responses. Instead of blindly returning your entire database model.
+
+	For example:
+
+	Task model
+	   ↓
+	TaskResource
+	   ↓
+	JSON
+
+	Example response conceptually:
+
+	{
+	    "id": 15,
+	    "title": "Learn Laravel",
+	    "completed": false
+	}
+
+
+
+8) app/Models/ -
+
+	This is where Eloquent models live.
+
+	A model is not simply a representation of a database table.  
+
+	An Eloquent model can contain:
+
+	i)relationships - 
+		| Laravel            | Meaning                              | MySQL structure                 |
+		| ------------------ | ------------------------------------ | ------------------------------- |
+		| `hasOne()`         | One-to-one                           | Foreign key in related table    |
+		| `hasMany()`        | One-to-many                          | Foreign key in related table    |
+		| `belongsTo()`      | Child → parent                       | Foreign key in current table    |
+		| `belongsToMany()`  | Many-to-many                         | Pivot table                     |
+		| `hasManyThrough()` | One → many through another model     | JOIN through intermediate table |
+		| `morphMany()`      | One model → many polymorphic records | `*_id` + `*_type`               |
+		| `morphTo()`        | Polymorphic child → any parent type  | `*_id` + `*_type`               |
+		
+		A model can describe how one piece of data is related to another.
+		For example:
+
+		A User has many Orders
+		An Order belongs to a User
+		A Post belongs to a User
+		A Post has many Comments
+
+		Eloquent: $user->orders
+		is basically giving you a convenient PHP interface over database operations such as:
+		SELECT *
+		FROM orders
+		WHERE user_id = 1;
+
+
+		Common relationship types
+
+		1)hasOne() - One User has one Profile.
+		users - 
+
+		| id | name  |
+		| -: | ----- |
+		|  1 | John  |
+		|  2 | Sarah |
+
+		profiles - 
+
+		| id | user_id | bio       |
+		| -: | ------: | --------- |
+		| 10 |       1 | Developer |
+		| 11 |       2 | Designer  |
+
+		profiles.user_id
+		       ↑
+		       └── points to users.id
+
+		In User.php:
+
+		public function profile()
+		{
+		    return $this->hasOne(Profile::class);
+		}
+
+		$user = User::find(1);
+		$user->profile;
+
+		(SELECT *
+		FROM profiles
+		WHERE user_id = 1
+		LIMIT 1;)
+
+
+		2)hasMany() -
+		app/Models/User.php:
+		<?php
+
+		namespace App\Models;
+
+		use Illuminate\Database\Eloquent\Model;
+
+		class User extends Model
+		{
+		public function orders()
+		{
+		return $this->hasMany(Order::class);
+		}
+		}
+		"A User has many Order records."
+			
+		3)belongsTo() - 
+		Inside Order.php:
+		<?php
+
+		namespace App\Models;
+
+		use Illuminate\Database\Eloquent\Model;
+
+		class Order extends Model
+		{
+		public function user()
+		{
+		return $this->belongsTo(User::class);
+		}
+		}
+		"An Order belongs to a User."
+		
+		belongsToMany()- role master, user master and one user can have multiple roles assigned to them.
+		a user can have multiple roles 		
+		
+		4)hasManyThrough()-One model can access many records of another model through an intermediate model.
+		for eg - 
+		Country
+		↓
+		Users
+		↓
+		Orders
+		A Country can have many Orders through its Users.
+		Country does not have a direct country_id on the orders table.
+		countries
+		↓
+		users
+		↓
+		orders
+		
+		morphMany()-
+		
+		morphTo()-
+		
+
+		
+
+
+ii) casts - 
+		A cast tells Eloquent how a database attribute should be converted when you use it in PHP.
+		For example, MySQL might store:
+		is_active = 1
+		But in PHP, you want: true
+
+		You tell Laravel:
+		protected $casts = [
+		    'is_active' => 'boolean',
+		];
+		 
+		 Common casts
+		 
+		 protected $casts = [
+		    'is_active' => 'boolean',  // Database: 1 PHP: true
+		    'age' => 'integer', // Database: "25" PHP: 25
+		    'price' => 'decimal:2', // Database: 500 PHP: 500.00
+		    'settings' => 'array',
+		    'metadata' => 'json',
+		    'birth_date' => 'date',
+		    'created_at' => 'datetime',
+		];
+
+iii) scopes -   A scope in Laravel Eloquent is a reusable way to define a common query condition.
+		for eg - Whenever I want active users, I don't want to write where('is_active', 1) again and again. 
+
+		Suppose your users table has:
+		id
+		name
+		email
+		is_active
+
+		You might repeatedly write:
+		$users = User::where('is_active', 1)->get();
+
+		Another controller:
+		$users = User::where('is_active', 1)
+			     ->orderBy('name')
+			     ->get();
+			     
+		$users = User::where('is_active', 1)
+			     ->orderBy('name')
+			     ->get();
+				          
+		$count = User::where('is_active', 1)->count();        
+
+		Scope + other conditions     
+		Scopes are especially useful because you can continue building the query.
+
+		Suppose:
+
+		public function scopeActive($query)
+		{
+		    return $query->where('is_active', 1);
+		}
+
+		You can do:
+
+		$users = User::active()
+			     ->where('country', 'India')
+			     ->get();
+
+		Multiple scopes
+
+		class User extends Model
+		{
+		    public function scopeActive($query)
+		    {
+			return $query->where('is_active', 1);
+		    }
+
+		    public function scopeVerified($query)
+		    {
+			return $query->where('email_verified', 1);
+		    }
+
+		    public function scopeAdults($query)
+		    {
+			return $query->where('age', '>=', 18);
+		    }
+		}
+
+		Now you can combine them:
+		$users = User::active()
+			     ->verified()
+			     ->adults()
+			     ->get();
+			     
+		Conceptually:
+		SELECT *
+		FROM users
+		WHERE is_active = 1
+		  AND email_verified = 1
+		  AND age >= 18;
+
+
+iv) accessors -
+
+
+		attribute behavior - An accessor controls what happens when you read an attribute from an Eloquent model.
+
+		Accessor = change or calculate a value when you GET/read it.
+
+		For example: $user->name
+
+		Normally Laravel gives you the name value directly from the database.
+		An accessor lets you say:
+		“Whenever someone reads name, I want Laravel to modify it first.”
+
+		example:
+		users
+		--------------------------------
+		id | name
+		--------------------------------
+		1  | john
+
+		$user = User::find(1);
+
+		echo $user->name;
+
+		Output: john
+
+		Now imagine you want the name displayed in uppercase.
+		You can define an accessor in the model.
+
+		use Illuminate\Database\Eloquent\Casts\Attribute;
+
+		class User extends Model
+		{
+		    protected function name(): Attribute
+		    {
+			return Attribute::make(
+			    get: fn ($value) => strtoupper($value),
+			);
+		    }
+		}
+
+		Now:
+		$user = User::find(1);
+
+		echo $user->name;
+
+		outputs:JOHN
+
+		But the database still contains the same john.
+		The accessor changed the value you get in PHP, not the database value.
+
+
+
+v) mutators - The opposite of an accessor, Accessor Controls reading, Mutator Controls writing
+		Accessor = GET  cannot change the value in the database.
+		Mutator  = SET  i.e mutator can change the value in the database.
+
+		protected function name(): Attribute
+		{
+		    return Attribute::make(
+			get: fn ($value) => strtoupper($value),
+
+			set: fn ($value) => strtolower($value),
+		    );
+		}
+
+				    Eloquent Model
+				         │
+			  ┌──────────────┼──────────────┐
+			  ↓              ↓              ↓
+			Scope           Cast         Accessor
+			  │              │              │
+			  ↓              ↓              ↓
+		      Query logic     Data type      Read logic
+		      
+		A very common use: password hashing
+
+		One classic use of a mutator is transforming a password before storing it.
+		use Illuminate\Database\Eloquent\Casts\Attribute;
+		use Illuminate\Support\Facades\Hash;
+
+		class User extends Model
+		{
+		    protected function password(): Attribute
+		    {
+			return Attribute::make(
+			    set: fn ($value) => Hash::make($value),
+			);
+		    }
+		}
+
+		Then your application can do:
+		$user->password = 'my-secret-password';
+
+		$user->save();
+
+		The mutator transforms the password before storage.
+		"my-secret-password"
+			↓
+		     mutator
+			↓
+		    Hash::make()
+			↓
+		"hashed value..."
+			↓
+		     database
+
+
+vi)model events - we can make event occur in different cases in the model i.e creating, created, updating, updated, deleting, deleted, retrieved.
+	for example if we have to save the audit log we will trigger the event which will occur before the update etc.
+
+vii)query behavior- 
+		Suppose you write: $query = User::where('is_active', 1); The database hasn't necessarily been queried yet.
+		Then:
+		$users = $query->get(); causes the query to execute.
+
+		get() - executes the query and returns an Eloquent Collection.
+		first() - first() gets the first matching model.
+		find() - find() is designed to find a model by its primary key.
+		find()
+		 ↓
+		"Find this exact primary-key record."
+
+		first()
+		 ↓
+		"Give me the first record matching this query."
+		all() - Give me all users.
+		where() - where() adds a condition to the query. User::where('age', '>=', 18) 
+		Multiple where() conditions
+		$users = User::where('is_active', 1)
+			     ->where('age', '>=', 18)
+			     ->get();
+			     
+		orderBy() - You can control ordering:$users = User::orderBy('name')->get();
+
+		limit() - $users = User::limit(10)->get(); You can limit how many records are returned:
+
+		count() -  If you only want the number of matching records:$count = User::where('is_active', 1)->count(); SELECT COUNT(*)
+		FROM users
+		WHERE is_active = 1;
+		exists() -   If you only care whether at least one matching record exists: $exists = User::where('email', $email)->exists();
+		The result is: true or false.
+		create() - Now we're moving from reading to writing.
+		Suppose: 
+		$user = User::create([
+		    'name' => 'John',
+		    'email' => 'john@example.com',
+		]);
+		Eloquent creates a new model and inserts it into the database.
+		INSERT INTO users (name, email)
+		VALUES ('John', 'john@example.com');
+		For create() to work with mass assignment, the relevant attributes must be allowed by the model's mass-assignment configuration.
+		// Find by primary key
+		$user = User::find(1);
+
+		// Find or 404/exception
+		$user = User::findOrFail(1);
+
+		// Get many
+		$users = User::where('is_active', 1)->get();
+
+		// Get one or null
+		$user = User::where('email', $email)->first();
+
+		// Check existence
+		$exists = User::where('email', $email)->exists();
+
+		// Count
+		$count = User::where('is_active', 1)->count();
+
+		// Create
+		$user = User::create($data);
+
+		// Change
+		$user->name = 'Sarah';
+
+		// Check unsaved changes
+		$user->isDirty('name');
+
+		// See changed attributes
+		$user->getDirty();
+
+		// See original value
+		$user->getOriginal('name');
+
+		// Save
+		$user->save();
+
+		// Check what changed after save
+		$user->wasChanged('name');
+
+		// Delete
+		$user->delete();
+
+9) app/Providers/ - Providers participate in Laravel's bootstrapping process.
+
+		A Service Provider tells Laravel how to register or initialize a service.
+
+		app/Providers/
+		       ↓
+		Service Provider classes
+		       ↓
+		register()
+		       ↓
+		Service Container
+		       ↓
+		boot()
+		       ↓
+		Application ready
+
+		A Service Provider is a class Laravel uses to register and/or initialize services in the application, and app/Providers/ is where your application's provider classes live.
+
+		There are two important methods:
+		register() - register() is mainly used to register things into Laravel's Service Container.
+
+		public function register()
+		{
+		    $this->app->singleton(PaymentService::class, function ($app) {
+			return new PaymentService();
+		    });
+		}
+
+		boot() - 
+		register()
+		    ↓
+		Tell Laravel about services
+
+		boot()
+		    ↓
+		Initialize/configure things after registration
+
+i)Service Container- The Service Container is a Laravel system responsible for creating and resolving objects/services.
+
+		$payment = app(PaymentService::class);
+
+		app(PaymentService::class)
+			    ↓
+		    Service Container
+			    ↓
+		"How do I create PaymentService?"
+			    ↓
+		new PaymentService()
+			    ↓
+		PaymentService object
+
+		So the container is essentially a place where Laravel can resolve dependencies and construct objects.
+
+ii)Dependency Injection - 
+			Now suppose OrderService needs PaymentService.
+
+			Without dependency injection:
+			class OrderService
+			{
+			    public function createOrder()
+			    {
+				$payment = new PaymentService();
+
+				$payment->charge();
+			    }
+			}
+
+			OrderService is manually creating its dependency.
+
+			With Dependency Injection:
+
+			class OrderService
+			{
+			    public function __construct(
+				PaymentService $payment
+			    ) {
+				$this->payment = $payment;
+			    }
+			}
+			Dependency Injection means giving an object the dependencies it needs instead of making the object create those dependencies itself.
+
+iii)Service Providers - 
+		A Service Provider is commonly where you tell Laravel's container about your application's services.
+		class AppServiceProvider extends ServiceProvider
+		{
+		    public function register(): void
+		    {
+			//
+		    }
+
+		    public function boot(): void
+		    {
+			//
+		    }
+		}
+		we can register like this 
+		public function register(): void
+		{
+		    $this->app->bind(
+			PaymentService::class,
+			function () {
+			    return new PaymentService();
+			}
+		    );
+		}
+
+		now app(PaymentService::class); can resolve it.
+
+iv) bindings
+	A binding tells the Service Container: "When someone asks for X, here's how you should provide X."'
+
+	eg - 
+	$this->app->bind(
+	    PaymentService::class,
+	    function () {
+		return new PaymentService();
+	    }
+	);
+
+
+
+v)singleton - through bind many objects can be created but with singleton - "Create this once, then reuse the same instance."
+		eg - 
+		$this->app->singleton(
+		    PaymentService::class,
+		    function () {
+			return new PaymentService();
+		    }
+		);
+
+		Normally, a bind() can create a new instance when the dependency is resolved.
+		$this->app->bind(
+		    PaymentService::class,
+		    function () {
+			return new PaymentService();
+		    }
+		);
+
+		Conceptually:
+		app(PaymentService::class)
+			↓
+		new PaymentService()
+
+		app(PaymentService::class)
+			↓
+		new PaymentService()
+		Potentially different objects.
+
+
+		$this->app->singleton(
+		    PaymentService::class,
+		    function () {
+			return new PaymentService();
+		    }
+		);
+
+		Now  - 
+		$a = app(PaymentService::class);
+		$b = app(PaymentService::class);
+
+		Conceptually:
+
+		$a
+		 ↓
+		PaymentService instance #1
+
+		$b
+		 ↓
+		same PaymentService instance #1
+
+
+
+		vi)scoped dependencies - 
+		A scoped binding is similar to a singleton, but its lifetime is limited to a particular application/request lifecycle.
+		Conceptually:
+		Request #1
+		    ↓
+		PaymentService instance A
+
+		Request #2
+		    ↓
+		PaymentService instance B
+
+		Within Request #1:
+		resolve PaymentService
+		       ↓
+		same instance
+
+		But when the next request/lifecycle begins:
+		new lifecycle
+		       ↓
+		new instance
+
+		The important distinction:
+		bind
+		    ↓
+		new instance as needed
+
+		singleton
+		    ↓
+		one shared instance for the container/application lifetime
+
+		scoped
+		    ↓
+		one instance per lifecycle/request scope
+
+vii)boot methods - initiale the mentioned services when laravel starts/bootstrapping happens
+
+
+		app/
+		│
+		├── Http/
+		│   └── Controllers/
+		│       └── OrderController.php
+		│                 │
+		│                 │ Dependency Injection
+		│                 ▼
+		│
+		├── Services/
+		│   └── PaymentService.php
+		│             │
+		│             │ actual service
+		│             ▼
+		│       PaymentService
+		│
+		├── Providers/
+		│   └── AppServiceProvider.php
+		│             │
+		│             │ bindings
+		│             ▼
+		│       Service Container
+		│
+		└── ...
+
+B)Folder name : bootstrap - This directory is responsible for bootstrapping the Laravel application.
+
+
+	in the app.php has withrouting() by (default web.php is added in this but if you want to api.php to work you have to add it here too), withmiddleware(same with middleware), withexecption(same with exceptions.) i.e it is used to register.
+	app.php is the heart as even public/index.php and artisian also calls this app.php i.e this is from where the application starts.
+
+	in the provider.php we have to mention the service provider i.e the service provider will directly not work if it is not mentioned here.
+	i.e the files you create in app/providers for eg AppServiceProvider.php which helps us to use services with its register and boot method.
+	the register method is used to register the service and boot method is used to initiate it whent he application bootstraps/starts.
+
+	a)cache - this sub - directory in the bootstrap folder has packages.php and services.php packages.php initiates the servies, services.php has all the services like from artistian to all the things laravel providesl through the vendor/composer dependencies packages which are installed through composer. It has cache directory - where all the cahce of config is to routing, middleware, console i.e the customized artisian commands. all cache is stored here.
+
+	C) Folder name : Config -
+	What is my application name?
+	Which database should I use?
+	Where should sessions be stored?
+	Which cache driver should I use?
+	Which mail service should I use?
+	Which filesystem should I use?
+
+	config folder all the default configration for all database.php (which contains default connection, migration, cache), app.php General application settings. it contians app_env it is set to production by default i.e can be changed in the env file , app_debug is false by default can change in env, timezone, maintainance.
+
+D) Folder name: Database - The database/ folder contains the files Laravel uses to create, populate, and test your database.
+		i)database/migrations/ -(A migration describes a change to your database structure, Version-controlled instructions for changing the database schema.) 
+		in the migration files we declare the database schema/structure of a particular table it has two methods up and down. the up fucntion is used to define the schema and the down is used to execute the drop table etc when we use the rollback etc with the migrate command.
+		all the migrations executed are stored in migrations table and whenever you run php artisan migrate only the migrations which are pending i.e are not in the migration table gets executed.
+
+		Eloquent Models doesn't care which migration created a table. Eloquent cares which table the model is configured to use.
+		you can tell the model which table to use 
+		class ProductItem extends Model
+		{
+		    protected $table = 'products';
+		}
+
+		or if you create two tables product and products with same schema
+		then if you do class Product extends Model it will resolve product table as per the laravel convetion it looks for name without s and if you want to ma manually configure it then use the above method.
+
+		ii)database/factories/ - (Generate fake/test records)
+
+		iii)database/seeders/ - (These decide what data should actually be inserted.)
+		$table->id()
+		    → BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY
+
+		$table->string()
+		    → VARCHAR
+
+		$table->text()
+		    → TEXT
+
+		$table->integer()
+		    → INT
+
+		$table->bigInteger()
+		    → BIGINT
+
+		$table->decimal()
+		    → DECIMAL
+
+		$table->boolean()
+		    → BOOLEAN / TINYINT(1)
+
+		$table->date()
+		    → DATE
+
+		$table->dateTime()
+		    → DATETIME
+
+		$table->timestamp()
+		    → TIMESTAMP
+
+		$table->json()
+		    → JSON
+
+		$table->foreignId()
+		    → BIGINT UNSIGNED
+		    + usually foreign-key constraint when chained with ->constrained()
+
+E) Folder name: public
+	This directory is extremely important from a production security perspective.
+
+	public/index.php - 
+	       ↓
+	starts/enters Laravel for HTTP 
+	
+	A web request has arrived. Start Laravel and give Laravel this request.
+
+	public/storage - php artisan storage:link
+	It connects: public/storage to storage/app/public
+	conceptually -
+	
+	Browser
+	↓
+	/storage/photo.jpg
+	↓
+	public/storage/photo.jpg
+	↓
+	storage/app/public/photo.jpg
+	
+	                 BROWSER
+                    │
+                    │ GET /products
+                    ↓
+          PHP Development Server
+                    │
+                    ↓
+             public/index.php
+                    │
+                    ↓
+          vendor/autoload.php
+                    │
+                    ↓
+           bootstrap/app.php
+                    │
+                    ↓
+          Laravel Application
+                    │
+                    ↓
+             HTTP Kernel / 
+             middleware pipeline
+                    │
+                    ↓
+                 Router
+                    │
+                    ↓
+       routes/web.php
+                    │
+                    ↓
+          ProductController
+                    │
+                    ↓
+             Eloquent Model
+                    │
+                    ↓
+                Database
+                    │
+                    ↓
+              Controller
+                    │
+                    ↓
+                 Response
+                    │
+                    ↓
+                 Resource
+                    │
+                    ↓
+                 Browser
+                 
+				 
+		┌──────────────────────────────┐
+		│           Browser            │
+		└──────────────┬───────────────┘
+			       │
+			       ↓
+		┌──────────────────────────────┐
+		│           public/            │
+		│                              │
+		│       index.php              │
+		│       built assets           │
+		│       public images          │
+		└──────────────┬───────────────┘
+			       │
+			       ↓
+		┌──────────────────────────────┐
+		│            app/              │
+		│                              │
+		│ Controllers                  │
+		│ Models                       │
+		│ Services                     │
+		│ Policies                     │
+		└──────────────┬───────────────┘
+			       │
+			       ↓
+		┌──────────────────────────────┐
+		│         resources/           │
+		│                              │
+		│ Blade views                  │
+		│ CSS source                   │
+		│ JS source                    │
+		└──────────────────────────────┘
+
+F) Folder name: resources - 
+		This contains source frontend resources.
+
+		blade - You can use PHP-like conditions.
+		@if($task->completed)
+		    <p>Completed</p>
+		@endif
+
+		@if($task->completed)
+		    <p>Completed</p>
+		@else
+		    <p>Pending</p>
+		@endif
+		@if($task->priority === 'high')
+		    <p>High priority</p>
+		@elseif($task->priority === 'medium')
+		    <p>Medium priority</p>
+		@else
+		    <p>Low priority</p>
+		@endif
+
+
+		Blade loops - 
+		@foreach($tasks as $task)
+
+		    <h2>{{ $task->title }}</h2>
+
+		@endforeach
+
+
+		@forelse($tasks as $task)
+
+		    <p>{{ $task->title }}</p>
+
+		@empty
+
+		    <p>No tasks found.</p>
+
+		@endforelse
+
+
+		Layouts - 
+		every page has:
+		HTML
+		head
+		navigation
+		footer
+		You don't copy that HTML into every page.
+
+		layouts/app.blade.php
+
+		<!DOCTYPE html>
+		<html>
+		<head>
+		    <title>Task Manager</title>
+		</head>
+
+		<body>
+
+		    <nav>
+			<a href="/tasks">Tasks</a>
+			<a href="/tasks/create">Create Task</a>
+		    </nav>
+
+		    <main>
+			@yield('content')
+		    </main>
+
+		</body>
+		</html>
+
+
+		Child view - 
+		resources/views/tasks/index.blade.php
+		@extends('layouts.app')
+
+		@section('content')
+
+		    <h1>Tasks</h1>
+
+		    <p>Here are your tasks.</p>
+
+		@endsection
+		
+		
+		                 BLADE
+		                   │
+	       ┌───────────────────┼───────────────────┐
+	       │                   │                   │
+	   DIRECTIVES          LAYOUTS            COMPONENTS
+	       │                   │                   │
+	       │                   │                   ├── Anonymous
+	       │                   │                   └── Class-based
+	       │                   │
+	       ├── @if             ├── @extends
+	       ├── @foreach        ├── @section
+	       ├── @forelse        └── @yield
+	       ├── @auth
+	       ├── @can
+	       ├── @csrf
+	       ├── @error
+	       ├── @include
+	       ├── @push
+	       └── @php
+	       
+	COMPONENTS
+	    │
+	    ├── <x-button>
+	    │       │
+	    │       ├── $slot
+	    │       ├── $attributes
+	    │       └── @props
+	    │
+	    ├── <x-card>
+	    │       │
+	    │       └── named slots
+	    │
+	    └── <x-form.input>
+	    
+		Browser
+		   │
+		   │ GET /tasks/10
+		   ↓
+		Web Server
+		   │
+		   ↓
+		public/index.php
+		   │
+		   ↓
+		Laravel Application
+		   │
+		   ↓
+		Middleware
+		   │
+		   ↓
+		Router
+		   │
+		   ↓
+		routes/web.php
+		   │
+		   │ matches:
+		   │ GET /tasks/{task}
+		   ↓
+		TaskController@show
+		   │
+		   │ Task $task
+		   ↓
+		Eloquent
+		   │
+		   │ SELECT ... FROM tasks WHERE id = 10
+		   ↓
+		Database
+		   │
+		   ↓
+		Task model
+		   │
+		   ↓
+		Controller
+		   │
+		   ↓
+		view('tasks.show')
+		   │
+		   ↓
+		resources/views/tasks/show.blade.php
+		   │
+		   ↓
+		HTML
+		   │
+		   ↓
+		Browser
+
+F) Folder name: routes - 
+
+	Route::get() - Used for GET requests.
+	Route::get('/tasks', function () {
+	    return 'Task list';
+	});
+
+	GET is normally used for retrieving/displaying data.
+	
+	Route::post() - used for create tasks
+	
+	PUT - Usually used to update a resource.
+	Route::put('/tasks/{task}', function ($task) {
+	return "Updating task {$task}";
+	});
+	PUT /tasks/10
+	
+	PATCH - Also used for updating, often for a partial update.
+	Route::patch('/tasks/{task}', function ($task) {
+	return "Partially updating task {$task}";
+	});
+	PATCH /tasks/10
+	
+	DELETE- 
+	Route::delete('/tasks/{task}', function ($task) {
+	return "Deleting task {$task}";
+	});
+	DELETE /tasks/10
+	
+	Route parameters - 
+	Route::get('/tasks/{id}', function ($id) {
+	return "Task ID: " . $id;
+	});
+	
+	The {id} is a route parameter.
+	
+	Route model binding - 
+	Route::get('/tasks/{task}', function (Task $task) {
+	return $task->title;
+	});
+	
+	Route model binding with controllers -
+	Route::get('/tasks/{task}', [TaskController::class, 'show']);
+	public function show(Task $task)
+	{
+	return view('tasks.show', [
+	'task' => $task
+	]);
+	}
+	
+	Named routes- 
+	Route::get('/tasks', [TaskController::class, 'index'])
+	->name('tasks.index');
+	For example in Blade:
+	<a href="{{ route('tasks.index') }}">
+	Tasks
+	</a>
+	
+	Route groups -
+	Suppose many routes use the same middleware. You can group them.
+	Route::middleware('auth')->group(function () {
+
+	Route::get('/tasks', ...);
+
+	Route::get('/tasks/create', ...);
+
+	Route::post('/tasks', ...);
+
+	});
+
+	routes/web.php - This is normally where your web/browser routes live.
+	routes/api.php - If your project has/configures routes/api.php, it's commonly used for API endpoints.
+	routes/console.php - This is for defining console/Artisan commands.
+	
+	
+G) Folder name - storage - 
+	The storage/ directory is where Laravel keeps files that the application generates or needs to store internally.
+	public/ = files the browser can access directly
+	storage/ = files Laravel stores behind the scenes
+
+
+	storage/app/ -
+	This is mainly for application-generated files.
+	For example:
+
+	uploaded profile pictures
+	invoices
+	PDFs
+	exported CSV files
+	private documents
+	generated reports
+
+	storage/app/private/
+	    invoices/
+		invoice-1001.pdf
+
+	storage/app/public/
+	    avatars/
+		john.jpg
+		
+		
+	Storage::disk('local')
+		↓
+	storage/app/private
+
+	Storage::disk('public')
+		↓
+	storage/app/public
+
+
+	php artisan storage:link - This creates a symbolic link:
+	public/storage
+	       ↓
+	storage/app/public
+
+
+	storage/framework/ - 
+	Laravel's working/cache/runtime area
+	storage/framework/
+	├── cache/
+	├── sessions/
+	├── testing/
+	└── views/
+
+==============================================================================
+composer create-project laravel/laravel:^12.0 Book
+
+php artisan make:model Book -mcr
+
+
+php artisan migrate:status
+
+php artisan migrate --path=migrationfilename.php
+
+php artisan make:migration add_book_details_to_books_table --table=books
+
+| Field            | Type             | Rule                        |
+| ---------------- | ---------------- | --------------------------- |
+| `id`             | bigint           | Primary key                 |
+| `title`          | string(150)      | Required                    |
+| `author`         | string(100)      | Required                    |
+| `isbn`           | string(20)       | Required, unique            |
+| `price`          | decimal(10,2)    | Required                    |
+| `published_year` | year             | Required                    |
+| `description`    | text             | Optional                    |
+| `status`         | string(20)       | `available` / `unavailable` |
+| `stock`          | unsigned integer | Required, ≥ 0               |
+| `created_at`     | timestamp        | Laravel                     |
+| `updated_at`     | timestamp        | Laravel                     |
+
+MYSQL TYPE: TINYINT
+-------------------
+Signed Range       : -128 to 127
+Unsigned Range     : 0 to 255
+Stores             : Very small whole numbers, flags
+
+Signed Syntax      : $table->tinyInteger('status');
+Unsigned Syntax    : $table->unsignedTinyInteger('status');
+
+Example            : -10, 0, 100
+
+
+MYSQL TYPE: SMALLINT
+--------------------
+Signed Range       : -32,768 to 32,767
+Unsigned Range     : 0 to 65,535
+Stores             : Small whole numbers
+
+Signed Syntax      : $table->smallInteger('age');
+Unsigned Syntax    : $table->unsignedSmallInteger('age');
+
+Example            : 1000, 30000
+
+
+MYSQL TYPE: MEDIUMINT
+---------------------
+Signed Range       : -8,388,608 to 8,388,607
+Unsigned Range     : 0 to 16,777,215
+Stores             : Medium whole numbers
+
+Signed Syntax      : $table->mediumInteger('views');
+Unsigned Syntax    : $table->unsignedMediumInteger('views');
+
+Example            : 500000
+
+
+MYSQL TYPE: INT / INTEGER
+-------------------------
+Signed Range       : -2,147,483,648 to 2,147,483,647
+Unsigned Range     : 0 to 4,294,967,295
+Stores             : General-purpose whole numbers
+
+Signed Syntax      : $table->integer('quantity');
+Unsigned Syntax    : $table->unsignedInteger('quantity');
+
+Example            : 25, 100000
+
+
+MYSQL TYPE: BIGINT
+------------------
+Signed Range       : -9,223,372,036,854,775,808
+                     to 9,223,372,036,854,775,807
+Unsigned Range     : 0 to 18,446,744,073,709,551,615
+Stores             : Very large integers; IDs
+
+Signed Syntax      : $table->bigInteger('population');
+Unsigned Syntax    : $table->unsignedBigInteger('population');
+
+Example            : 9876543210
+
+
+MYSQL TYPE: BIGINT UNSIGNED
+---------------------------
+Signed Range       : —
+Unsigned Range     : 0 to 18,446,744,073,709,551,615
+Stores             : Large unsigned numeric IDs
+
+Signed Syntax      : —
+Unsigned Syntax    : $table->unsignedBigInteger('user_id');
+
+Example            : 1, 5000000
+
+
+MYSQL TYPE: BIGINT UNSIGNED AUTO_INCREMENT
+------------------------------------------
+Signed Range       : —
+Unsigned Range     : Same unsigned range, auto-generated
+Stores             : Primary IDs
+
+Signed Syntax      : —
+Unsigned Syntax    : $table->id();
+
+Example            : 1, 2, 3
+
+
+MYSQL TYPE: DECIMAL(5,2)
+------------------------
+Signed Range       : -999.99 to 999.99
+Unsigned Range     : 0 to 999.99
+Stores             : Exact decimal values
+
+Signed Syntax      : $table->decimal('rating', total: 5, places: 2);
+Unsigned Syntax    : $table->decimal('rating', total: 5, places: 2)->unsigned();
+
+Example            : 123.45
+
+
+MYSQL TYPE: DECIMAL(10,2)
+-------------------------
+Signed Range       : -99,999,999.99 to 99,999,999.99
+Unsigned Range     : 0 to 99,999,999.99
+Stores             : Exact decimal values, commonly money
+
+Signed Syntax      : $table->decimal('price', total: 10, places: 2);
+Unsigned Syntax    : $table->decimal('price', total: 10, places: 2)->unsigned();
+
+Example            : 1499.99
+
+
+MYSQL TYPE: FLOAT
+-----------------
+Signed Range       : Approx. ±3.402823466×10³⁸
+Unsigned Range     : Depends on definition
+Stores             : Approximate floating-point numbers
+
+Signed Syntax      : $table->float('temperature');
+Unsigned Syntax    : $table->float('temperature')->unsigned();
+
+Example            : 3.14
+
+
+MYSQL TYPE: DOUBLE
+------------------
+Signed Range       : Approx. ±1.7976931348623157×10³⁰⁸
+Unsigned Range     : Depends on definition
+Stores             : Higher-range approximate floating-point numbers
+
+Signed Syntax      : $table->double('latitude');
+Unsigned Syntax    : $table->double('latitude')->unsigned();
+
+Example            : 3.1415926535
+
+
+MYSQL TYPE: CHAR(n)
+-------------------
+Size                : Up to 255 characters
+Stores              : Fixed-length strings
+
+Syntax              : $table->char('country_code', length: 2);
+
+Example             : "US"
+
+
+MYSQL TYPE: VARCHAR(n)
+----------------------
+Size                : Up to 65,535 bytes per row, subject to
+                      row-size/charset limits
+Stores              : Variable-length strings
+
+Syntax              : $table->string('name', length: 100);
+
+Example             : "John"
+
+
+MYSQL TYPE: TINYTEXT
+--------------------
+Size                : Max 255 bytes
+Stores              : Small text
+
+Syntax              : $table->tinyText('note');
+
+Example             : "Short note"
+
+
+MYSQL TYPE: TEXT
+----------------
+Size                : Max 65,535 bytes (~64 KB)
+Stores              : Normal long text
+
+Syntax              : $table->text('description');
+
+Example             : Article/description
+
+
+MYSQL TYPE: MEDIUMTEXT
+----------------------
+Size                : Max 16,777,215 bytes (~16 MB)
+Stores              : Large text
+
+Syntax              : $table->mediumText('content');
+
+Example             : Large document
+
+
+MYSQL TYPE: LONGTEXT
+--------------------
+Size                : Max 4,294,967,295 bytes (~4 GB)
+Stores              : Extremely large text
+
+Syntax              : $table->longText('content');
+
+Example             : Very large content
+
+
+MYSQL TYPE: BOOLEAN / BOOL
+--------------------------
+Range               : 0 or 1 in MySQL
+Stores              : True / false
+
+Syntax              : $table->boolean('is_active');
+
+Example             : 0, 1
+
+
+MYSQL TYPE: DATE
+----------------
+Range               : 1000-01-01 to 9999-12-31
+Stores              : Date only
+
+Syntax              : $table->date('birth_date');
+
+Example             : 2026-09-23
+
+
+MYSQL TYPE: DATETIME
+--------------------
+Range               : 1000-01-01 00:00:00
+                      to 9999-12-31 23:59:59
+Stores              : Date + time
+
+Syntax              : $table->dateTime('published_at');
+
+Example             : 2026-09-23 15:30:00
+
+
+MYSQL TYPE: TIMESTAMP
+---------------------
+Range               : 1970-01-01 00:00:01 UTC
+                      to 2038-01-19 03:14:07 UTC
+                      (traditional MySQL 32-bit range)
+Stores              : Date + time, timezone-related behavior
+
+Syntax              : $table->timestamp('created_at');
+
+Example             : 2026-09-23 15:30:00
+
+
+MYSQL TYPE: TIME
+----------------
+Range               : -838:59:59 to 838:59:59
+Stores              : Time / duration
+
+Syntax              : $table->time('start_time');
+
+Example             : 14:30:00
+
+
+MYSQL TYPE: YEAR
+----------------
+Range               : 1901 to 2155
+Stores              : Year
+
+Syntax              : $table->year('birth_year');
+
+Example             : 2026
+
+
+MYSQL TYPE: JSON
+----------------
+Size                : Up to 4 GB document size
+Stores              : Structured JSON data
+
+Syntax              : $table->json('settings');
+
+Example             : {"dark":true}
+
+
+MYSQL TYPE: BINARY(n)
+---------------------
+Size                : Exactly n bytes, up to 255 bytes
+Stores              : Raw binary data
+
+Syntax              : $table->binary('file_data', length: 16);
+
+Example             : Binary data
+
+
+MYSQL TYPE: ENUM
+----------------
+Size                : Up to 65,535 distinct values
+Stores              : One value from predefined list
+
+Syntax              : $table->enum(
+                        'status',
+                        ['pending', 'approved', 'rejected']
+                      );
+
+Example             : "pending"
+
+
+MYSQL TYPE: UUID
+----------------
+Size                : 128 bits / 16 bytes
+Stores              : Globally unique identifiers
+
+Syntax              : $table->uuid('external_id');
+
+Example             : 550e8400-e29b-41d4-a716-446655440000
+
+============================================================
+RELATIONSHIPS
+============================================================
+
+1. ONE-TO-ONE
+------------------------------------------------------------
+
+Example:
+User has one Profile
+Profile belongs to User
+
+USERS TABLE
+$table->id();
+
+PROFILES TABLE
+$table->id();
+$table->foreignId('user_id')
+      ->unique()
+      ->constrained()
+      ->cascadeOnDelete();
+
+
+Laravel relationship:
+
+User Model:
+public function profile()
+{
+    return $this->hasOne(Profile::class);
+}
+
+Profile Model:
+public function user()
+{
+    return $this->belongsTo(User::class);
+}
+
+
+------------------------------------------------------------
+2. ONE-TO-MANY
+------------------------------------------------------------
+
+Example:
+User has many Posts
+Post belongs to User
+
+USERS TABLE
+$table->id();
+
+POSTS TABLE
+$table->id();
+$table->foreignId('user_id')
+      ->constrained()
+      ->cascadeOnDelete();
+
+
+Laravel relationship:
+
+User Model:
+public function posts()
+{
+    return $this->hasMany(Post::class);
+}
+
+Post Model:
+public function user()
+{
+    return $this->belongsTo(User::class);
+}
+
+
+------------------------------------------------------------
+3. MANY-TO-MANY
+------------------------------------------------------------
+
+Example:
+Users have many Roles
+Roles have many Users
+
+USERS TABLE
+$table->id();
+
+ROLES TABLE
+$table->id();
+
+ROLE_USER TABLE
+$table->foreignId('user_id')
+      ->constrained()
+      ->cascadeOnDelete();
+
+$table->foreignId('role_id')
+      ->constrained()
+      ->cascadeOnDelete();
+
+$table->primary(['user_id', 'role_id']);
+
+
+Laravel relationship:
+
+User Model:
+public function roles()
+{
+    return $this->belongsToMany(Role::class);
+}
+
+Role Model:
+public function users()
+{
+    return $this->belongsToMany(User::class);
+}
+
+
+------------------------------------------------------------
+4. ONE-TO-MANY POLYMORPHIC
+------------------------------------------------------------
+
+Example:
+Post can have comments
+Video can have comments
+
+COMMENTS TABLE
+
+$table->id();
+
+$table->morphs('commentable');
+
+$table->text('body');
+
+
+This creates:
+
+commentable_id
+commentable_type
+
+
+Laravel relationship:
+
+Comment Model:
+public function commentable()
+{
+    return $this->morphTo();
+}
+
+Post Model:
+public function comments()
+{
+    return $this->morphMany(Comment::class, 'commentable');
+}
+
+Video Model:
+public function comments()
+{
+    return $this->morphMany(Comment::class, 'commentable');
+}
+
+
+------------------------------------------------------------
+5. MANY-TO-MANY POLYMORPHIC
+------------------------------------------------------------
+
+Example:
+Posts can have Tags
+Videos can have Tags
+
+TAGS TABLE
+
+$table->id();
+$table->string('name');
+
+
+TAGGABLES TABLE
+
+$table->foreignId('tag_id')
+      ->constrained()
+      ->cascadeOnDelete();
+
+$table->morphs('taggable');
+
+$table->unique([
+    'tag_id',
+    'taggable_id',
+    'taggable_type'
+]);
+
+
+Laravel relationship:
+
+Post Model:
+public function tags()
+{
+    return $this->morphToMany(Tag::class, 'taggable');
+}
+
+Video Model:
+public function tags()
+{
+    return $this->morphToMany(Tag::class, 'taggable');
+}
+
+Tag Model:
+public function posts()
+{
+    return $this->morphedByMany(Post::class, 'taggable');
+}
+
+public function videos()
+{
+    return $this->morphedByMany(Video::class, 'taggable');
+}
+
+============================================================
+INDEXES
+============================================================
+
+PRIMARY KEY
+------------------------------------------------------------
+
+$table->id();
+
+Equivalent concept:
+
+PRIMARY KEY (id)
+
+
+------------------------------------------------------------
+UNIQUE INDEX
+------------------------------------------------------------
+
+$table->string('email')->unique();
+
+Prevents duplicate values.
+
+
+------------------------------------------------------------
+NORMAL INDEX
+------------------------------------------------------------
+
+$table->index('email');
+
+Used to speed up searches/filtering.
+
+
+------------------------------------------------------------
+COMPOSITE INDEX
+------------------------------------------------------------
+
+$table->index(['user_id', 'status']);
+
+Creates one index using multiple columns.
+
+
+------------------------------------------------------------
+COMPOSITE UNIQUE INDEX
+------------------------------------------------------------
+
+$table->unique(['user_id', 'product_id']);
+
+Useful when the combination must be unique.
+
+
+------------------------------------------------------------
+NAMED INDEX
+------------------------------------------------------------
+
+$table->index(
+    ['user_id', 'status'],
+    'users_status_index'
+);
+
+
+------------------------------------------------------------
+FULLTEXT INDEX
+------------------------------------------------------------
+
+$table->fullText('description');
+
+
+------------------------------------------------------------
+SPATIAL INDEX
+------------------------------------------------------------
+
+$table->spatialIndex('location');
+
+
+------------------------------------------------------------
+DROP INDEX
+------------------------------------------------------------
+
+$table->dropIndex(['email']);
+
+OR
+
+$table->dropIndex('users_email_index');
+
+
+------------------------------------------------------------
+DROP UNIQUE INDEX
+------------------------------------------------------------
+
+$table->dropUnique(['email']);
+
+
+------------------------------------------------------------
+DROP PRIMARY KEY
+------------------------------------------------------------
+
+$table->dropPrimary();
+
+
+------------------------------------------------------------
+DROP FULLTEXT INDEX
+------------------------------------------------------------
+
+$table->dropFullText(['description']);
+
+
+------------------------------------------------------------
+DROP SPATIAL INDEX
+------------------------------------------------------------
+
+$table->dropSpatialIndex(['location']);
+
+
+============================================================
+FOREIGN KEYS
+============================================================
+
+SHORT FORM
+------------------------------------------------------------
+
+$table->foreignId('user_id')
+      ->constrained();
+
+
+This is commonly used for:
+
+users.id  <---  posts.user_id
+
+
+------------------------------------------------------------
+SPECIFY TABLE
+------------------------------------------------------------
+
+$table->foreignId('user_id')
+      ->constrained('users');
+
+
+------------------------------------------------------------
+FOREIGN KEY WITH DELETE CASCADE
+------------------------------------------------------------
+
+$table->foreignId('user_id')
+      ->constrained()
+      ->cascadeOnDelete();
+
+
+Meaning:
+
+Delete User
+    |
+    +----> Delete related Posts
+
+
+------------------------------------------------------------
+FOREIGN KEY WITH DELETE SET NULL
+------------------------------------------------------------
+
+$table->foreignId('user_id')
+      ->nullable()
+      ->constrained()
+      ->nullOnDelete();
+
+
+Important:
+
+nullable() is required because user_id
+must be able to become NULL.
+
+
+------------------------------------------------------------
+FOREIGN KEY WITH RESTRICT
+------------------------------------------------------------
+
+$table->foreignId('user_id')
+      ->constrained()
+      ->restrictOnDelete();
+
+
+------------------------------------------------------------
+FOREIGN KEY WITH NO ACTION
+------------------------------------------------------------
+
+$table->foreignId('user_id')
+      ->constrained()
+      ->noActionOnDelete();
+
+
+------------------------------------------------------------
+FOREIGN KEY UPDATE CASCADE
+------------------------------------------------------------
+
+$table->foreignId('user_id')
+      ->constrained()
+      ->cascadeOnUpdate();
+
+
+------------------------------------------------------------
+MANUAL FOREIGN KEY
+------------------------------------------------------------
+
+$table->unsignedBigInteger('user_id');
+
+$table->foreign('user_id')
+      ->references('id')
+      ->on('users');
+
+
+------------------------------------------------------------
+MANUAL FOREIGN KEY WITH DELETE CASCADE
+------------------------------------------------------------
+
+$table->unsignedBigInteger('user_id');
+
+$table->foreign('user_id')
+      ->references('id')
+      ->on('users')
+      ->onDelete('cascade');
+      
+============================================================
+COLUMN MODIFIERS
+============================================================
+
+NULLABLE
+------------------------------------------------------------
+
+$table->string('name')->nullable();
+
+
+DEFAULT
+------------------------------------------------------------
+
+$table->boolean('is_active')->default(true);
+
+$table->integer('status')->default(0);
+
+
+UNIQUE
+------------------------------------------------------------
+
+$table->string('email')->unique();
+
+
+COMMENT
+------------------------------------------------------------
+
+$table->string('name')->comment('User full name');
+
+
+UNSIGNED
+------------------------------------------------------------
+
+$table->integer('age')->unsigned();
+
+
+INDEX
+------------------------------------------------------------
+
+$table->string('email')->index();
+
+
+NULLABLE + DEFAULT
+------------------------------------------------------------
+
+$table->string('nickname')
+      ->nullable()
+      ->default(null);
+
+
+AFTER
+------------------------------------------------------------
+
+$table->string('phone')
+      ->after('email');
+
+
+FIRST
+------------------------------------------------------------
+
+$table->string('username')
+      ->first();
+
+ public function up(): void
+    {
+        Schema::table('books', function (Blueprint $table) {
+           $table->String('title',150);
+           $table->String('author',100);
+           $table->String('isbn',20)->unique();
+           $table->decimal('price',10,2);
+           $table->year('published_year');
+           $table->text('description')->nullable();
+           $table->string('status',20)->default('available');
+           $table->unsignedInteger('stock');
+
+
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('books', function (Blueprint $table) {
+            $table->dropColumn('title');
+            $table->dropColumn('author');
+            $table->dropColumn('isbn');
+            $table->dropColumn('price');
+            $table->dropColumn('published_year');
+            $table->dropColumn('description');
+            $table->dropColumn('status');
+            $table->dropColumn('stock');
+        });
+    }
+
+php artisan migrate --path=database/migrations/YOUR_MIGRATION_FILE.php
+
+
+
+
+
+
+
+

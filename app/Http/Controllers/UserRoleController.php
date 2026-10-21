@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\UserRoleChanged; // Import the custom event.
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -57,10 +58,15 @@ class UserRoleController extends Controller
         // Find the selected user.
         $user = User::findOrFail($validated['user_id']);
 
-        // Get the user's current roles.
+        // Get the user's current roles before changing anything.
         $existingRoles = $user->getRoleNames();
 
-        // Find the selected role.
+        // Store the old role names for the event.
+        $oldRole = $existingRoles->isEmpty()
+            ? null
+            : $existingRoles->join(', ');
+
+        // Find the selected role for the web guard.
         $role = Role::where('name', $validated['role'])
             ->where('guard_name', 'web')
             ->firstOrFail();
@@ -85,6 +91,13 @@ class UserRoleController extends Controller
             // Assign the role to a user who has no role.
             $user->assignRole($role);
 
+            // Announce that the user's role has changed.
+            UserRoleChanged::dispatch(
+                $user,
+                null,
+                $role->name
+            );
+
             return redirect()
                 ->route('user-roles.assign')
                 ->with('success', 'Role assigned successfully.');
@@ -105,8 +118,22 @@ class UserRoleController extends Controller
                     ]);
             }
 
+            // Check whether the user already has exactly this role.
+            $roleIsUnchanged =
+                $existingRoles->count() === 1
+                && $existingRoles->first() === $role->name;
+
             // Remove existing role assignments and assign only this role.
             $user->syncRoles([$role]);
+
+            // Dispatch the event only if the role actually changed.
+            if (! $roleIsUnchanged) {
+                UserRoleChanged::dispatch(
+                    $user,
+                    $oldRole,
+                    $role->name
+                );
+            }
 
             return redirect()
                 ->route('user-roles.assign')

@@ -345,6 +345,53 @@ $selectedProjects = old('project_ids', $employee->projects->pluck('id')->toArray
             </div>
 
 
+
+
+            <hr class="my-4">
+
+            {{-- Employee Documents --}}
+            <div class="section-title">
+                Employee Documents
+            </div>
+
+            @if ($employee->documents->isNotEmpty())
+
+                <div class="row g-3">
+                    @foreach ($employee->documents as $document)
+                        <div class="col-md-6">
+                            <div class="border rounded p-3">
+
+                                <p class="fw-semibold mb-2">
+                                    {{ $document->original_name }}
+                                </p>
+
+                                @if (str_starts_with($document->mime_type, 'image/'))
+                                    {{-- Display the image directly --}}
+                                    <img src="{{ route('employee-documents.view', $document) }}"
+                                        alt="{{ $document->original_name }}" class="img-fluid rounded border"
+                                        style="max-height: 350px; width: auto;">
+                                @elseif ($document->mime_type === 'application/pdf')
+                                    {{-- Display the PDF directly --}}
+                                    <iframe src="{{ route('employee-documents.view', $document) }}"
+                                        title="{{ $document->original_name }}" width="100%" height="400"
+                                        style="border: 1px solid #dee2e6;"></iframe>
+                                @else
+                                    <p class="text-muted mb-0">
+                                        Preview is not available for this file type.
+                                    </p>
+                                @endif
+
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-muted">
+                    No documents have been uploaded for this employee.
+                </p>
+
+            @endif
+
             <!-- Form Actions -->
             <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
 
@@ -353,8 +400,6 @@ $selectedProjects = old('project_ids', $employee->projects->pluck('id')->toArray
                 </a>
 
             </div>
-
-
 
         </div>
 

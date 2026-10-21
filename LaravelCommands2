@@ -1,0 +1,208 @@
+composer create-project laravel/laravel mini-employee-auth
+
+composer require laravel/breeze --dev
+What does --dev mean?
+It installs Breeze as a development dependency used to generate the application's authentication scaffolding. The generated application code remains in your project.
+
+php artisan breeze:install blade
+
+npm install
+
+Breeze uses Vite and frontend dependencies to build its CSS and JavaScript.
+
+npm run build
+
+Then build the frontend assets:
+
+php artisan migrate
+
+Run Laravel migrations
+
+composer run dev start the application
+
+In a fresh Laravel 12 project, the dev script in composer.json is commonly configured to start several development processes together, including:
+
+- The Laravel development server.
+- A queue worker.
+- Laravel log monitoring through Pail.
+- Vite, which serves frontend assets during development.
+
+Install Spatie Laravel Permission
+composer require spatie/laravel-permission
+
+Once the command finishes, publish Spatie's configuration and migrations:
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+
+php artisan migrate
+
+Add Spatie's trait to the User model
+
+app/Models/User.php use Spatie\Permission\Traits\HasRoles;
+add HasRoles to the model's existing traits
+use HasFactory, Notifiable, HasRoles;
+
+It adds methods to the User model, including:
+$user->assignRole('admin');
+
+$user->hasRole('admin');
+
+$user->hasPermissionTo('view employees');
+
+$user->getRoleNames();
+
+Role seeder + permisson seeder
+
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
+
+class RolesAndPermissionsSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // Clear cached permissions before defining them.
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+        // Define the permissions available in the application.
+        $permissions = [
+            'view employees',
+            'create employees',
+            'edit employees',
+            'delete employees',
+        ];
+
+        // Create each permission if it does not already exist.
+        foreach ($permissions as $permission) {
+            Permission::firstOrCreate([
+                'name' => $permission,
+                'guard_name' => 'web',
+            ]);
+        }
+
+        // Admin can perform every employee operation.
+        $admin = Role::firstOrCreate([
+            'name' => 'admin',
+            'guard_name' => 'web',
+        ]);
+
+        $admin->syncPermissions($permissions);
+
+        // HR can view, create, and edit employees, but cannot delete.
+        $hr = Role::firstOrCreate([
+            'name' => 'hr',
+            'guard_name' => 'web',
+        ]);
+
+        $hr->syncPermissions([
+            'view employees',
+            'create employees',
+            'edit employees',
+        ]);
+
+        // Employee receives no general employee-management permissions.
+        // Access to their own record will be handled later by a policy.
+        Role::firstOrCreate([
+            'name' => 'employee',
+            'guard_name' => 'web',
+        ]);
+
+        // Clear the cached permission data after seeding.
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+    }
+}
+
+
+if the spatie calls is not getting detected in the model then composer dump-autoload does not modify your User model or seeder code. It regenerates Composer's class-loading metadata. It can fix an autoloading problem.
+
+
+assign roles to the users
+server@PARASIGHT-SERVER:~/Desktop/mini-employee-auth$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+> $admin = \App\Models\User::find(1);
+
+= App\Models\User {#8149
+    id: 1,
+    name: "Admin",
+    email: "testuser001@gmail.com",
+    email_verified_at: null,
+    #password: "\$2y\$12\$OGtMMIDjJ1VMDXMDYY4pkeVbFNs0/0ik2DMKan3A5qdeOat7JfxyO",
+    #remember_token: null,
+    created_at: "2026-10-16 06:23:58",
+    updated_at: "2026-10-16 06:23:58",
+  }
+
+> $admin->assignRole('admin');
+
+= App\Models\User {#8149
+    id: 1,
+    name: "Admin",
+    email: "testuser001@gmail.com",
+    email_verified_at: null,
+    #password: "\$2y\$12\$OGtMMIDjJ1VMDXMDYY4pkeVbFNs0/0ik2DMKan3A5qdeOat7JfxyO",
+    #remember_token: null,
+    created_at: "2026-10-16 06:23:58",
+    updated_at: "2026-10-16 06:23:58",
+  }
+
+> $hr = \App\Models\User::find(3);
+
+= App\Models\User {#7425
+    id: 3,
+    name: "HR",
+    email: "hruser@gmail.com",
+    email_verified_at: null,
+    #password: "\$2y\$12\$XZfjcotJ0rGIe75NOSd3TOoAqh1AYu7C1VIRids41k1Mx8RWCVIWm",
+    #remember_token: null,
+    created_at: "2026-10-16 07:24:34",
+    updated_at: "2026-10-16 07:24:34",
+  }
+
+> $hr->assignRole('hr');
+
+= App\Models\User {#7425
+    id: 3,
+    name: "HR",
+    email: "hruser@gmail.com",
+    email_verified_at: null,
+    #password: "\$2y\$12\$XZfjcotJ0rGIe75NOSd3TOoAqh1AYu7C1VIRids41k1Mx8RWCVIWm",
+    #remember_token: null,
+    created_at: "2026-10-16 07:24:34",
+    updated_at: "2026-10-16 07:24:34",
+  }
+
+> $employee = \App\Models\User::find(4);
+
+= App\Models\User {#7428
+    id: 4,
+    name: "Employee",
+    email: "employee@gmail.com",
+    email_verified_at: null,
+    #password: "\$2y\$12\$nFwOAhhQoIitmhHvf4p/Dur0jl/Yf2HFHHFgRffIWAF1YjO6Zw4Zm",
+    #remember_token: null,
+    created_at: "2026-10-16 07:25:01",
+    updated_at: "2026-10-16 07:25:01",
+  }
+
+> $employee->assignRole('employee');
+
+= App\Models\User {#7428
+    id: 4,
+    name: "Employee",
+    email: "employee@gmail.com",
+    email_verified_at: null,
+    #password: "\$2y\$12\$nFwOAhhQoIitmhHvf4p/Dur0jl/Yf2HFHHFgRffIWAF1YjO6Zw4Zm",
+    #remember_token: null,
+    created_at: "2026-10-16 07:25:01",
+    updated_at: "2026-10-16 07:25:01",
+  }
+
+>
+
+
+Creating a POLICY

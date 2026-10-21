@@ -15,6 +15,8 @@ use App\Models\EmployeeDocument;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
+use App\Mail\WelcomeEmployeeMail;
+use Illuminate\Support\Facades\Mail;
 
 class EmployeeController extends Controller
 {
@@ -61,7 +63,7 @@ class EmployeeController extends Controller
             $query->where('user_id', $request->user()->id);
         }
 
-        $employees = $query->paginate(10)->withQueryString(); // withQueryString() appends the current query string parameters to the pagination links, ensuring that the search filters remain applied when navigating through paginated results.
+        $employees = $query->orderBy('id', 'desc')->paginate(10)->withQueryString(); // withQueryString() appends the current query string parameters to the pagination links, ensuring that the search filters remain applied when navigating through paginated results.
 
         //dd($employees->getCollection());
 
@@ -203,6 +205,12 @@ class EmployeeController extends Controller
             ) {
                 // Create the employee first so we have their ID.
                 $employee = Employee::create($data);
+                // Send the welcome email to the new employee.
+                // Mail::to($employee->email)
+                //     ->send(new WelcomeEmployeeMail($employee));
+                Mail::to($employee->email)
+                    ->queue(new WelcomeEmployeeMail($employee));
+                //Laravel will put the email job into a queue. A separate background worker will process the job and send the email.
 
                 // Save project assignments.
                 $employee->projects()->sync($syncData);

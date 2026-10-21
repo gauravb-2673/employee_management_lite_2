@@ -1,0 +1,35 @@
+remember the breeze install will clear the routes in web.php
+
+composer require laravel/breeze --dev
+
+
+php artisan breeze:install
+
+Blade
+
+
+Breeze's UI uses frontend assets.
+
+Your Laravel application has:
+
+resources/
+    css/
+    js/
+
+and Vite builds those assets.
+
+npm install installs the required packages.
+
+npm run build creates the production-ready frontend assets.
+
+
+php artisan migrate
+
+
+implementing spatie - 
+
+composer require spatie/laravel-permission
+
+php artisan vendor:publish --provider="Spatie\Permission\PermissionServiceProvider"
+
+php artisan migrate

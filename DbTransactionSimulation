@@ -1,0 +1,312 @@
+server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ php artisan tinker
+Psy Shell v0.12.24 (PHP 8.2.30 — cli) by Justin Hileman
+New PHP manual is available (latest: 3.1.0). Update with `doc --update-manual`
+> $employee = App\Models\Employee::with('projects')->firstOrFail();
+
+= App\Models\Employee {#7906
+    id: 1,
+    department_id: 1,
+    name: "MiSs ElIsE ScHaEfEr",
+    email: "marisol.langosh@example.org",
+    salary: "38357.71",
+    joining_date: "2026-10-14",
+    is_active: 1,
+    deleted_at: null,
+    created_at: "2026-10-09 11:53:58",
+    updated_at: "2026-10-15 07:58:14",
+    user_id: 1,
+    projects: Illuminate\Database\Eloquent\Collection {#7984
+      all: [
+        App\Models\Project {#7955
+          id: 1,
+          project_name: "Quidem velit fugiat et.",
+          created_at: "2026-10-09 11:53:57",
+          updated_at: "2026-10-09 11:53:57",
+          pivot: App\Models\EmployeeProject {#7964
+            employee_id: 1,
+            project_id: 1,
+            role: 1,
+            created_at: "2026-10-09 11:54:06",
+            updated_at: "2026-10-09 11:54:06",
+          },
+        },
+        App\Models\Project {#7960
+          id: 2,
+          project_name: "Sit rerum qui atque.",
+          created_at: "2026-10-09 11:53:57",
+          updated_at: "2026-10-09 11:53:57",
+          pivot: App\Models\EmployeeProject {#7990
+            employee_id: 1,
+            project_id: 2,
+            role: 1,
+            created_at: "2026-10-12 11:07:46",
+            updated_at: "2026-10-12 12:37:25",
+          },
+        },
+        App\Models\Project {#7956
+          id: 4,
+          project_name: "Vel sint id sint dolores id.",
+          created_at: "2026-10-09 11:53:58",
+          updated_at: "2026-10-09 11:53:58",
+          pivot: App\Models\EmployeeProject {#7986
+            employee_id: 1,
+            project_id: 4,
+            role: 1,
+            created_at: "2026-10-12 11:43:12",
+            updated_at: "2026-10-15 07:58:14",
+          },
+        },
+        App\Models\Project {#7502
+          id: 4,
+          project_name: "Vel sint id sint dolores id.",
+          created_at: "2026-10-09 11:53:58",
+          updated_at: "2026-10-09 11:53:58",
+          pivot: App\Models\EmployeeProject {#7989
+            employee_id: 1,
+            project_id: 4,
+            role: 1,
+            created_at: "2026-10-12 11:43:21",
+            updated_at: "2026-10-15 07:58:14",
+          },
+        },
+        App\Models\Project {#7499
+          id: 4,
+          project_name: "Vel sint id sint dolores id.",
+          created_at: "2026-10-09 11:53:58",
+          updated_at: "2026-10-09 11:53:58",
+          pivot: App\Models\EmployeeProject {#7987
+            employee_id: 1,
+            project_id: 4,
+            role: 1,
+            created_at: "2026-10-12 11:43:30",
+            updated_at: "2026-10-15 07:58:14",
+          },
+        },
+        App\Models\Project {#7501
+          id: 3,
+          project_name: "Assumenda ut dolores optio.",
+          created_at: "2026-10-09 11:53:58",
+          updated_at: "2026-10-09 11:53:58",
+          pivot: App\Models\EmployeeProject {#7988
+            employee_id: 1,
+            project_id: 3,
+            role: 1,
+            created_at: "2026-10-12 11:43:36",
+            updated_at: "2026-10-12 11:43:36",
+          },
+        },
+      ],
+    },
+  }
+
+> $employee->only(['id', 'name', 'email', 'salary']);
+
+= [
+    "id" => 1,
+    "name" => "Miss Elise Schaefer",
+    "email" => "marisol.langosh@example.org",
+    "salary" => "38357.71",
+  ]
+
+> $employeeId = $employee->id;
+
+= 1
+
+> $employeeBefore = DB::table('employees')->where('id', $employeeId)->first();
+
+= {#7472
+    +"id": 1,
+    +"department_id": 1,
+    +"name": "MiSs ElIsE ScHaEfEr",
+    +"email": "marisol.langosh@example.org",
+    +"salary": "38357.71",
+    +"joining_date": "2026-10-14",
+    +"is_active": 1,
+    +"deleted_at": null,
+    +"created_at": "2026-10-09 11:53:58",
+    +"updated_at": "2026-10-15 07:58:14",
+    +"user_id": 1,
+  }
+
+> $pivotBefore = DB::table('employee_project')->where('employee_id', $employeeId)->orderBy('project_id')->get(['project_id', 'role', 'created_at','updated_at'])->toArray();
+
+= [
+    {#7628
+      +"project_id": 1,
+      +"role": 1,
+      +"created_at": "2026-10-09 11:54:06",
+      +"updated_at": "2026-10-09 11:54:06",
+    },
+    {#7454
+      +"project_id": 2,
+      +"role": 1,
+      +"created_at": "2026-10-12 11:07:46",
+      +"updated_at": "2026-10-12 12:37:25",
+    },
+    {#7453
+      +"project_id": 3,
+      +"role": 1,
+      +"created_at": "2026-10-12 11:43:36",
+      +"updated_at": "2026-10-12 11:43:36",
+    },
+    {#7455
+      +"project_id": 4,
+      +"role": 1,
+      +"created_at": "2026-10-12 11:43:12",
+      +"updated_at": "2026-10-15 07:58:14",
+    },
+    {#7457
+      +"project_id": 4,
+      +"role": 1,
+      +"created_at": "2026-10-12 11:43:21",
+      +"updated_at": "2026-10-15 07:58:14",
+    },
+    {#7458
+      +"project_id": 4,
+      +"role": 1,
+      +"created_at": "2026-10-12 11:43:30",
+      +"updated_at": "2026-10-15 07:58:14",
+    },
+  ]
+
+> $projectId = App\Models\Project::query()->value('id');
+
+= 1
+
+> $roleId = App\Models\RoleMaster::query()->value('id');
+
+= 5
+
+> $projectId;
+
+= 1
+
+> $roleId;
+
+= 5
+
+> $syncData = [
+.     $projectId => ['role' => $roleId],
+.     999999999 => ['role' => $roleId],
+. ];
+
+= [
+    1 => [
+      "role" => 5,
+    ],
+    999999999 => [
+      "role" => 5,
+    ],
+  ]
+
+> $failureMessage = null;
+
+= null
+
+> try {DB::transaction(function () use ($employeeId, $syncData) {$employee = App\Models\Employee::findOrFail($employeeId);$employee->update(['salary' => ((float) $employee->salary) + 1,]);$employee->projects()->sync($syncData);});} catch (\Throwable $e) {$failureMessage = get_class($e) . ': ' . $e->getMessage();}
+
+> $failureMessage;
+
+= "Illuminate\\Database\\QueryException: SQLSTATE[23000]: Integrity constraint violation: 1452 Cannot add or update a child row: a foreign key constraint fails (`emp_man_lite_2`.`employee_project`, CONSTRAINT `employee_project_project_id_foreign` FOREIGN KEY (`project_id`) REFERENCES `projects` (`id`)) (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: emp_man_lite_2, SQL: insert into `employee_project` (`project_id`, `employee_id`, `created_at`, `updated_at`, `role`) values (999999999, 1, 2026-10-17 06:55:45, 2026-10-17 06:55:45, 5))"
+
+> $employeeAfter = DB::table('employees')->where('id', $employeeId)->first();
+
+= {#8072
+    +"id": 1,
+    +"department_id": 1,
+    +"name": "MiSs ElIsE ScHaEfEr",
+    +"email": "marisol.langosh@example.org",
+    +"salary": "38357.71",
+    +"joining_date": "2026-10-14",
+    +"is_active": 1,
+    +"deleted_at": null,
+    +"created_at": "2026-10-09 11:53:58",
+    +"updated_at": "2026-10-15 07:58:14",
+    +"user_id": 1,
+  }
+
+> json_encode($employeeBefore) === json_encode($employeeAfter);
+
+= true
+
+> $pivotAfter = DB::table('employee_project')->where('employee_id', $employeeId)->orderBy('project_id')->get(['project_id', 'role', 'created_at', 'updated_at'])->toArray();
+
+= [
+    {#7875
+      +"project_id": 1,
+      +"role": 1,
+      +"created_at": "2026-10-09 11:54:06",
+      +"updated_at": "2026-10-09 11:54:06",
+    },
+    {#7647
+      +"project_id": 2,
+      +"role": 1,
+      +"created_at": "2026-10-12 11:07:46",
+      +"updated_at": "2026-10-12 12:37:25",
+    },
+    {#7874
+      +"project_id": 3,
+      +"role": 1,
+      +"created_at": "2026-10-12 11:43:36",
+      +"updated_at": "2026-10-12 11:43:36",
+    },
+    {#8076
+      +"project_id": 4,
+      +"role": 1,
+      +"created_at": "2026-10-12 11:43:12",
+
+> $pivotAfter = DB::table('employee_project')->where('employee_id', $employeeId)->orderBy('project_id')->get(['project_id', 'role', 'created_at', 'updated_at'])->toArray();
+
+= [
+    {#8007
+      +"project_id": 1,
+      +"role": 1,
+      +"created_at": "2026-10-09 11:54:06",
+      +"updated_at": "2026-10-09 11:54:06",
+    },
+    {#8010
+      +"project_id": 2,
+      +"role": 1,
+      +"created_at": "2026-10-12 11:07:46",
+      +"updated_at": "2026-10-12 12:37:25",
+    },
+    {#8009
+      +"project_id": 3,
+      +"role": 1,
+      +"created_at": "2026-10-12 11:43:36",
+      +"updated_at": "2026-10-12 11:43:36",
+    },
+    {#8011
+      +"project_id": 4,
+      +"role": 1,
+      +"created_at": "2026-10-12 11:43:12",
+      +"updated_at": "2026-10-15 07:58:14",
+    },
+    {#8013
+      +"project_id": 4,
+      +"role": 1,
+      +"created_at": "2026-10-12 11:43:21",
+      +"updated_at": "2026-10-15 07:58:14",
+    },
+    {#8014
+      +"project_id": 4,
+      +"role": 1,
+      +"created_at": "2026-10-12 11:43:30",
+      +"updated_at": "2026-10-15 07:58:14",
+    },
+  ]
+
+> json_encode($pivotBefore) === json_encode($pivotAfter);
+
+= true
+
+> $projectId;
+
+= 1
+
+> $roleId;
+
+= 5
+
+> 
+

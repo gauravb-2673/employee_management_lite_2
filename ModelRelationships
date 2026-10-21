@@ -1,0 +1,3395 @@
+For all my questions, especially Laravel, PHP, programming, and technical learning questions, answer in the following teaching format:
+
+1. Give me a clear introduction explaining what we are going to learn/build.
+2. Explain the concept in simple beginner-friendly language before giving code.
+3. Break the solution into proper numbered steps in the exact order I should follow.
+4. For every step:
+
+   * Explain what the step does.
+   * Tell me exactly where to put the code.
+   * Give the complete code with proper indentation.
+   * Explain important lines of the code.
+   * Show how and when to use it.
+5. Do not give disconnected code snippets. Make the examples follow one continuous practical project so that each step builds on the previous step.
+6. If the current example does not properly explain a particular concept, add a separate example specifically for that concept.
+7. Do not assume that one example explains everything. Add missing topics, edge cases, alternatives, or related methods when they are important for understanding.
+8. Explain WHY something works, not just WHAT code to write.
+9. When Laravel automatically follows a convention, explicitly explain:
+
+   * What Laravel assumes.
+   * Why Laravel knows what to use.
+   * What happens if I don't follow the convention.
+   * How to specify things manually when the convention is not followed.
+10. For database-related topics, show:
+
+    * Table structure.
+    * Relationships.
+    * Foreign keys.
+    * How tables connect.
+    * Example rows/data.
+    * How Laravel models map to the tables.
+11. For Eloquent relationships, always explain the relationship in both directions when applicable.
+12. For pivot tables, clearly explain:
+
+    * Why the pivot table exists.
+    * What data belongs in the main tables.
+    * What data belongs in the pivot table.
+    * How Laravel finds the pivot table.
+    * How to access pivot data.
+    * How to create, update, remove, and query pivot relationships.
+13. When explaining multiple similar methods such as with(), load(), attach(), detach(), sync(), etc., explain the difference clearly and show separate practical examples.
+14. Include common mistakes and explain how to avoid them.
+15. Include a final complete version of the important code so I can compare everything together.
+16. Include a final quick-reference section for the important commands, methods, and syntax.
+17. Use proper indentation, formatting, headings, code blocks, tables, and diagrams where useful.
+18. Keep the explanation beginner-friendly but technically accurate.
+19. Do not skip intermediate steps just because they seem obvious.
+20. If there are multiple ways to accomplish something, explain the normal/recommended approach first, then explain the alternative and when it is useful.
+
+IMPORTANT OUTPUT FORMAT:
+
+When I ask for a "copy paste", "complete notes", "full document", "complete setup", or similar request, put the ENTIRE answer into ONE single writing/document block.
+
+Do not split the complete solution into multiple writing blocks.
+
+The document should be organized like:
+
+# Topic
+
+## 1. What We Are Building
+
+## 2. Concept Explanation
+
+## 3. Database/Table Structure
+
+## 4. Step 1
+
+### Explanation
+
+### Code
+
+### How It Works
+
+## 5. Step 2
+
+### Explanation
+
+### Code
+
+### How It Works
+
+Continue in the correct sequence.
+
+Then include:
+
+## Common Mistakes
+
+## Complete Final Code
+
+## Quick Reference
+
+## Final Mental Model
+
+For normal questions that do not require a complete reusable document, still explain the concept in the same beginner-friendly, structured style, but do not unnecessarily create a long document.
+
+Most importantly: teach me as if I am learning the topic from scratch. Do not just give me the final code. Help me understand why every important part exists and how all the parts connect.
+
+
+
+
+# Laravel Eloquent Relationships & Pivot Tables
+
+## Complete Step-by-Step Practical Guide
+
+This guide builds the following Laravel structure from scratch:
+
+```text
+Department
+    │
+    │ hasMany
+    ▼
+Employee
+    │
+    │ belongsToMany
+    ▼
+employee_project
+    │
+    │ belongsToMany
+    ▼
+Project
+```
+
+We will learn:
+
+* One-to-many relationships
+* Many-to-many relationships
+* Pivot tables
+* `belongsToMany()`
+* `withPivot()`
+* `withTimestamps()`
+* `attach()`
+* `detach()`
+* `updateExistingPivot()`
+* `sync()`
+* `syncWithoutDetaching()`
+* `wherePivot()`
+* `wherePivotIn()`
+* `wherePivotNull()`
+* `wherePivotNotNull()`
+* `orderByPivot()`
+* `with()`
+* `load()`
+* Local scopes
+* Laravel naming conventions
+* Custom pivot table names
+* Custom foreign keys
+* How all the tables and models connect together
+
+---
+
+# 1. What We Are Building
+
+We will create four database tables:
+
+```text
+departments
+employees
+projects
+employee_project
+```
+
+The important point is:
+
+```text
+departments
+    ↓
+employees
+```
+
+is a **one-to-many** relationship.
+
+One department can have many employees.
+
+Then:
+
+```text
+employees
+    ↓
+employee_project
+    ↓
+projects
+```
+
+is a **many-to-many** relationship.
+
+One employee can work on many projects.
+
+One project can have many employees.
+
+The `employee_project` table is called a **pivot table**.
+
+---
+
+# 2. Database Structure
+
+## departments
+
+```text
+id
+name
+description
+created_at
+updated_at
+```
+
+Example:
+
+```text
+id | name       | description
+---|------------|----------------------
+1  | IT         | IT Department
+2  | HR         | Human Resources
+```
+
+---
+
+## employees
+
+```text
+id
+department_id
+name
+email
+joining_date
+is_active
+salary
+created_at
+updated_at
+```
+
+Example:
+
+```text
+id | department_id | name
+---|---------------|----------------
+1  | 1             | John
+2  | 1             | Sarah
+3  | 2             | David
+```
+
+Here:
+
+```text
+employees.department_id
+```
+
+points to:
+
+```text
+departments.id
+```
+
+So:
+
+```text
+Employee John
+    ↓
+department_id = 1
+    ↓
+Department IT
+```
+
+---
+
+## projects
+
+```text
+id
+name
+description
+created_at
+updated_at
+```
+
+Example:
+
+```text
+id | name
+---|----------------------
+1  | E-commerce Website
+2  | Banking Application
+3  | Mobile Application
+```
+
+---
+
+# 3. Why Do We Need employee_project?
+
+Suppose John works on two projects:
+
+```text
+John → E-commerce Website
+John → Banking Application
+```
+
+And Sarah also works on E-commerce:
+
+```text
+Sarah → E-commerce Website
+```
+
+We cannot simply put `project_id` inside `employees`, because one employee can have multiple projects.
+
+We also cannot put `employee_id` inside `projects`, because one project can have multiple employees.
+
+So we create a separate table:
+
+```text
+employee_project
+```
+
+Example:
+
+```text
+employee_id | project_id
+------------|-----------
+1           | 1
+1           | 2
+2           | 1
+```
+
+This means:
+
+```text
+Employee 1 → Project 1
+Employee 1 → Project 2
+Employee 2 → Project 1
+```
+
+---
+
+# 4. Adding Extra Information to the Pivot Table
+
+Suppose John is a developer on Project 1.
+
+Sarah is a tester on Project 1.
+
+Then the relationship itself has extra information:
+
+```text
+employee_id | project_id | role
+------------|------------|----------
+1           | 1          | developer
+2           | 1          | tester
+```
+
+The `role` belongs to the relationship between the employee and project.
+
+Therefore, `role` goes into the pivot table:
+
+```text
+employee_project
+```
+
+It does NOT need a separate `roles` table for this assignment.
+
+---
+
+# 5. Create the Models and Migrations
+
+Run these commands:
+
+```bash
+php artisan make:model Department -m
+php artisan make:model Employee -m
+php artisan make:model Project -m
+php artisan make:migration create_employee_project_table
+```
+
+This creates:
+
+```text
+app/Models/Department.php
+app/Models/Employee.php
+app/Models/Project.php
+```
+
+And migrations inside:
+
+```text
+database/migrations/
+```
+
+---
+
+# 6. Department Migration
+
+Open the department migration.
+
+File:
+
+```text
+database/migrations/xxxx_xx_xx_xxxxxx_create_departments_table.php
+```
+
+Put:
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('departments', function (Blueprint $table) {
+            $table->id();
+
+            $table->string('name');
+
+            $table->text('description')->nullable();
+
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('departments');
+    }
+};
+```
+
+---
+
+# 7. Employee Migration
+
+Open:
+
+```text
+database/migrations/xxxx_xx_xx_xxxxxx_create_employees_table.php
+```
+
+Put:
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('employees', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('department_id')
+                  ->constrained('departments')
+                  ->cascadeOnDelete();
+
+            $table->string('name');
+
+            $table->string('email')->unique();
+
+            $table->date('joining_date');
+
+            $table->boolean('is_active')->default(true);
+
+            $table->decimal('salary', 10, 2);
+
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('employees');
+    }
+};
+```
+
+---
+
+# 8. Understanding department_id
+
+This part:
+
+```php
+$table->foreignId('department_id')
+      ->constrained('departments')
+      ->cascadeOnDelete();
+```
+
+creates:
+
+```text
+employees.department_id
+```
+
+and connects it to:
+
+```text
+departments.id
+```
+
+So:
+
+```text
+employees.department_id
+        ↓
+departments.id
+```
+
+For example:
+
+```text
+departments
+
+id | name
+---|------
+1  | IT
+2  | HR
+```
+
+Then:
+
+```text
+employees
+
+id | department_id | name
+---|---------------|------
+1  | 1             | John
+2  | 1             | Sarah
+3  | 2             | David
+```
+
+John and Sarah belong to IT.
+
+David belongs to HR.
+
+---
+
+# 9. Understanding cascadeOnDelete()
+
+This:
+
+```php
+->cascadeOnDelete();
+```
+
+means:
+
+If a department is deleted, its employees will also be deleted.
+
+Example:
+
+```text
+Department IT
+    ↓
+John
+Sarah
+```
+
+If IT is deleted:
+
+```text
+IT
+John
+Sarah
+```
+
+will be deleted.
+
+Use this carefully because deleting a parent can delete related records.
+
+---
+
+# 10. Project Migration
+
+Open:
+
+```text
+database/migrations/xxxx_xx_xx_xxxxxx_create_projects_table.php
+```
+
+Put:
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('projects', function (Blueprint $table) {
+            $table->id();
+
+            $table->string('name');
+
+            $table->text('description')->nullable();
+
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('projects');
+    }
+};
+```
+
+---
+
+# 11. Pivot Table Migration
+
+Now create the pivot table.
+
+File:
+
+```text
+database/migrations/xxxx_xx_xx_xxxxxx_create_employee_project_table.php
+```
+
+Put:
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('employee_project', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('employee_id')
+                  ->constrained('employees')
+                  ->cascadeOnDelete();
+
+            $table->foreignId('project_id')
+                  ->constrained('projects')
+                  ->cascadeOnDelete();
+
+            $table->string('role');
+
+            $table->timestamps();
+
+            $table->unique(['employee_id', 'project_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('employee_project');
+    }
+};
+```
+
+---
+
+# 12. Why Is the Pivot Table Called employee_project?
+
+Laravel follows naming conventions.
+
+For:
+
+```php
+Employee
+```
+
+and:
+
+```php
+Project
+```
+
+Laravel expects:
+
+```text
+employee_project
+```
+
+The names are generally:
+
+```text
+employee + project
+```
+
+in alphabetical order.
+
+You don't normally need to tell Laravel the pivot table name when using the conventional name.
+
+---
+
+# 13. Why Do We Have Both projects and employee_project?
+
+They are completely different tables.
+
+## projects
+
+Contains actual projects:
+
+```text
+id | name
+---|----------------------
+1  | E-commerce
+2  | Banking App
+3  | Mobile App
+```
+
+## employee_project
+
+Connects employees to projects:
+
+```text
+employee_id | project_id | role
+------------|------------|----------
+1           | 1          | developer
+1           | 2          | tester
+2           | 1          | tester
+```
+
+Think about it like this:
+
+```text
+employees
+    |
+    |
+    ↓
+employee_project
+    |
+    |
+    ↓
+projects
+```
+
+The pivot table is the bridge.
+
+---
+
+# 14. Run the Migrations
+
+After writing all migrations:
+
+```bash
+php artisan migrate
+```
+
+Laravel will create:
+
+```text
+departments
+employees
+projects
+employee_project
+```
+
+---
+
+# 15. Department Model
+
+Open:
+
+```text
+app/Models/Department.php
+```
+
+Put:
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Department extends Model
+{
+    protected $fillable = [
+        'name',
+        'description',
+    ];
+
+    public function employees(): HasMany
+    {
+        return $this->hasMany(Employee::class);
+    }
+}
+```
+
+---
+
+# 16. Understanding hasMany()
+
+This:
+
+```php
+public function employees(): HasMany
+{
+    return $this->hasMany(Employee::class);
+}
+```
+
+means:
+
+```text
+One Department
+        ↓
+Many Employees
+```
+
+Example:
+
+```text
+IT Department
+    ↓
+    ├── John
+    ├── Sarah
+    └── Mike
+```
+
+So we can do:
+
+```php
+$department->employees;
+```
+
+and get all employees belonging to that department.
+
+---
+
+# 17. Employee Model
+
+Open:
+
+```text
+app/Models/Employee.php
+```
+
+Put:
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+class Employee extends Model
+{
+    protected $fillable = [
+        'department_id',
+        'name',
+        'email',
+        'joining_date',
+        'is_active',
+        'salary',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'joining_date' => 'date',
+            'is_active' => 'boolean',
+            'salary' => 'decimal:2',
+        ];
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function projects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class)
+                    ->withPivot('role')
+                    ->withTimestamps();
+    }
+
+    public function scopeActive(Builder $query): void
+    {
+        $query->where('is_active', true);
+    }
+}
+```
+
+---
+
+# 18. Understanding belongsTo()
+
+This:
+
+```php
+public function department(): BelongsTo
+{
+    return $this->belongsTo(Department::class);
+}
+```
+
+means:
+
+```text
+Employee
+   ↓
+belongs to
+   ↓
+Department
+```
+
+The employee has:
+
+```text
+department_id
+```
+
+Laravel uses that foreign key to find the department.
+
+For example:
+
+```text
+employees
+
+id | department_id | name
+---|---------------|------
+1  | 2             | John
+```
+
+Laravel looks at:
+
+```text
+department_id = 2
+```
+
+and finds:
+
+```text
+departments
+
+id | name
+---|------
+2  | IT
+```
+
+So:
+
+```php
+$employee->department;
+```
+
+returns:
+
+```text
+IT
+```
+
+---
+
+# 19. Project Model
+
+Open:
+
+```text
+app/Models/Project.php
+```
+
+Put:
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+class Project extends Model
+{
+    protected $fillable = [
+        'name',
+        'description',
+    ];
+
+    public function employees(): BelongsToMany
+    {
+        return $this->belongsToMany(Employee::class)
+                    ->withPivot('role')
+                    ->withTimestamps();
+    }
+}
+```
+
+---
+
+# 20. Understanding belongsToMany()
+
+This is the important relationship:
+
+```php
+public function projects(): BelongsToMany
+{
+    return $this->belongsToMany(Project::class)
+                ->withPivot('role')
+                ->withTimestamps();
+}
+```
+
+It means:
+
+```text
+Employee
+    ↓
+employee_project
+    ↓
+Project
+```
+
+One employee can have many projects.
+
+One project can have many employees.
+
+Therefore:
+
+```text
+Many-to-Many
+```
+
+---
+
+# 21. How Does Laravel Know About employee_project?
+
+You may wonder:
+
+"We never wrote:
+
+```php
+employee_project
+```
+
+inside `belongsToMany()`.
+
+So how does Laravel know?"
+
+Because Laravel follows conventions.
+
+When you write:
+
+```php
+return $this->belongsToMany(Project::class);
+```
+
+Laravel understands:
+
+```text
+Current model = Employee
+Related model = Project
+```
+
+Therefore Laravel expects:
+
+```text
+employee_project
+```
+
+as the pivot table.
+
+It also expects:
+
+```text
+employee_id
+project_id
+```
+
+as the pivot foreign keys.
+
+So:
+
+```php
+$this->belongsToMany(Project::class);
+```
+
+is enough when you follow Laravel's naming conventions.
+
+---
+
+# 22. What Does withPivot('role') Do?
+
+Our pivot table contains:
+
+```text
+employee_id
+project_id
+role
+created_at
+updated_at
+```
+
+By default, Eloquent knows about the relationship IDs.
+
+But we also want to access:
+
+```text
+role
+```
+
+So we write:
+
+```php
+->withPivot('role')
+```
+
+Complete:
+
+```php
+public function projects(): BelongsToMany
+{
+    return $this->belongsToMany(Project::class)
+                ->withPivot('role')
+                ->withTimestamps();
+}
+```
+
+Now we can do:
+
+```php
+$project->pivot->role;
+```
+
+---
+
+# 23. What Does withTimestamps() Do?
+
+Our pivot table has:
+
+```text
+created_at
+updated_at
+```
+
+because we wrote:
+
+```php
+$table->timestamps();
+```
+
+To tell Laravel to maintain those pivot timestamps, we use:
+
+```php
+->withTimestamps();
+```
+
+Example:
+
+```php
+public function projects(): BelongsToMany
+{
+    return $this->belongsToMany(Project::class)
+                ->withPivot('role')
+                ->withTimestamps();
+}
+```
+
+---
+
+# 24. Create Test Data Using Tinker
+
+Run:
+
+```bash
+php artisan tinker
+```
+
+Create departments:
+
+```php
+$it = Department::create([
+    'name' => 'IT',
+    'description' => 'Information Technology Department',
+]);
+
+$hr = Department::create([
+    'name' => 'HR',
+    'description' => 'Human Resources Department',
+]);
+```
+
+Create employees:
+
+```php
+$john = Employee::create([
+    'department_id' => $it->id,
+    'name' => 'John',
+    'email' => 'john@example.com',
+    'joining_date' => '2025-01-10',
+    'is_active' => true,
+    'salary' => 50000,
+]);
+
+$sarah = Employee::create([
+    'department_id' => $it->id,
+    'name' => 'Sarah',
+    'email' => 'sarah@example.com',
+    'joining_date' => '2025-02-15',
+    'is_active' => true,
+    'salary' => 60000,
+]);
+
+$david = Employee::create([
+    'department_id' => $hr->id,
+    'name' => 'David',
+    'email' => 'david@example.com',
+    'joining_date' => '2025-03-20',
+    'is_active' => false,
+    'salary' => 45000,
+]);
+```
+
+Create projects:
+
+```php
+$project1 = Project::create([
+    'name' => 'E-commerce Website',
+    'description' => 'Online shopping platform',
+]);
+
+$project2 = Project::create([
+    'name' => 'Banking Application',
+    'description' => 'Banking management system',
+]);
+
+$project3 = Project::create([
+    'name' => 'Mobile Application',
+    'description' => 'Mobile application project',
+]);
+```
+
+---
+
+# 25. attach()
+
+`attach()` creates a relationship in the pivot table.
+
+For example:
+
+```php
+$john->projects()->attach($project1->id, [
+    'role' => 'developer',
+]);
+```
+
+This creates approximately:
+
+```text
+employee_project
+
+employee_id | project_id | role
+------------|------------|----------
+1           | 1          | developer
+```
+
+You can attach another project:
+
+```php
+$john->projects()->attach($project2->id, [
+    'role' => 'tester',
+]);
+```
+
+Now:
+
+```text
+employee_id | project_id | role
+------------|------------|----------
+1           | 1          | developer
+1           | 2          | tester
+```
+
+---
+
+# 26. attach() With Multiple Projects
+
+You can attach multiple projects:
+
+```php
+$john->projects()->attach([
+    $project1->id => [
+        'role' => 'developer',
+    ],
+
+    $project2->id => [
+        'role' => 'tester',
+    ],
+]);
+```
+
+Result:
+
+```text
+employee_id | project_id | role
+------------|------------|----------
+1           | 1          | developer
+1           | 2          | tester
+```
+
+---
+
+# 27. Attach Projects to Sarah
+
+```php
+$sarah->projects()->attach($project1->id, [
+    'role' => 'tester',
+]);
+```
+
+Now:
+
+```text
+employee_project
+
+employee_id | project_id | role
+------------|------------|----------
+1           | 1          | developer
+1           | 2          | tester
+2           | 1          | tester
+```
+
+---
+
+# 28. detach()
+
+`detach()` removes a relationship from the pivot table.
+
+Example:
+
+```php
+$john->projects()->detach($project2->id);
+```
+
+Before:
+
+```text
+employee_id | project_id | role
+------------|------------|----------
+1           | 1          | developer
+1           | 2          | tester
+```
+
+After:
+
+```text
+employee_id | project_id | role
+------------|------------|----------
+1           | 1          | developer
+```
+
+The project itself is NOT deleted.
+
+Only the relationship is deleted.
+
+This is very important.
+
+```php
+$john->projects()->detach($project2->id);
+```
+
+does NOT delete:
+
+```text
+projects.id = 2
+```
+
+It only removes:
+
+```text
+employee_id = 1
+project_id = 2
+```
+
+from the pivot table.
+
+---
+
+# 29. updateExistingPivot()
+
+Suppose John is currently:
+
+```text
+Project 1 → developer
+```
+
+and we want to change his role to:
+
+```text
+tester
+```
+
+Use:
+
+```php
+$john->projects()->updateExistingPivot(
+    $project1->id,
+    [
+        'role' => 'tester',
+    ]
+);
+```
+
+Before:
+
+```text
+employee_id | project_id | role
+------------|------------|----------
+1           | 1          | developer
+```
+
+After:
+
+```text
+employee_id | project_id | role
+------------|------------|----------
+1           | 1          | tester
+```
+
+---
+
+# 30. sync()
+
+`sync()` is used when you want the pivot relationships to match a specific list.
+
+Example:
+
+```php
+$john->projects()->sync([
+    $project1->id => [
+        'role' => 'developer',
+    ],
+
+    $project2->id => [
+        'role' => 'tester',
+    ],
+]);
+```
+
+This tells Laravel:
+
+"John should have these projects and these pivot values."
+
+Important:
+
+`sync()` can remove relationships that are not included.
+
+Suppose John currently has:
+
+```text
+Project 1
+Project 2
+Project 3
+```
+
+Then:
+
+```php
+$john->projects()->sync([
+    $project1->id => [
+        'role' => 'developer',
+    ],
+]);
+```
+
+After sync, John will have:
+
+```text
+Project 1
+```
+
+Project 2 and Project 3 relationships may be removed from the pivot table.
+
+The actual projects are NOT deleted.
+
+---
+
+# 31. syncWithoutDetaching()
+
+Sometimes you want to add or update relationships without removing existing ones.
+
+Use:
+
+```php
+$john->projects()->syncWithoutDetaching([
+    $project3->id => [
+        'role' => 'developer',
+    ],
+]);
+```
+
+If John already has:
+
+```text
+Project 1
+Project 2
+```
+
+then after this:
+
+```text
+Project 1
+Project 2
+Project 3
+```
+
+The existing relationships remain.
+
+---
+
+# 32. Reading an Employee's Projects
+
+Use:
+
+```php
+$john->projects;
+```
+
+Example:
+
+```php
+$projects = $john->projects;
+
+foreach ($projects as $project) {
+    echo $project->name;
+}
+```
+
+---
+
+# 33. Reading Pivot Data
+
+Because we used:
+
+```php
+->withPivot('role')
+```
+
+we can access:
+
+```php
+$project->pivot->role;
+```
+
+Example:
+
+```php
+foreach ($john->projects as $project) {
+    echo $project->name;
+    echo $project->pivot->role;
+}
+```
+
+Output could be:
+
+```text
+E-commerce Website
+developer
+
+Banking Application
+tester
+```
+
+The `pivot` property represents the intermediate `employee_project` record.
+
+---
+
+# 34. Understanding the pivot Property
+
+Suppose:
+
+```text
+employee_project
+
+employee_id | project_id | role
+------------|------------|----------
+1           | 1          | developer
+```
+
+When you do:
+
+```php
+$john->projects
+```
+
+Laravel gives you Project models.
+
+For example:
+
+```text
+Project
+id = 1
+name = E-commerce Website
+```
+
+But Laravel also attaches the intermediate pivot information:
+
+```php
+$project->pivot
+```
+
+So:
+
+```php
+$project->pivot->role
+```
+
+returns:
+
+```text
+developer
+```
+
+---
+
+# 35. Getting Employees of a Project
+
+Because Project has:
+
+```php
+public function employees(): BelongsToMany
+{
+    return $this->belongsToMany(Employee::class)
+                ->withPivot('role')
+                ->withTimestamps();
+}
+```
+
+we can do:
+
+```php
+$project1->employees;
+```
+
+Example:
+
+```php
+foreach ($project1->employees as $employee) {
+    echo $employee->name;
+    echo $employee->pivot->role;
+}
+```
+
+Output:
+
+```text
+John
+developer
+
+Sarah
+tester
+```
+
+---
+
+# 36. wherePivot()
+
+`wherePivot()` filters records based on a pivot column.
+
+Suppose we want employees who are developers on a project.
+
+From the Project model:
+
+```php
+$developers = $project1->employees()
+    ->wherePivot('role', 'developer')
+    ->get();
+```
+
+This means:
+
+```text
+Get employees
+WHERE employee_project.role = 'developer'
+```
+
+---
+
+# 37. wherePivotIn()
+
+Suppose we want employees whose role is either:
+
+```text
+developer
+tester
+```
+
+Use:
+
+```php
+$employees = $project1->employees()
+    ->wherePivotIn('role', ['developer', 'tester'])
+    ->get();
+```
+
+This is similar to:
+
+```sql
+WHERE role IN ('developer', 'tester')
+```
+
+---
+
+# 38. wherePivotNull()
+
+Suppose your pivot table has:
+
+```text
+completed_at
+```
+
+and some relationships do not have a completion date.
+
+You could use:
+
+```php
+$employees = $project1->employees()
+    ->wherePivotNull('completed_at')
+    ->get();
+```
+
+This means:
+
+```text
+completed_at IS NULL
+```
+
+Our current pivot table does not contain `completed_at`.
+
+If you want to use this example in your actual project, you must first add that column.
+
+For example:
+
+```php
+$table->timestamp('completed_at')->nullable();
+```
+
+---
+
+# 39. wherePivotNotNull()
+
+The opposite is:
+
+```php
+$employees = $project1->employees()
+    ->wherePivotNotNull('completed_at')
+    ->get();
+```
+
+This means:
+
+```text
+completed_at IS NOT NULL
+```
+
+Again, the column must exist in the pivot table.
+
+---
+
+# 40. orderByPivot()
+
+You can sort relationships using a pivot column.
+
+For example:
+
+```php
+$employees = $project1->employees()
+    ->orderByPivot('created_at', 'desc')
+    ->get();
+```
+
+This sorts employees based on when their employee-project relationship was created.
+
+---
+
+# 41. Adding More Pivot Columns
+
+Currently we have:
+
+```text
+employee_project
+
+employee_id
+project_id
+role
+created_at
+updated_at
+```
+
+Suppose we want:
+
+```text
+assigned_at
+completed_at
+hours_per_week
+```
+
+Then migration could contain:
+
+```php
+Schema::create('employee_project', function (Blueprint $table) {
+    $table->id();
+
+    $table->foreignId('employee_id')
+          ->constrained('employees')
+          ->cascadeOnDelete();
+
+    $table->foreignId('project_id')
+          ->constrained('projects')
+          ->cascadeOnDelete();
+
+    $table->string('role');
+
+    $table->date('assigned_at')->nullable();
+
+    $table->timestamp('completed_at')->nullable();
+
+    $table->integer('hours_per_week')->nullable();
+
+    $table->timestamps();
+});
+```
+
+Then expose them:
+
+```php
+public function projects(): BelongsToMany
+{
+    return $this->belongsToMany(Project::class)
+                ->withPivot([
+                    'role',
+                    'assigned_at',
+                    'completed_at',
+                    'hours_per_week',
+                ])
+                ->withTimestamps();
+}
+```
+
+Then:
+
+```php
+$project->pivot->role;
+
+$project->pivot->assigned_at;
+
+$project->pivot->completed_at;
+
+$project->pivot->hours_per_week;
+```
+
+---
+
+# 42. with() — Eager Loading
+
+Suppose we want all employees and their departments.
+
+Without eager loading:
+
+```php
+$employees = Employee::all();
+
+foreach ($employees as $employee) {
+    echo $employee->department->name;
+}
+```
+
+This can cause many database queries.
+
+Instead:
+
+```php
+$employees = Employee::with('department')->get();
+```
+
+Now Laravel loads the employees and their departments efficiently.
+
+---
+
+# 43. with() Uses Model Relationships
+
+When we write:
+
+```php
+Employee::with('department')->get();
+```
+
+Laravel looks at this method:
+
+```php
+public function department(): BelongsTo
+{
+    return $this->belongsTo(Department::class);
+}
+```
+
+The string:
+
+```text
+department
+```
+
+refers to the relationship method:
+
+```php
+department()
+```
+
+Similarly:
+
+```php
+Employee::with('projects')->get();
+```
+
+uses:
+
+```php
+public function projects(): BelongsToMany
+```
+
+---
+
+# 44. Eager Loading Projects
+
+Use:
+
+```php
+$employees = Employee::with('projects')->get();
+```
+
+Then:
+
+```php
+foreach ($employees as $employee) {
+    echo $employee->name;
+
+    foreach ($employee->projects as $project) {
+        echo $project->name;
+    }
+}
+```
+
+---
+
+# 45. Eager Loading Multiple Relationships
+
+You can load multiple relationships:
+
+```php
+$employees = Employee::with([
+    'department',
+    'projects',
+])->get();
+```
+
+Now Laravel loads:
+
+```text
+Employee
+ ├── Department
+ └── Projects
+```
+
+---
+
+# 46. Nested Eager Loading
+
+Suppose:
+
+```text
+Department
+    ↓
+Employees
+    ↓
+Projects
+```
+
+You can use:
+
+```php
+$departments = Department::with('employees.projects')->get();
+```
+
+This means:
+
+```text
+Load departments
+    ↓
+load employees
+    ↓
+load each employee's projects
+```
+
+---
+
+# 47. load()
+
+`load()` is different from `with()` mainly in when you call it.
+
+`with()` is used while building the query:
+
+```php
+$employees = Employee::with('projects')->get();
+```
+
+`load()` is used after you already have the model:
+
+```php
+$employee = Employee::find(1);
+
+$employee->load('projects');
+```
+
+---
+
+# 48. with() vs load()
+
+## with()
+
+Use before retrieving the data:
+
+```php
+$employee = Employee::with('projects')->find(1);
+```
+
+Conceptually:
+
+```text
+Build query
+    ↓
+Tell Laravel which relationship to eager load
+    ↓
+Retrieve employee
+```
+
+## load()
+
+Use after retrieving the model:
+
+```php
+$employee = Employee::find(1);
+
+$employee->load('projects');
+```
+
+Conceptually:
+
+```text
+Retrieve employee
+    ↓
+Already have employee
+    ↓
+Now load projects
+```
+
+---
+
+# 49. load() With Multiple Relationships
+
+You can do:
+
+```php
+$employee = Employee::find(1);
+
+$employee->load([
+    'department',
+    'projects',
+]);
+```
+
+---
+
+# 50. load() on a Collection
+
+Suppose:
+
+```php
+$employees = Employee::all();
+```
+
+You can then:
+
+```php
+$employees->load('projects');
+```
+
+Now all employees in the collection have their projects loaded.
+
+---
+
+# 51. Local Scope: active()
+
+Our Employee model contains:
+
+```php
+public function scopeActive(Builder $query): void
+{
+    $query->where('is_active', true);
+}
+```
+
+This creates a local scope called:
+
+```text
+active
+```
+
+We can use:
+
+```php
+Employee::active()->get();
+```
+
+This is equivalent to:
+
+```php
+Employee::where('is_active', true)->get();
+```
+
+---
+
+# 52. Why Use a Scope?
+
+Without scope:
+
+```php
+Employee::where('is_active', true)->get();
+```
+
+You might write the same condition in many places.
+
+With scope:
+
+```php
+Employee::active()->get();
+```
+
+Your code becomes easier to read and reuse.
+
+---
+
+# 53. Combining Scope With Other Conditions
+
+You can do:
+
+```php
+$employees = Employee::active()
+    ->where('salary', '>', 50000)
+    ->get();
+```
+
+This means:
+
+```text
+is_active = true
+AND salary > 50000
+```
+
+---
+
+# 54. Combining Scope With Eager Loading
+
+You can also do:
+
+```php
+$employees = Employee::active()
+    ->with('projects')
+    ->get();
+```
+
+Now:
+
+```text
+Only active employees
+        ↓
+Their projects are eager loaded
+```
+
+---
+
+# 55. Custom Pivot Table Name
+
+Suppose you do NOT want:
+
+```text
+employee_project
+```
+
+Instead, you want:
+
+```text
+employee_project_mapping
+```
+
+Then Laravel cannot rely on its normal convention.
+
+You must tell Laravel the table name.
+
+Employee model:
+
+```php
+public function projects(): BelongsToMany
+{
+    return $this->belongsToMany(
+        Project::class,
+        'employee_project_mapping'
+    )
+    ->withPivot('role')
+    ->withTimestamps();
+}
+```
+
+Project model:
+
+```php
+public function employees(): BelongsToMany
+{
+    return $this->belongsToMany(
+        Employee::class,
+        'employee_project_mapping'
+    )
+    ->withPivot('role')
+    ->withTimestamps();
+}
+```
+
+---
+
+# 56. Custom Foreign-Key Names
+
+Suppose your pivot table is:
+
+```text
+employee_project_mapping
+```
+
+but its columns are:
+
+```text
+employee
+project
+role
+```
+
+instead of:
+
+```text
+employee_id
+project_id
+role
+```
+
+Then you need to tell Laravel the foreign keys.
+
+Example:
+
+```php
+public function projects(): BelongsToMany
+{
+    return $this->belongsToMany(
+        Project::class,
+        'employee_project_mapping',
+        'employee',
+        'project'
+    )
+    ->withPivot('role')
+    ->withTimestamps();
+}
+```
+
+The parameters mean:
+
+```php
+belongsToMany(
+    RelatedModel,
+    PivotTable,
+    CurrentModelForeignKey,
+    RelatedModelForeignKey
+)
+```
+
+So:
+
+```php
+Project::class
+```
+
+means the related model.
+
+```text
+employee_project_mapping
+```
+
+means the pivot table.
+
+```text
+employee
+```
+
+means the current model's pivot foreign key.
+
+```text
+project
+```
+
+means the related model's pivot foreign key.
+
+---
+
+# 57. Convention vs Custom Naming
+
+## Using convention
+
+Database:
+
+```text
+employee_project
+```
+
+Columns:
+
+```text
+employee_id
+project_id
+```
+
+Relationship:
+
+```php
+return $this->belongsToMany(Project::class);
+```
+
+Laravel automatically understands the structure.
+
+---
+
+## Not using convention
+
+Database:
+
+```text
+employee_project_mapping
+```
+
+Columns:
+
+```text
+employee
+project
+```
+
+Relationship:
+
+```php
+return $this->belongsToMany(
+    Project::class,
+    'employee_project_mapping',
+    'employee',
+    'project'
+);
+```
+
+You must provide the information manually.
+
+---
+
+# 58. What If We Need a Separate Role Table?
+
+Our current assignment does NOT require this.
+
+We currently have:
+
+```text
+employee_project
+
+employee_id
+project_id
+role
+```
+
+Here:
+
+```text
+role
+```
+
+is simply a string.
+
+For example:
+
+```text
+developer
+tester
+manager
+designer
+```
+
+But suppose we need a proper role system.
+
+Then we could create:
+
+```text
+roles
+```
+
+Example:
+
+```text
+roles
+
+id | name
+---|----------
+1  | Developer
+2  | Tester
+3  | Manager
+```
+
+Then the pivot could contain:
+
+```text
+employee_id
+project_id
+role_id
+```
+
+instead of:
+
+```text
+role
+```
+
+That is a different database design.
+
+For the current assignment, use:
+
+```php
+$table->string('role');
+```
+
+---
+
+# 59. Unique Constraint on Employee + Project
+
+Our pivot contains:
+
+```php
+$table->unique(['employee_id', 'project_id']);
+```
+
+This prevents duplicate employee-project relationships.
+
+Without it, you could accidentally have:
+
+```text
+employee_id | project_id | role
+------------|------------|----------
+1           | 1          | developer
+1           | 1          | tester
+```
+
+The same employee would be connected to the same project twice.
+
+The unique constraint prevents that.
+
+---
+
+# 60. Important Difference: attach() vs updateExistingPivot()
+
+If the relationship doesn't exist:
+
+```php
+$john->projects()->attach($project1->id, [
+    'role' => 'developer',
+]);
+```
+
+creates it.
+
+If the relationship already exists and you want to change its pivot data:
+
+```php
+$john->projects()->updateExistingPivot(
+    $project1->id,
+    [
+        'role' => 'tester',
+    ]
+);
+```
+
+So:
+
+```text
+attach()
+    ↓
+Create relationship
+
+updateExistingPivot()
+    ↓
+Update existing relationship
+```
+
+---
+
+# 61. Important Difference: detach() vs Delete Project
+
+This:
+
+```php
+$john->projects()->detach($project1->id);
+```
+
+means:
+
+```text
+Remove John from Project 1
+```
+
+It does NOT mean:
+
+```text
+Delete Project 1
+```
+
+The project remains:
+
+```text
+projects
+id | name
+1  | E-commerce Website
+```
+
+Only the pivot record is removed.
+
+---
+
+# 62. Complete Relationship Diagram
+
+The final structure is:
+
+```text
+┌─────────────────────┐
+│     departments     │
+├─────────────────────┤
+│ id                  │
+│ name                │
+│ description         │
+└──────────┬──────────┘
+           │
+           │ hasMany
+           │
+           ▼
+┌─────────────────────┐
+│      employees      │
+├─────────────────────┤
+│ id                  │
+│ department_id       │
+│ name                │
+│ email               │
+│ joining_date        │
+│ is_active           │
+│ salary              │
+└──────────┬──────────┘
+           │
+           │ belongsToMany
+           │
+           ▼
+┌─────────────────────────────┐
+│      employee_project       │
+├─────────────────────────────┤
+│ id                          │
+│ employee_id                 │
+│ project_id                  │
+│ role                        │
+│ created_at                  │
+│ updated_at                  │
+└──────────────┬──────────────┘
+               │
+               │ belongsToMany
+               │
+               ▼
+┌─────────────────────┐
+│      projects       │
+├─────────────────────┤
+│ id                  │
+│ name                │
+│ description         │
+└─────────────────────┘
+```
+
+---
+
+# 63. Complete Relationship Map
+
+## Department
+
+```php
+public function employees(): HasMany
+{
+    return $this->hasMany(Employee::class);
+}
+```
+
+Meaning:
+
+```text
+Department → Many Employees
+```
+
+---
+
+## Employee → Department
+
+```php
+public function department(): BelongsTo
+{
+    return $this->belongsTo(Department::class);
+}
+```
+
+Meaning:
+
+```text
+Employee → One Department
+```
+
+---
+
+## Employee → Projects
+
+```php
+public function projects(): BelongsToMany
+{
+    return $this->belongsToMany(Project::class)
+                ->withPivot('role')
+                ->withTimestamps();
+}
+```
+
+Meaning:
+
+```text
+Employee → Many Projects
+```
+
+through:
+
+```text
+employee_project
+```
+
+---
+
+## Project → Employees
+
+```php
+public function employees(): BelongsToMany
+{
+    return $this->belongsToMany(Employee::class)
+                ->withPivot('role')
+                ->withTimestamps();
+}
+```
+
+Meaning:
+
+```text
+Project → Many Employees
+```
+
+through:
+
+```text
+employee_project
+```
+
+---
+
+# 64. Complete Employee Model
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+class Employee extends Model
+{
+    protected $fillable = [
+        'department_id',
+        'name',
+        'email',
+        'joining_date',
+        'is_active',
+        'salary',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'joining_date' => 'date',
+            'is_active' => 'boolean',
+            'salary' => 'decimal:2',
+        ];
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function projects(): BelongsToMany
+    {
+        return $this->belongsToMany(Project::class)
+                    ->withPivot('role')
+                    ->withTimestamps();
+    }
+
+    public function scopeActive(Builder $query): void
+    {
+        $query->where('is_active', true);
+    }
+}
+```
+
+---
+
+# 65. Complete Department Model
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Department extends Model
+{
+    protected $fillable = [
+        'name',
+        'description',
+    ];
+
+    public function employees(): HasMany
+    {
+        return $this->hasMany(Employee::class);
+    }
+}
+```
+
+---
+
+# 66. Complete Project Model
+
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+class Project extends Model
+{
+    protected $fillable = [
+        'name',
+        'description',
+    ];
+
+    public function employees(): BelongsToMany
+    {
+        return $this->belongsToMany(Employee::class)
+                    ->withPivot('role')
+                    ->withTimestamps();
+    }
+}
+```
+
+---
+
+# 67. Complete Department Migration
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('departments', function (Blueprint $table) {
+            $table->id();
+
+            $table->string('name');
+
+            $table->text('description')->nullable();
+
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('departments');
+    }
+};
+```
+
+---
+
+# 68. Complete Employee Migration
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('employees', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('department_id')
+                  ->constrained('departments')
+                  ->cascadeOnDelete();
+
+            $table->string('name');
+
+            $table->string('email')->unique();
+
+            $table->date('joining_date');
+
+            $table->boolean('is_active')->default(true);
+
+            $table->decimal('salary', 10, 2);
+
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('employees');
+    }
+};
+```
+
+---
+
+# 69. Complete Project Migration
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('projects', function (Blueprint $table) {
+            $table->id();
+
+            $table->string('name');
+
+            $table->text('description')->nullable();
+
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('projects');
+    }
+};
+```
+
+---
+
+# 70. Complete Pivot Migration
+
+```php
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('employee_project', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('employee_id')
+                  ->constrained('employees')
+                  ->cascadeOnDelete();
+
+            $table->foreignId('project_id')
+                  ->constrained('projects')
+                  ->cascadeOnDelete();
+
+            $table->string('role');
+
+            $table->timestamps();
+
+            $table->unique(['employee_id', 'project_id']);
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('employee_project');
+    }
+};
+```
+
+---
+
+# 71. Complete Practical Example
+
+After creating the models and migrations:
+
+```bash
+php artisan migrate
+```
+
+Then:
+
+```bash
+php artisan tinker
+```
+
+Create a department:
+
+```php
+$it = Department::create([
+    'name' => 'IT',
+    'description' => 'Information Technology',
+]);
+```
+
+Create an employee:
+
+```php
+$john = Employee::create([
+    'department_id' => $it->id,
+    'name' => 'John',
+    'email' => 'john@example.com',
+    'joining_date' => '2025-01-10',
+    'is_active' => true,
+    'salary' => 50000,
+]);
+```
+
+Create a project:
+
+```php
+$project = Project::create([
+    'name' => 'E-commerce Website',
+    'description' => 'Online shopping platform',
+]);
+```
+
+Assign John to the project:
+
+```php
+$john->projects()->attach($project->id, [
+    'role' => 'developer',
+]);
+```
+
+Now the database looks like:
+
+```text
+departments
+
+id | name
+---|-----
+1  | IT
+```
+
+```text
+employees
+
+id | department_id | name
+---|---------------|------
+1  | 1             | John
+```
+
+```text
+projects
+
+id | name
+---|------------------
+1  | E-commerce Website
+```
+
+```text
+employee_project
+
+employee_id | project_id | role
+------------|------------|----------
+1           | 1          | developer
+```
+
+Now:
+
+```php
+$john->projects;
+```
+
+returns John's projects.
+
+And:
+
+```php
+$john->projects->first()->pivot->role;
+```
+
+returns:
+
+```text
+developer
+```
+
+---
+
+# 72. The Most Important Concept
+
+Remember this structure:
+
+```text
+Employee
+    |
+    | belongsToMany()
+    ↓
+employee_project
+    |
+    | contains relationship data
+    | employee_id
+    | project_id
+    | role
+    | timestamps
+    ↓
+Project
+```
+
+The actual project is stored in:
+
+```text
+projects
+```
+
+The relationship is stored in:
+
+```text
+employee_project
+```
+
+The employee is stored in:
+
+```text
+employees
+```
+
+---
+
+# 73. Quick Reference
+
+## Get employee's department
+
+```php
+$employee->department;
+```
+
+## Get department's employees
+
+```php
+$department->employees;
+```
+
+## Get employee's projects
+
+```php
+$employee->projects;
+```
+
+## Get project's employees
+
+```php
+$project->employees;
+```
+
+## Get pivot role
+
+```php
+$project->pivot->role;
+```
+
+## Add relationship
+
+```php
+$employee->projects()->attach($projectId, [
+    'role' => 'developer',
+]);
+```
+
+## Remove relationship
+
+```php
+$employee->projects()->detach($projectId);
+```
+
+## Update pivot
+
+```php
+$employee->projects()->updateExistingPivot(
+    $projectId,
+    [
+        'role' => 'tester',
+    ]
+);
+```
+
+## Replace/synchronize relationships
+
+```php
+$employee->projects()->sync([
+    $projectId => [
+        'role' => 'developer',
+    ],
+]);
+```
+
+## Add without removing existing
+
+```php
+$employee->projects()->syncWithoutDetaching([
+    $projectId => [
+        'role' => 'developer',
+    ],
+]);
+```
+
+## Filter pivot
+
+```php
+$project->employees()
+    ->wherePivot('role', 'developer')
+    ->get();
+```
+
+## Filter multiple pivot values
+
+```php
+$project->employees()
+    ->wherePivotIn('role', ['developer', 'tester'])
+    ->get();
+```
+
+## Sort using pivot
+
+```php
+$project->employees()
+    ->orderByPivot('created_at', 'desc')
+    ->get();
+```
+
+## Eager load
+
+```php
+$employees = Employee::with('projects')->get();
+```
+
+## Load after retrieving
+
+```php
+$employee = Employee::find(1);
+
+$employee->load('projects');
+```
+
+## Active employees
+
+```php
+Employee::active()->get();
+```
+
+## Active employees with projects
+
+```php
+Employee::active()
+    ->with('projects')
+    ->get();
+```
+
+---
+
+# 74. Final Mental Model
+
+Whenever you see:
+
+```php
+$employee->projects()
+```
+
+think:
+
+```text
+Employee
+   ↓
+employee_project
+   ↓
+Project
+```
+
+Whenever you see:
+
+```php
+$project->pivot
+```
+
+think:
+
+```text
+The employee_project row connecting
+this employee and this project.
+```
+
+Whenever you see:
+
+```php
+withPivot('role')
+```
+
+think:
+
+```text
+"Also give me the role column
+from employee_project."
+```
+
+Whenever you see:
+
+```php
+withTimestamps()
+```
+
+think:
+
+```text
+"Manage created_at and updated_at
+on the pivot relationship."
+```
+
+Whenever you see:
+
+```php
+with('projects')
+```
+
+think:
+
+```text
+"Load the projects relationship
+while retrieving the employees."
+```
+
+Whenever you see:
+
+```php
+load('projects')
+```
+
+think:
+
+```text
+"I already retrieved the employee(s).
+Now load their projects."
+```
+
+Whenever you see:
+
+```php
+Employee::active()
+```
+
+think:
+
+```text
+"Use the reusable active() query scope."
+```
+
+And whenever you see:
+
+```php
+belongsToMany(Project::class)
+```
+
+think:
+
+```text
+Employee
+    ↓
+employee_project
+    ↓
+Project
+```
+
+Laravel automatically knows the conventional pivot table:
+
+```text
+employee_project
+```
+
+and conventional pivot foreign keys:
+
+```text
+employee_id
+project_id
+```
+
+unless you explicitly tell it to use something different.
+
+# End Result
+
+You now have a complete Laravel Eloquent setup with:
+
+```text
+Department
+    ↓
+hasMany
+    ↓
+Employee
+    ↓
+belongsToMany
+    ↓
+employee_project
+    ↓
+belongsToMany
+    ↓
+Project
+```
+
+with:
+
+```text
+role
+timestamps
+attach()
+detach()
+updateExistingPivot()
+sync()
+syncWithoutDetaching()
+wherePivot()
+wherePivotIn()
+wherePivotNull()
+wherePivotNotNull()
+orderByPivot()
+with()
+load()
+active()
+```
+
+all working together in one practical example.
+
+

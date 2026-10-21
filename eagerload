@@ -1,0 +1,695 @@
+# Laravel Eloquent Practice Queries
+
+Assumptions based on the current project:
+
+```text
+Department
+    hasMany
+        Employee
+
+Employee
+    belongsTo
+        Department
+
+Employee
+    belongsToMany
+        Project
+
+Project
+    belongsToMany
+        Employee
+```
+
+---
+
+# 1. All active employees in the "Development" department, with their department loaded in the same query set
+
+### Goal
+
+We want:
+
+* Employees where `is_active = true`
+* Only employees belonging to the `Development` department
+* Department relationship loaded eagerly
+* Avoid the N+1 query problem
+
+### Query
+
+```php
+$employees = Employee::with('department')
+    ->whereHas('department', function ($query) {
+        $query->where('name', 'Development');
+    })
+    ->where('is_active', true)
+    ->get();
+```
+
+### Explanation
+
+```php
+Employee::with('department')
+```
+
+tells Laravel:
+
+> When retrieving employees, also eager-load their department.
+
+Then:
+
+```php
+->whereHas('department', ...)
+```
+
+means:
+
+> Only return employees whose related department satisfies this condition.
+
+The condition:
+
+```php
+$query->where('name', 'Development');
+```
+
+restricts the department to:
+
+```text
+Development
+```
+
+And:
+
+```php
+->where('is_active', true)
+```
+
+gets only active employees.
+
+### Why this avoids N+1
+
+Without eager loading:
+
+```php
+$employees = Employee::get();
+
+foreach ($employees as $employee) {
+    echo $employee->department->name;
+}
+```
+
+Laravel could execute:
+
+```text
+1 query → employees
+
+then:
+1 query → department for employee 1
+1 query → department for employee 2
+1 query → department for employee 3
+...
+```
+
+With:
+
+```php
+Employee::with('department')->get();
+```
+
+Laravel eager-loads the departments instead.
+
+---
+
+# 2. Every department with the count of its employees, sorted highest first
+
+### Query
+
+```php
+$departments = Department::withCount('employees')
+    ->orderByDesc('
+    employees_count')
+    ->get();
+```
+
+### Important part
+
+```php
+withCount('employees')
+```
+
+adds a calculated attribute:
+
+```php
+$department->employees_count
+```
+
+For example:
+
+```text
+Department       employees_count
+--------------------------------
+Development      12
+Testing           8
+HR                5
+Sales             2
+```
+
+Then:
+
+```php
+orderByDesc('employees_count')
+```
+
+sorts the largest count first.
+
+### Accessing the result
+
+```php
+foreach ($departments as $department) {
+    echo $department->name;
+    echo $department->employees_count;
+}
+```
+
+---
+
+# 3. Departments that have more than 3 employees
+
+There are two useful approaches.
+
+## Approach 1 — `has()`
+
+Laravel's `has()` can directly express this:
+
+```php
+$departments = Department::has('employees', '>', 3)->get();
+```
+
+This means:
+
+```text
+Give me departments
+WHERE employee count > 3
+```
+
+This is concise and very useful.
+
+---
+
+## Approach 2 — `withCount()` + `having()`
+
+You can also explicitly calculate the count:
+
+```php
+$departments = Department::withCount('employees')
+    ->having('employees_count', '>', 3)
+    ->get();
+```
+
+Now each result also contains:
+
+```php
+$department->employees_count
+```
+
+### Difference
+
+```php
+Department::has('employees', '>', 3)
+```
+
+is primarily asking:
+
+> Which departments have more than 3 employees?
+
+Whereas:
+
+```php
+Department::withCount('employees')
+    ->having('employees_count', '>', 3)
+```
+
+also gives you the count.
+
+---
+
+# 4. Total and average salary per department
+
+For this, we want SQL aggregate functions:
+
+```text
+SUM()
+AVG()
+```
+
+A useful Eloquent approach is:
+
+```php
+$departments = Department::withSum('employees', 'salary')
+    ->withAvg('employees', 'salary')
+    ->get();
+```
+
+Laravel adds attributes similar to:
+
+```php
+$department->employees_sum_salary;
+$department->employees_avg_salary;
+```
+
+### Example
+
+```php
+foreach ($departments as $department) {
+
+    echo $department->name;
+
+    echo $department->employees_sum_salary;
+
+    echo $department->employees_avg_salary;
+}
+```
+
+Conceptually:
+
+```text
+Department       Total Salary      Average Salary
+-------------------------------------------------
+Development      750000            62500
+Testing          420000            52500
+HR               300000            60000
+```
+
+### Important
+
+This is different from:
+
+```php
+$department->employees->sum('salary');
+```
+
+because that approach loads the employees and calculates the result in PHP.
+
+`withSum()` / `withAvg()` lets the database perform the aggregation.
+
+---
+
+# 5. Attach employee 1 to project 2 with role "tester", then fetch employee 1's projects showing the pivot role
+
+Your relationship is:
+
+```php
+public function projects(): BelongsToMany
+{
+    return $this->belongsToMany(Project::class)
+                ->withPivot('role')
+                ->withTimestamps();
+}
+```
+
+## Step 1 — Find employee 1
+
+```php
+$employee = Employee::findOrFail(1);
+```
+
+## Step 2 — Attach project 2
+
+```php
+$employee->projects()->attach(2, [
+    'role' => 'tester',
+]);
+```
+
+This creates a row in:
+
+```text
+employee_project
+```
+
+like:
+
+```text
+id    employee_id    project_id    role
+-----------------------------------------
+1     1              2             tester
+```
+
+### Step 3 — Fetch employee 1's projects
+
+```php
+$projects = $employee->projects()->get();
+```
+
+### Step 4 — Access the pivot role
+
+```php
+foreach ($projects as $project) {
+
+    echo $project->project_name;
+
+    echo $project->pivot->role;
+}
+```
+
+The important part is:
+
+```php
+$project->pivot->role
+```
+
+`pivot` represents the intermediate `employee_project` record.
+
+So:
+
+```text
+$project
+    |
+    └── pivot
+          |
+          └── role = "tester"
+```
+
+### If employee 1 might already be attached to project 2
+
+`attach()` can create a duplicate relationship unless your database constraint prevents it.
+
+Since your pivot table has:
+
+```php
+$table->unique(['employee_id', 'project_id']);
+```
+
+you can instead use:
+
+```php
+$employee->projects()->syncWithoutDetaching([
+    2 => ['role' => 'tester'],
+]);
+```
+
+This is useful when you want to add the relationship without detaching existing projects.
+
+---
+
+# 6. Soft-delete employee 3, verify normal query doesn't return them, fetch with trashed records, then restore
+
+This requires your `Employee` model to use `SoftDeletes`.
+
+## Step 1 — Employee model
+
+```php
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Employee extends Model
+{
+    use SoftDeletes;
+
+    // ...
+}
+```
+
+## Step 2 — Migration
+
+Your `employees` table needs:
+
+```php
+$table->softDeletes();
+```
+
+This creates:
+
+```text
+deleted_at
+```
+
+in the table.
+
+---
+
+## Step 3 — Soft-delete employee 3
+
+```php
+$employee = Employee::findOrFail(3);
+
+$employee->delete();
+```
+
+Laravel does **not** physically remove the row.
+
+Instead:
+
+```text
+deleted_at
+-------------------
+NULL
+```
+
+becomes something like:
+
+```text
+2026-10-02 14:30:00
+```
+
+The employee still exists in the database.
+
+---
+
+# Step 4 — Normal query
+
+```php
+$employee = Employee::find(3);
+```
+
+After soft deletion, this returns:
+
+```php
+null
+```
+
+because Laravel automatically excludes records where:
+
+```text
+deleted_at IS NOT NULL
+```
+
+---
+
+# Step 5 — Fetch including soft-deleted records
+
+Use:
+
+```php
+$employee = Employee::withTrashed()->find(3);
+```
+
+Now employee 3 can be retrieved even though:
+
+```text
+deleted_at IS NOT NULL
+```
+
+---
+
+# Step 6 — Restore employee 3
+
+```php
+$employee->restore();
+```
+
+Laravel changes:
+
+```text
+deleted_at
+```
+
+back to:
+
+```text
+NULL
+```
+
+Employee 3 is active in normal Eloquent queries again.
+
+---
+
+# Complete soft-delete flow
+
+```php
+// 1. Find employee
+$employee = Employee::findOrFail(3);
+
+// 2. Soft delete
+$employee->delete();
+
+// 3. Normal query does not find the employee
+$employee = Employee::find(3);
+
+// 4. Include soft-deleted employees
+$employee = Employee::withTrashed()->find(3);
+
+// 5. Restore
+$employee->restore();
+
+// 6. Normal query can find employee again
+$employee = Employee::find(3);
+```
+
+---
+
+# Quick Reference
+
+```text
+1. Active employees in Development + eager loading
+
+Employee::with('department')
+    ->whereHas('department', fn ($q) =>
+        $q->where('name', 'Development')
+    )
+    ->where('is_active', true)
+    ->get();
+
+
+2. Departments + employee count
+
+Department::withCount('employees')
+    ->orderByDesc('employees_count')
+    ->get();
+
+
+3. Departments with > 3 employees
+
+Department::has('employees', '>', 3)
+    ->get();
+
+
+4. Total + average salary
+
+Department::withSum('employees', 'salary')
+    ->withAvg('employees', 'salary')
+    ->get();
+
+
+5. Attach employee 1 → project 2
+
+$employee = Employee::findOrFail(1);
+
+$employee->projects()->attach(2, [
+    'role' => 'tester',
+]);
+
+$projects = $employee->projects()->get();
+
+foreach ($projects as $project) {
+    echo $project->project_name;
+    echo $project->pivot->role;
+}
+
+
+6. Soft delete → retrieve → restore
+
+$employee = Employee::findOrFail(3);
+
+$employee->delete();
+
+Employee::find(3);                         // null
+
+$employee = Employee::withTrashed()->find(3);
+
+$employee->restore();
+
+Employee::find(3);                         // employee 3
+```
+
+# The Eloquent concepts you're practicing
+
+```text
+Question 1
+    ↓
+with()
+whereHas()
+Eager Loading
+N+1 prevention
+
+Question 2
+    ↓
+withCount()
+orderByDesc()
+
+Question 3
+    ↓
+has()
+Relationship existence queries
+
+Question 4
+    ↓
+withSum()
+withAvg()
+Database aggregation
+
+Question 5
+    ↓
+belongsToMany()
+attach()
+pivot
+withPivot()
+syncWithoutDetaching()
+
+Question 6
+    ↓
+SoftDeletes
+delete()
+withTrashed()
+restore()
+Global scope
+```
+
+These six exercises cover a large part of the **real-world Eloquent querying patterns** you'll use in your employee-management project.
+
+
+
+
+
+All active employees in the "Development" department, with their department loaded in the same query set (no N+1).
+
+
+App\Models\Employee::with('department')->whereHas('department', function ($query) {$query->where('name', 'Mr. Abdul Rice IV');})->get();
+
+App\Models\Employee::with('department')->whereHas('department', function ($query) {$query->where('name', 'Mr. Abdul Rice IV');})->active()->get();
+
+Every department with the count of its employees, sorted by count, highest first.
+
+
+$departments = App\Models\Department::withCount('employees')->orderByDesc('employees_count')->get();
+
+Departments that have more than 3 employees.
+
+
+$departments = App\Models\Department::withCount('employees')->having('employees_count','>','3')->orderByDesc('employees_count')->get();
+
+Total and average salary per department.
+
+$departments = App\Models\Department::withSum('employees', 'salary')->withAvg('employees', 'salary')->get();
+
+Attach employee 1 to project 2 with the role "tester", then fetch employee 1's projects showing the pivot role.
+
+App\Models\Employee::find(1)->projects()->attach(2, ['role' => 'tester']);
+$employee = App\Models\Employee::with('projects')->find(1);
+
+$employee->projects;
+
+Soft-delete employee 3, show that a normal query no longer returns them, then fetch them again including trashed records and restore them.
+
+$employee = App\Models\Employee::find(3);
+
+$employee->delete();
+
+$employee = App\Models\Employee::withTrashed()->find(3);
+
+$employee->restore();
+
+App\Models\Employee::find(3);
+
+
+
+
+
+

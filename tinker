@@ -1,0 +1,236 @@
+App\Models\Employee::create(['department_id'=>'1','name'=>'test','email'=>'test@gmail.com','Salary'=>'7000.00','joining_date'=>'2026-07-01','is_active'=>'1','phone_no'=>'7548547845']);
+
+App\Models\Department::create(['name'=>'accounts'],);
+
+
+
+
+
+App\Models\User::create(['name'=>'testuser001'],['email'=>'testuser001@gmail.com'],['password'=>'User@123'],);
+
+App\Models\User::create(['name'=>'testuser002'],['email'=>'testuser002@gmail.com'],['password'=>'User@123'],);
+
+App\Models\User::create(['name'=>'testuser003'],['email'=>'testuser003@gmail.com'],['password'=>'User@123'],);
+
+
+
+
+| Method | Purpose | Removes other existing relationships? |
+|---|---|---|
+| `attach()` | Adds a relationship | No |
+| `detach()` | Removes a relationship | Not applicable |
+| `sync()` | Makes relationships match the supplied list | Yes |
+| `syncWithoutDetaching()` | Adds or updates relationships without removing others | No |
+| `syncWithPivotValues()` | Syncs relationships while applying the same pivot values to all supplied IDs | Yes |
+| `toggle()` | Attaches missing relationships and detaches existing ones | Depends on whether each relationship already exists |
+| `updateExistingPivot()` | Updates pivot data for an existing relationship | No |
+
+2. attach() — Add a relationship
+Syntax
+$employee->projects()->attach($projectId);
+
+Example
+Attach employee 1 to project 4:
+$employee->projects()->attach(4);
+
+If the pivot table permits the association, Laravel inserts a new row:
+employee_id	project_id	role
+1	4	NULL or database default
+
+
+The role value depends on your column definition. If role is non-nullable and has no default, this operation may fail because no role was supplied.
+Attach with pivot data
+Your pivot table contains a role column, so you can provide its value:
+$employee->projects()->attach(4, [
+    'role' => 2,
+]);
+
+Laravel inserts an association for employee 1 and project 4 with role ID 2.
+Attach multiple projects
+$employee->projects()->attach([
+    4,
+    5,
+]);
+
+Attach multiple projects with different pivot values
+$employee->projects()->attach([
+    4 => ['role' => 2],
+    5 => ['role' => 3],
+]);
+
+This associates project 4 with role ID 2 and project 5 with role ID 3.
+Important: attach() does not automatically check whether an association already exists. If a duplicate violates a database unique constraint, the insert fails.
+Use attach() when: You want to create a new association that you know does not already exist.
+3. detach() — Remove a relationship
+detach() is the opposite of attach().
+Remove one project
+$employee->projects()->detach(2);
+
+Laravel removes the employee 1/project 2 association from the pivot table.
+Before:
+employee_id	project_id	role
+1	1	1
+1	2	2
+1	3	3
+
+
+After:
+employee_id	project_id	role
+1	1	1
+1	3	3
+
+
+The project itself remains in the projects table. Only the association is removed.
+Remove multiple projects
+$employee->projects()->detach([1, 3]);
+
+Remove all project assignments
+$employee->projects()->detach();
+
+This removes all pivot associations for that employee.
+Use detach() when: You want to remove an assignment without deleting the actual project or employee.
+4. sync() — Make relationships match a list
+sync() is different from attach() because it reconciles the existing relationships with the IDs you provide.
+Example
+$employee->projects()->sync([
+    2,
+    4,
+]);
+
+Laravel makes the employee's project assignments match projects 2 and 4.
+Suppose the employee initially has projects 1, 2, and 3.
+After the operation:
+employee_id	project_id
+1	2
+1	4
+
+
+Project 1 and project 3 are detached because they were omitted from the submitted list.
+Sync with pivot data
+$employee->projects()->sync([
+    2 => ['role' => 1],
+    4 => ['role' => 2],
+]);
+
+This makes the employee's assignments match projects 2 and 4, with the specified pivot role values.
+Existing supplied associations can have their pivot values updated.
+What does sync() return?
+It returns an array describing the changes, typically with keys such as:
+[
+    'attached' => [],
+    'detached' => [],
+    'updated' => [],
+]
+
+The actual contents depend on which relationships were added, removed, or updated.
+Use sync() when: You have a complete list of the relationships that should remain—for example, when a form submits the employee's entire set of project assignments.
+Common mistake: Do not use sync() with only the newly selected project if you intend to preserve every other assignment.
+5. syncWithoutDetaching() — Add or update without removing others
+This is the method you used earlier.
+Example
+$employee->projects()->syncWithoutDetaching([
+    4 => ['role' => 2],
+]);
+
+Laravel adds project 4 or updates its pivot data if the association already exists.
+Unlike sync(), it preserves the employee's other project assignments.
+Example with multiple projects
+$employee->projects()->syncWithoutDetaching([
+    4 => ['role' => 2],
+    5 => ['role' => 3],
+]);
+
+Laravel adds or updates the specified associations without detaching unrelated projects.
+Use it when: You want to add a project assignment but don't want to remove existing assignments.
+6. syncWithPivotValues() — Apply common pivot values
+This method is useful when you want to sync multiple related IDs and give all of them the same pivot values.
+Example
+$employee->projects()->syncWithPivotValues(
+    [2, 4, 5],
+    ['role' => 2]
+);
+
+This syncs the employee's project assignments to projects 2, 4, and 5, assigning role ID 2 to each association.
+Because it is a sync operation, other project assignments not in the list can be detached.
+Compare the two approaches:
+Different pivot values:
+$employee->projects()->sync([
+    2 => ['role' => 1],
+    4 => ['role' => 2],
+]);
+
+Same pivot values:
+$employee->projects()->syncWithPivotValues(
+    [2, 4],
+    ['role' => 2]
+);
+
+Use it when: Multiple associations should receive the same pivot attributes.
+7. toggle() — Attach or detach depending on the current state
+toggle() switches the relationship state.
+Example
+$employee->projects()->toggle([2, 4]);
+
+Laravel checks the supplied relationship IDs:
+- If project 2 is already assigned, it detaches project 2.
+- If project 4 is not assigned, it attaches project 4.
+The result is a change in assignment state.
+Toggle with pivot data
+$employee->projects()->toggle([
+    4 => ['role' => 2],
+]);
+
+If project 4 is not assigned, Laravel attaches it with the supplied pivot values. If it is already assigned, Laravel detaches it.
+Use it when: You deliberately want a toggle operation, such as switching a user's membership on or off.
+Avoid it for ordinary assignment forms when submitting a form should always mean "make this assignment exist." Repeated submissions can reverse the state.
+8. updateExistingPivot() — Update pivot data only
+Suppose employee 1 is already assigned to project 2 with role ID 1.
+You want to change that role to ID 3 without changing the project assignment.
+$employee->projects()->updateExistingPivot(2, [
+    'role' => 3,
+]);
+
+This updates the existing pivot record.
+Before:
+employee_id	project_id	role
+1	2	1
+
+
+After:
+employee_id	project_id	role
+1	2	3
+
+
+The employee remains assigned to project 2.
+Important: This method updates an existing pivot association. It does not attach the relationship if it is missing.
+Use it when: You only need to update pivot attributes, such as an employee's role on a project.
+9. Which method should you choose?
+For your Employee Management Lite project:
+Requirement	Recommended method
+Assign an employee to a new project	attach()
+Remove an employee's project assignment	detach()
+Replace all project assignments with a submitted list	sync()
+Add a project without removing existing assignments	syncWithoutDetaching()
+Sync several projects with identical pivot values	syncWithPivotValues()
+Switch an assignment on or off	toggle()
+Change the role on an existing project assignment	updateExistingPivot()
+
+
+One final distinction: projects() versus projects
+These are also important to understand:
+$employee->projects()
+
+Returns the relationship object, allowing you to call methods such as attach(), sync(), and detach().
+$employee->projects
+
+Returns the related projects as an Eloquent collection, allowing you to loop over them, map their values, or display them.
+For example:
+// Modify relationships.
+$employee->projects()->syncWithoutDetaching([
+    2 => ['role' => 2],
+]);
+
+// Read the related projects.
+$employee->projects;
+
+The key lesson: Use sync() when the supplied list represents the complete desired relationship state. Use syncWithoutDetaching() when you want to add or update specified relationships while preserving all other existing relationships.

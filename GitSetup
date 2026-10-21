@@ -1,0 +1,548 @@
+git config user.name "Gaurav Bansode"
+git config user.email "gauravb@parasightsolutions.com"
+
+
+
+git --version
+
+
+git init
+
+
+cat .gitignore
+
+
+git check-ignore .env
+
+
+
+Step 2: Connect your local repository to GitHub
+
+Open your terminal in the project directory:
+
+cd ~/Desktop/employee_management_lite_2
+
+Add GitHub as a remote:
+
+git remote add origin https://github.com/gauravb-2673/employee_management_lite_2.git
+
+What does it do?
+
+git remote add adds a remote repository.
+origin is the remote's local name.
+The URL identifies your GitHub repository.
+
+Check the remote:
+
+git remote -v
+
+Expected output:
+
+origin  https://github.com/gauravb-2673/employee_management_lite_2.git (fetch)
+origin  https://github.com/gauravb-2673/employee_management_lite_2.git (push)
+If origin already exists
+
+You might get:
+
+error: remote origin already exists.
+
+Do not add it again. Inspect the existing URL:
+
+git remote -v
+
+If the URL is incorrect, change it:
+
+git remote set-url origin https://github.com/gauravb-2673/employee_management_lite_2.git
+
+Verify:
+
+git remote -v
+Step 3: Rename your branch to main
+
+Check your current branch:
+
+git branch
+
+If you want the current branch to be called main, run:
+
+git branch -M main
+
+-M renames the current branch to main, even if a branch with that name already exists locally.
+
+This is commonly used during initial setup.
+
+Step 4: Push the project
+git push -u origin main
+
+This command uploads your local commits to the remote repository.
+
+Breaking it down:
+
+Part	Meaning
+git push	Upload commits to a remote.
+-u	Configure upstream tracking for the branch.
+origin	The remote repository.
+main	The local branch to push.
+
+After the first successful push, you can normally use:
+
+git push
+
+The upstream setting tells Git which remote branch to push to by default.
+
+Step 5: Verify the push
+
+Run:
+
+git status
+
+Expected result:
+
+On branch main
+Your branch is up to date with 'origin/main'.
+
+nothing to commit, working tree clean
+
+Open your repository on GitHub and refresh the page.
+
+Your committed Laravel project files should now be visible.
+
+Part 4: Clone an existing GitHub repository
+
+Cloning is different from initializing a repository.
+
+Use git clone when you want to download an existing GitHub repository to your computer.
+
+For example, you want a local copy of:
+
+https://github.com/gauravb-2673/employee_management_lite_2.git
+Step 1: Navigate to the destination directory
+
+Suppose you want the project on your Desktop.
+
+cd ~/Desktop
+
+Check the current directory:
+
+pwd
+Step 2: Clone the repository
+
+Run:
+
+git clone https://github.com/gauravb-2673/employee_management_lite_2.git
+
+Git will create a directory named:
+
+employee_management_lite_2
+
+The directory name is normally derived from the repository URL.
+
+Clone into a custom directory
+
+You can specify a different destination name:
+
+git clone https://github.com/gauravb-2673/employee_management_lite_2.git employee-project
+
+This creates a local directory named employee-project.
+
+Step 3: Enter the cloned project
+
+If you used the default directory name:
+
+cd employee_management_lite_2
+
+Check the files:
+
+ls -la
+
+Check the Git status:
+
+git status
+
+Inspect the remote:
+
+git remote -v
+
+Inspect the branches:
+
+git branch -a
+
+What did git clone do automatically?
+
+It downloaded the repository and its history, initialized the local repository, configured the origin remote, and checked out the default branch.
+
+You do not need to run git init or git remote add origin after a normal successful clone.
+
+If the repository is private
+
+You must authenticate with an account that has permission to access it.
+
+Depending on your Git configuration, Git may use browser-based authentication, Git Credential Manager, or SSH.
+
+Do not put a password or personal access token directly into a repository URL or commit it to your project.
+
+Part 5: Pull the latest changes from GitHub
+
+Suppose you cloned your Laravel project yesterday, and today another developer updated routes/web.php.
+
+You want those changes on your computer.
+
+Step 1: Enter the repository
+cd ~/Desktop/employee_management_lite_2
+Step 2: Check your current changes
+git status
+
+This is important because local modifications may conflict with incoming changes.
+
+Commit or otherwise safely preserve important local work before integrating remote changes.
+
+Step 3: Pull changes
+git pull
+
+A normal git pull fetches remote changes and integrates them into the current branch, using the configured upstream branch.
+
+For a specific remote and branch:
+
+git pull origin main
+
+This explicitly pulls from origin/main.
+
+Difference between git fetch and git pull
+
+Fetch:
+
+git fetch origin
+
+Downloads remote information and updates remote-tracking references, without integrating those commits into your current branch.
+
+Pull:
+
+git pull origin main
+
+Fetches the remote changes and integrates them into your current branch.
+
+A useful rule is:
+
+Use git fetch when you want to inspect remote changes first.
+Use git pull when you are ready to integrate them.
+Part 6: Upload changes after modifying your Laravel project
+
+Once your project is connected to GitHub, this is the usual development workflow.
+
+Suppose you added validation to:
+
+app/Http/Controllers/EmployeeController.php
+Step 1: Check what changed
+git status
+
+To inspect the actual changes:
+
+git diff
+
+To inspect changes in one file:
+
+git diff app/Http/Controllers/EmployeeController.php
+Step 2: Stage the changes
+
+Stage everything you intend to commit:
+
+git add .
+
+Or stage a specific file:
+
+git add app/Http/Controllers/EmployeeController.php
+Step 3: Commit the changes
+git commit -m "Add employee validation"
+
+A commit records the staged changes in your local Git history.
+
+Step 4: Push the commit
+git push
+
+The new commit will be uploaded to GitHub.
+
+The complete everyday workflow
+cd ~/Desktop/employee_management_lite_2
+
+git status
+
+git diff
+
+git add .
+
+git commit -m "Describe your changes"
+
+git push
+
+If there are no changes to commit, Git will tell you that the working tree is clean or that there is nothing to commit.
+
+Part 7: Common branch commands
+
+Branches let you develop a feature separately from your main code.
+
+For example, you want to build a new employee search feature.
+
+Step 1: View local branches
+git branch
+
+The current branch is marked with *.
+
+Step 2: Create a new branch
+git branch feature/employee-search
+
+This creates the branch but does not switch to it.
+
+Step 3: Switch branches
+git switch feature/employee-search
+Step 4: Create and switch in one command
+
+This is the common shortcut:
+
+git switch -c feature/employee-search
+
+It creates the branch and switches to it.
+
+Step 5: Commit and push the feature branch
+
+After making changes:
+
+git add .
+git commit -m "Add employee search"
+git push -u origin feature/employee-search
+
+The first push establishes upstream tracking for that feature branch.
+
+Step 6: Switch back to main
+git switch main
+
+To list local and remote branches:
+
+git branch -a
+Part 8: Fix common Git errors
+Error 1: remote origin already exists
+
+Cause: A remote named origin is already configured.
+
+Inspect it:
+
+git remote -v
+
+If necessary, change its URL:
+
+git remote set-url origin YOUR_REPOSITORY_URL
+
+Replace YOUR_REPOSITORY_URL with the actual GitHub URL.
+
+Error 2: src refspec main does not match any
+
+This commonly happens when the branch does not exist locally or the repository has no commit yet.
+
+Check your branch:
+
+git branch
+
+Check the status:
+
+git status
+
+If you have staged project files but have not made your first commit:
+
+git add .
+git commit -m "Initial commit"
+
+Then, if you intend to use main:
+
+git branch -M main
+git push -u origin main
+
+Do not assume this is the correct fix without checking your current branch and repository state.
+
+Error 3: ! [rejected] main -> main (non-fast-forward)
+
+This was the error you encountered earlier.
+
+Example:
+
+! [rejected] main -> main (non-fast-forward)
+error: failed to push some refs
+
+Meaning: Your remote branch contains commits that your local branch does not contain. Git refuses to push because doing so would not be a fast-forward update.
+
+Start by inspecting the repository:
+
+git status
+git fetch origin
+git log --oneline --graph --decorate --all -10
+
+If the branches share a history and the remote changes are safe to integrate:
+
+git merge origin/main
+
+Resolve any conflicts, commit the merge if Git requires it, and then push:
+
+git push
+
+If the histories are unrelated, as happened in your project, first inspect the remote commit:
+
+git show --stat origin/main
+
+If you want to retain both histories, you can merge them:
+
+git merge origin/main --allow-unrelated-histories
+
+Resolve any conflicts and then push:
+
+git push -u origin main
+
+Do not use git push --force as the default fix. It can overwrite remote history.
+
+Error 4: Merge conflict
+
+A merge conflict occurs when Git cannot automatically reconcile competing changes.
+
+Check the conflicted files:
+
+git status
+
+Open each conflicted file. You may see markers like:
+
+<<<<<<< HEAD
+Your local version
+=======
+The incoming version
+>>>>>>> origin/main
+
+Edit the file to retain the correct code and remove the conflict markers.
+
+Then stage the resolved file:
+
+git add path/to/file
+
+For example:
+
+git add README.md
+
+Complete the merge:
+
+git commit
+
+Then push:
+
+git push
+
+Follow the exact instructions Git prints if it has already created a merge commit or if the operation is still in progress.
+
+Error 5: Wrong Git username or email
+
+Check the identity configured for your current project:
+
+git config user.name
+git config user.email
+
+Check the global identity:
+
+git config --global user.name
+git config --global user.email
+
+Correct the identity for the current repository:
+
+git config user.name "Gaurav Bansode"
+git config user.email "gauravb@parasightsolutions.com"
+
+To correct the most recent commit's author before pushing it:
+
+git commit --amend --reset-author --no-edit
+
+Caution: Amending a commit changes its ID. If that commit has already been pushed and other people depend on it, coordinate before rewriting history.
+
+Also, changing Git's author identity does not change which GitHub account is authenticated in VS Code or your terminal.
+
+Part 9: Useful Git commands reference
+Command	Purpose
+git --version	Check the installed Git version.
+git init	Initialize a repository in the current directory.
+git clone URL	Clone a remote repository.
+git status	Check working-tree and staging status.
+git add .	Stage changes in the current directory tree, subject to ignore rules.
+git add filename	Stage a specific file.
+git commit -m "message"	Commit staged changes.
+git log --oneline	View concise commit history.
+git log --oneline --graph --decorate --all -10	View recent commits across branches.
+git diff	View unstaged changes.
+git diff --staged	View staged changes.
+git remote -v	Display configured remotes.
+git remote add origin URL	Add a remote named origin.
+git remote set-url origin URL	Change the remote URL.
+git fetch origin	Fetch remote updates without integrating them.
+git pull	Fetch and integrate upstream changes.
+git push	Push commits to the configured upstream.
+git push -u origin main	Push main and configure upstream tracking.
+git branch	List local branches.
+git branch -a	List local and remote-tracking branches.
+git switch main	Switch to main.
+git switch -c branch-name	Create and switch to a branch.
+git merge branch-name	Merge another branch into the current branch.
+git merge-base main origin/main	Find a common ancestor of two branches.
+git stash push -m "message"	Temporarily save uncommitted changes.
+git stash list	List saved stashes.
+git stash pop	Reapply and remove the latest stash if successful.
+git restore filename	Discard unstaged changes to a file.
+git show --stat HEAD	Show the latest commit and its file-change summary.
+git check-ignore .env	Check whether .env is ignored.
+Part 10: The two most important workflows
+A. Existing Laravel project → GitHub
+
+Use this when the project already exists locally.
+
+cd ~/Desktop/employee_management_lite_2
+
+git status
+
+git init
+
+git config user.name "Gaurav Bansode"
+git config user.email "gauravb@parasightsolutions.com"
+
+git add .
+
+git commit -m "Initial commit: Employee Management Lite"
+
+git branch -M main
+
+git remote add origin https://github.com/gauravb-2673/employee_management_lite_2.git
+
+git push -u origin main
+
+Important: These commands assume the project does not already have the relevant Git history or remote configured, and that the GitHub repository is empty. If you have already initialized Git or configured origin, inspect the current state rather than repeating those commands blindly.
+
+B. GitHub → Local computer
+
+Use this when the repository already exists on GitHub and you want a local copy.
+
+cd ~/Desktop
+
+git clone https://github.com/gauravb-2673/employee_management_lite_2.git
+
+cd employee_management_lite_2
+
+git status
+
+git remote -v
+
+For a Laravel project, cloning downloads the source code and Git history, but you will normally need to install dependencies and configure the local environment before running the application.
+
+For example:
+
+composer install
+
+Then create a local .env based on .env.example and configure the database and other environment-specific settings.
+
+For a local Laravel application, you may also need to generate an application key:
+
+php artisan key:generate
+
+Run migrations only after confirming that the database configuration points to the correct local database:
+
+php artisan migrate
+
+Do not run php artisan migrate:fresh on a database containing data you want to preserve. It drops existing tables before recreating them.
