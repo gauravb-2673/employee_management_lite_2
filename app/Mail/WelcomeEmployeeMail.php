@@ -39,7 +39,7 @@ class WelcomeEmployeeMail extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            view: 'emails.welcome-employee',
+            view: 'mails.welcome-employee',
         );
     }
 

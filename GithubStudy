@@ -1,0 +1,212 @@
+git branch - used to check the branche's.
+
+
+git switch -c feature/employee-api  - The -c option means create a new branch.Switches you to that branch.
+it is equivalent to git branch feature/employee-api , git switch feature/employee-api
+
+git status - check for uncommitted changes.
+
+git stash push -m "Work in progress on employee API"  - if you have unfinished work, either commit it or deliberately stash it before switching.
+
+Later, after returning to the appropriate branch : git stash pop the restored changes apply to your current working tree, so make sure you're on the intended branch. 
+
+stages of Git - 
+
+Working Directory
+       |
+       | git add
+       v
+Staging Area
+       |
+       | git commit
+       v
+Local Repository
+       |
+       | git push
+       v
+Remote Repository (GitHub)
+
+git diff  - used to check the difference of changes done in the local vs remote repository
+
+git add . - stage all changes
+
+git commit -m "feat(api): add employee CRUD endpoints"   -- -m option supplies the commit message 
+Git commit - A commit is a recorded snapshot of changes in your Git history.
+
+| Type | Meaning | Example |
+|---|---|---|
+| `feat` | Introduces functionality | `feat(api): add employee endpoints` |
+| `fix` | Fixes a defect | `fix(api): correct employee lookup` |
+| `test` | Adds or updates tests | `test(api): test invalid employee data` |
+| `docs` | Changes documentation | `docs(readme): add setup instructions` |
+| `refactor` | Restructures code without intentionally changing behavior | `refactor(api): simplify employee queries` |
+| `style` | Formatting changes without changing program logic | `style(api): format controller code` |
+| `perf` | Improves performance | `perf(employee): eager load departments` |
+| `chore` | Maintenance work | `chore(deps): update development dependencies` |
+
+git remote -v  -- shows the configured remotes.
+
+git push -u origin feature/employee-api 
+git push: Upload local commits to a remote repository.
+origin: The remote repository's configured name.
+feature/employee-api: The branch to upload.
+-u: Set the upstream relationship between your local branch and its remote counterpart.
+git commit records your changes locally; git push sends your commits to the remote repository.
+
+Pull Request - A Pull Request (PR) is a request to review and integrate changes from one branch into another.
+
+git switch -c feature/days-8-9 <base-commit-hash>
+cherry-pick -
+git cherry-pick <first-commit-hash>
+git cherry-pick <second-commit-hash>
+cherry-picking can produce conflicts, and the correct base commit depends on your repository history.
+
+=======================================================================================================================
+Proper GITHUB REFERENCE WITH EXAMPLES
+=======================================================================================================================
+
+Configure your identity
+git config --global user.name "Your Name"
+git config --global user.email "your-email@example.com"
+
+What does --global mean? Git supports configuration at different levels.
+| Level | Scope | Example |
+|---|---|---|
+| System | All users on the computer | System-wide Git settings |
+| Global | Your user account | Your default commit identity |
+| Local | The current repository | A project-specific identity |
+
+=======================================================================================================================
+
+The .gitignore file tells Git which untracked files and directories to ignore.
+
+=======================================================================================================================
+Initialize Git
+git init
+
+Git creates a repository in the current directory.
+git init creates a local repository. It does not create a GitHub repository or upload your files.
+=======================================================================================================================
+
+Depending on your Git configuration, the initial branch may have a name such as master or main.
+git branch --show-current
+To configure the initial branch as main: git branch -M main -- -M renames the current branch to main, even if a branch with that name already exists.
+=======================================================================================================================
+Stage the initial files
+
+git add .
+
+=======================================================================================================================
+Inspect the staged changes:
+
+git status
+git diff --cached
+
+git diff normally shows unstaged changes.
+git diff --cached shows staged changes.
+
+=======================================================================================================================
+Create the first commit
+git commit -m "feat: initialize employee management project" -- Git records the staged files in a new commit.
+
+=======================================================================================================================
+Inspect the result:
+git log --oneline
+Example:a12bc34 feat: initialize employee management project
+=======================================================================================================================
+You can inspect the full commit:
+git show
+Or inspect only the summary:
+git show --stat
+=======================================================================================================================
+Create the GitHub repository and connect it
+Create a new repository with the name:company-employee-management
+
+For this example, use:your-username/company-employee-management
+=======================================================================================================================
+Connect your local repository to GitHub
+git remote add origin https://github.com/your-username/company-employee-management.git
+remote manages remote repository references.
+add adds a remote.
+origin is the conventional name for the primary remote.
+
+git remote -v
+=======================================================================================================================
+Push the initial commit
+git push -u origin main
+
+Connects to the remote named origin.
+Uploads the local main branch and its necessary commits.
+Establishes an upstream relationship for the local branch.
+=======================================================================================================================
+
+Create a feature branch  
+make sure your working tree is clean git status nothing to commit, working tree clean
+
+git switch main
+git pull --ff-only origin main
+--ff-only means --fast-forward only.Pull the latest changes from origin/main only if your local branch can be updated by moving its branch pointer forward without creating a merge commit. If a fast-forward is not possible, stop and report an error.
+
+
+Option A: Rebase your local commits
+git pull --rebase origin main
+
+
+=======================================================================================================================
+What if you forget to create a branch?
+Suppose you make several employee-creation changes while still on main.
+
+If the changes are uncommitted, you can often create a branch immediately:
+
+git switch -c feature/add-employee
+The uncommitted changes normally remain in your working tree.
+
+But if you have already committed the feature directly to main, creating a new branch from the current main will not separate those commits from main.
+
+
+=======================================================================================================================
+if you staged the wrong file?
+
+git restore --staged path/to/file
+
+example:git restore --staged .env
+
+If you staged everything accidentally, you can unstage all changes:
+git restore --staged .
+
+
+=======================================================================================================================
+
+To inspect a particular commit:
+git show <commit-hash>
+
+=======================================================================================================================
+You want to preserve the integration history
+git switch feature/add-employee
+git merge origin/main
+Bring the changes from main into my feature branch while preserving the existing branch history.
+
+
+
+
+You want a clean, linear feature history
+git switch feature/add-employee
+git rebase origin/main
+Replay my feature commits on top of the latest main commits.
+
+
+=======================================================================================================================
+git fetch origin 
+This downloads remote updates and refreshes remote-tracking references.
+
+It does not change the current branch's files just because the remote branch changed.
+
+You can compare your local and remote 
+
+git pull
+branch Fetches and integrates changes
+
+=======================================================================================================================
+
+
+=======================================================================================================================
