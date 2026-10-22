@@ -51,7 +51,6 @@ class EmployeeProjectSeeder extends Seeder
             // Select a random role from the available roles.
             $roleId = $roles->random();
 
-
             // 7. Create the relationship without duplicating it.
             $employee->projects()->syncWithoutDetaching([
                 $project->id => [

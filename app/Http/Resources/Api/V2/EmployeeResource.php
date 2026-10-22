@@ -28,7 +28,7 @@ class EmployeeResource extends JsonResource
             // V2 returns nested department information.
             'department' => $this->whenLoaded(
                 'department',
-                fn() => $this->department
+                fn () => $this->department
                     ? [
                         'id' => $this->department->id,
                         'name' => $this->department->department_name,
@@ -39,8 +39,8 @@ class EmployeeResource extends JsonResource
             // V2 includes projects assigned to the employee.
             'projects' => $this->whenLoaded(
                 'projects',
-                fn() => $this->projects
-                    ->map(fn($project) => [
+                fn () => $this->projects
+                    ->map(fn ($project) => [
                         'id' => $project->id,
                         'name' => $project->project_name,
 

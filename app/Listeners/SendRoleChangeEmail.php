@@ -4,7 +4,6 @@ namespace App\Listeners;
 
 use App\Events\UserRoleChanged;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Mail;
 
 class SendRoleChangeEmail implements ShouldQueue
@@ -26,10 +25,10 @@ class SendRoleChangeEmail implements ShouldQueue
 
         Mail::raw(
             "Hello {$user->name},\n\n"
-                . "Your role has been changed.\n"
-                . "Previous role: " . ($event->oldRole ?? 'None') . "\n"
-                . "New role: {$event->newRole}\n\n"
-                . "If you have questions, please contact your administrator.",
+                ."Your role has been changed.\n"
+                .'Previous role: '.($event->oldRole ?? 'None')."\n"
+                ."New role: {$event->newRole}\n\n"
+                .'If you have questions, please contact your administrator.',
             function ($message) use ($user) {
                 $message->to($user->email)
                     ->subject('Your Role Has Been Updated');

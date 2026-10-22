@@ -2,21 +2,21 @@
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Http\Resources\Api\V1\EmployeeResource;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
+use App\Http\Resources\Api\V1\EmployeeResource;
+use App\Mail\WelcomeEmployeeMail;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Project;
 use App\Models\RoleMaster;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\UploadedFile;
-use App\Mail\WelcomeEmployeeMail;
 use Throwable;
 
 class EmployeeController extends Controller
@@ -33,8 +33,8 @@ class EmployeeController extends Controller
             $search = $request->input('employeesearch');
 
             $query->where(function ($subQuery) use ($search) {
-                $subQuery->where('name', 'like', $search . '%')
-                    ->orWhere('email', 'like', $search . '%');
+                $subQuery->where('name', 'like', $search.'%')
+                    ->orWhere('email', 'like', $search.'%');
             });
         }
 
@@ -72,8 +72,8 @@ class EmployeeController extends Controller
         $rolesById = $roleIds->isEmpty()
             ? collect()
             : RoleMaster::whereIn('id', $roleIds)
-            ->get()
-            ->keyBy('id');
+                ->get()
+                ->keyBy('id');
 
         // Attach the already-retrieved role to each project pivot.
         $employees->getCollection()->each(function ($employee) use ($rolesById) {
@@ -255,7 +255,7 @@ class EmployeeController extends Controller
                 $employee->projects()->sync($syncData);
 
                 // Keep the current document if no new file was uploaded.
-                if (!$file) {
+                if (! $file) {
                     return;
                 }
 
@@ -347,9 +347,9 @@ class EmployeeController extends Controller
         $timestamp = now()->format('Y-m-d_H-i-s-u');
 
         $fileName = $originalName
-            . '_employee_' . $employee->id
-            . '_' . $timestamp
-            . '.' . $extension;
+            .'_employee_'.$employee->id
+            .'_'.$timestamp
+            .'.'.$extension;
 
         $path = $file->storeAs(
             'employee-documents',

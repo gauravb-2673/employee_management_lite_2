@@ -10,8 +10,7 @@ use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 
 // Reset the test database state between tests.
-//uses(RefreshDatabase::class);
-
+// uses(RefreshDatabase::class);
 
 /*
 |--------------------------------------------------------------------------
@@ -58,7 +57,6 @@ it('lists employees successfully', function () {
     // Assert that all three employees are returned.
     $this->assertCount(3, $response->json('data'));
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -116,7 +114,6 @@ it('creates an employee successfully', function () {
     Mail::assertQueued(WelcomeEmployeeMail::class);
 });
 
-
 /*
 |--------------------------------------------------------------------------
 | Test 3: Invalid employee creation
@@ -143,7 +140,6 @@ it('returns validation errors for invalid employee data', function () {
     // No employee should have been created.
     $this->assertDatabaseCount('employees', 0);
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -177,7 +173,6 @@ it('shows an individual employee', function () {
         ->assertJsonPath('data.id', $employee->id)
         ->assertJsonPath('data.email', $employee->email);
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -239,7 +234,6 @@ it('updates an employee successfully', function () {
     ]);
 });
 
-
 /*
 |--------------------------------------------------------------------------
 | Test 6: Invalid employee update
@@ -289,7 +283,6 @@ it('returns validation errors for invalid employee updates', function () {
     ]);
 });
 
-
 /*
 |--------------------------------------------------------------------------
 | Test 7: Delete an employee
@@ -327,7 +320,6 @@ it('soft deletes an employee successfully', function () {
     ]);
 });
 
-
 /*
 |--------------------------------------------------------------------------
 | Test 8: Unauthenticated access
@@ -340,7 +332,6 @@ it('rejects unauthenticated requests', function () {
 
     $response->assertUnauthorized();
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -384,7 +375,6 @@ it('forbids an employee from viewing another employees record', function () {
     // EmployeePolicy should deny access with HTTP 403.
     $response->assertForbidden();
 });
-
 
 /*
 |--------------------------------------------------------------------------

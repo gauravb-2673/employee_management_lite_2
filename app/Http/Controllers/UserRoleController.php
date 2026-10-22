@@ -82,9 +82,9 @@ class UserRoleController extends Controller
                     ->withInput()
                     ->withErrors([
                         'role' => 'This user already has the role(s): '
-                            . $existingRoles->join(', ')
-                            . '. Remove the existing role or choose '
-                            . 'Change Existing Role.',
+                            .$existingRoles->join(', ')
+                            .'. Remove the existing role or choose '
+                            .'Change Existing Role.',
                     ]);
             }
 
@@ -114,7 +114,7 @@ class UserRoleController extends Controller
                     ->withInput()
                     ->withErrors([
                         'role' => 'This user has no existing role. '
-                            . 'Choose Assign Role instead.',
+                            .'Choose Assign Role instead.',
                     ]);
             }
 

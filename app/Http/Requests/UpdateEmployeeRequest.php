@@ -2,12 +2,9 @@
 
 namespace App\Http\Requests;
 
-
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-
-
 
 class UpdateEmployeeRequest extends FormRequest
 {
@@ -52,6 +49,7 @@ class UpdateEmployeeRequest extends FormRequest
             ],
         ];
     }
+
     public function messages(): array
     {
         return [

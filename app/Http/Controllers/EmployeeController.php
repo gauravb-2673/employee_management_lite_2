@@ -2,21 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Department;
-use Illuminate\Http\Request;
 use App\Http\Requests\StoreEmployeeRequest;
+use App\Http\Requests\UpdateEmployeeRequest;
+use App\Mail\WelcomeEmployeeMail;
+use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Project;
-use Illuminate\Support\Facades\DB;
-use App\Http\Requests\UpdateEmployeeRequest;
 use App\Models\RoleMaster;
-use Illuminate\Support\Facades\Gate;
-use App\Models\EmployeeDocument;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
-use App\Mail\WelcomeEmployeeMail;
-use Illuminate\Support\Facades\Mail;
 
 class EmployeeController extends Controller
 {
@@ -25,7 +24,7 @@ class EmployeeController extends Controller
      */
     public function index(Request $request)
     {
-        //dd($request->input('departmentsearch'));
+        // dd($request->input('departmentsearch'));
         // dd($request);
 
         // DB::listen(function ($query) use (&$queries) {
@@ -34,12 +33,9 @@ class EmployeeController extends Controller
         //         'bindings' => $query->bindings,
         //     ];
         // });
-        //dd($queries);
+        // dd($queries);
 
         //     $employees = Employee::with('department', 'projects')->paginate(10);
-
-
-
 
         $query = Employee::with('department', 'projects');
         $departments = Department::all();
@@ -49,8 +45,8 @@ class EmployeeController extends Controller
         // Apply employee name/email search only when a value is provided.
         if ($request->filled('employeesearch')) { // filled() checks if the input field is present and not empty. It returns true if the field has a value, and false if it's empty or not present.
             $query->where(function ($subQuery) use ($employeesearch) { // where() adds a condition to the query. In this case, it adds a condition that will filter employees based on their name or email. The closure allows for grouping multiple conditions together. // use ($employeesearch) allows the closure to access the $employeesearch variable from the parent scope. if you didn't use use ($employeesearch), the closure wouldn't have access to that variable, and you'd get an error of undefined variable.
-                $subQuery->where('name', 'like',  $employeesearch . '%')
-                    ->orWhere('email', 'like',  $employeesearch . '%'); //$subQuery is used to build a subquery that checks if the employee's name or email starts with the value of $employeesearch. The 'like' operator is used for pattern matching, and '%' is a wildcard that matches any sequence of characters.
+                $subQuery->where('name', 'like', $employeesearch.'%')
+                    ->orWhere('email', 'like', $employeesearch.'%'); // $subQuery is used to build a subquery that checks if the employee's name or email starts with the value of $employeesearch. The 'like' operator is used for pattern matching, and '%' is a wildcard that matches any sequence of characters.
             });
         }
 
@@ -65,7 +61,7 @@ class EmployeeController extends Controller
 
         $employees = $query->orderBy('id', 'desc')->paginate(10)->withQueryString(); // withQueryString() appends the current query string parameters to the pagination links, ensuring that the search filters remain applied when navigating through paginated results.
 
-        //dd($employees->getCollection());
+        // dd($employees->getCollection());
 
         // Collect the role IDs from all project assignments
         // belonging to the employees on the current page.
@@ -84,8 +80,8 @@ class EmployeeController extends Controller
         $rolesById = $roleIds->isEmpty()
             ? collect()
             : RoleMaster::whereIn('id', $roleIds)
-            ->get()
-            ->keyBy('id');
+                ->get()
+                ->keyBy('id');
         // $rolesById is a collection of RoleMaster models, keyed by their ID. This allows for quick access to role details when attaching them to the pivot models later. If there are no role IDs, an empty collection is created to avoid unnecessary database queries.
         // Attach each already-retrieved role to its pivot model.
 
@@ -101,12 +97,12 @@ class EmployeeController extends Controller
         });
         // $employees->getCollection() retrieves the collection of Employee models from the paginated result. each() iterates over each employee, and for each employee, it iterates over their associated projects. For each project, it retrieves the role ID from the pivot table and uses it to fetch the corresponding RoleMaster model from $rolesById. The setRelation() method attaches the RoleMaster model to the pivot model under the name 'roleMaster', allowing easy access to role details when rendering views.
 
-        //dd($query->toRawSql());
+        // dd($query->toRawSql());
         // dd($queries);
 
         return view('employee.index', [
             'employees' => $employees,
-            'departments' => $departments
+            'departments' => $departments,
         ]);
     }
     // public function index()
@@ -122,13 +118,11 @@ class EmployeeController extends Controller
 
     //     $employees = Employee::with('department', 'projects')->paginate(10);
 
+    // dd($queries);
+    // dd($employees->toArray());
 
-        //dd($queries);
-        //dd($employees->toArray());
-
-
-        //dd($employees);
-        // dd($employees->toSql());
+    // dd($employees);
+    // dd($employees->toSql());
     //     return view('employee.index', ['employees' => $employees]);
     // }
 
@@ -210,7 +204,7 @@ class EmployeeController extends Controller
                 //     ->send(new WelcomeEmployeeMail($employee));
                 Mail::to($employee->email)
                     ->queue(new WelcomeEmployeeMail($employee));
-                //Laravel will put the email job into a queue. A separate background worker will process the job and send the email.
+                // Laravel will put the email job into a queue. A separate background worker will process the job and send the email.
 
                 // Save project assignments.
                 $employee->projects()->sync($syncData);
@@ -262,15 +256,15 @@ class EmployeeController extends Controller
 
         // dd($employee);
 
-
         return view('employee.show', ['employee' => $employee, 'departments' => $departments, 'projects' => $projects, 'roles' => $roles]);
     }
+
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(Employee $employee)
     {
-        //dd($employee);
+        // dd($employee);
         Gate::authorize('update', $employee);
         $employee = $employee->load('department', 'projects', 'documents');
         $departments = Department::all();
@@ -278,7 +272,6 @@ class EmployeeController extends Controller
         $roles = RoleMaster::all();
 
         // dd($employee);
-
 
         return view('employee.edit', ['employee' => $employee, 'departments' => $departments, 'projects' => $projects, 'roles' => $roles]);
     }
@@ -346,7 +339,7 @@ class EmployeeController extends Controller
                 $employee->projects()->sync($syncData);
 
                 // No new file selected: leave the document unchanged.
-                if (!$file) {
+                if (! $file) {
                     return;
                 }
 
@@ -442,9 +435,9 @@ class EmployeeController extends Controller
 
         // Create the custom filename.
         $fileName = $originalName
-            . '_employee_' . $employee->id
-            . '_' . $timestamp
-            . '.' . $extension;
+            .'_employee_'.$employee->id
+            .'_'.$timestamp
+            .'.'.$extension;
 
         // Save the file on Laravel's local disk.
         $path = $file->storeAs(

@@ -11,13 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        
+
         Schema::create('departments', function (Blueprint $table) {
             $table->id();
-            $table->String('department_name',100 )->unique();
+            $table->String('department_name', 100)->unique();
             $table->timestamps();
         });
-        
+
     }
 
     /**
@@ -25,8 +25,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        
+
         Schema::dropIfExists('departments');
-        
+
     }
 };
