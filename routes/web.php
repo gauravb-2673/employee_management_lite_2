@@ -1,11 +1,10 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\UserRoleController;
 use App\Http\Controllers\EmployeeDocumentController;
-
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserRoleController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
@@ -77,4 +76,4 @@ Route::middleware(['auth', 'active'])->group(function () {
     )->name('employee-documents.view');
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

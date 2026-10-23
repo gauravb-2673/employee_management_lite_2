@@ -2,9 +2,8 @@
 
 namespace Tests;
 
-use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\RefreshDatabaseState;
+use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -18,8 +17,8 @@ abstract class TestCase extends BaseTestCase
         fwrite(
             STDERR,
             'RefreshDatabaseState::$migrated = '
-                . var_export(RefreshDatabaseState::$migrated, true)
-                . "\n"
+                .var_export(RefreshDatabaseState::$migrated, true)
+                ."\n"
         );
 
         fwrite(STDERR, "Calling parent::setUp()...\n");

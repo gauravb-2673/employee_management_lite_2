@@ -23,7 +23,7 @@ class EmployeeResource extends JsonResource
 
             'department' => $this->whenLoaded(
                 'department',
-                fn() => $this->department
+                fn () => $this->department
                     ? [
                         'id' => $this->department->id,
                         'name' => $this->department->department_name,
@@ -33,7 +33,7 @@ class EmployeeResource extends JsonResource
 
             'projects' => $this->whenLoaded(
                 'projects',
-                fn() => $this->projects->map(fn($project) => [
+                fn () => $this->projects->map(fn ($project) => [
                     'id' => $project->id,
                     'name' => $project->project_name,
                     'role' => $project->pivot->role ?? null,

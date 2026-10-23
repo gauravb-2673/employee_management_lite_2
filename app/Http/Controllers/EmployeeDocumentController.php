@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
-
 class EmployeeDocumentController extends Controller
 {
     /**
@@ -43,9 +42,9 @@ class EmployeeDocumentController extends Controller
 
         // Build the new filename.
         $fileName = $originalName
-            . '_employee_' . $employee->id
-            . '_' . $timestamp
-            . '.' . $extension;
+            .'_employee_'.$employee->id
+            .'_'.$timestamp
+            .'.'.$extension;
 
         // Store the file with the custom filename.
         $path = $file->storeAs(
@@ -85,7 +84,7 @@ class EmployeeDocumentController extends Controller
         Gate::authorize('view', $document->employee);
 
         // Build the absolute path to the private file.
-        $filePath = storage_path('app/private/' . $document->path);
+        $filePath = storage_path('app/private/'.$document->path);
 
         // Return 404 if the file does not exist.
         abort_unless(is_file($filePath), 404, 'Document not found.');
@@ -118,8 +117,6 @@ class EmployeeDocumentController extends Controller
             ->route('employees.show', $employee)
             ->with('success', 'Document deleted successfully.');
     }
-
-
 
     public function view(EmployeeDocument $document)
     {

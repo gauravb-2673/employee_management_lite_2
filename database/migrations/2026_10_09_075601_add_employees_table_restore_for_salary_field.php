@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
 
-        schema::table('employees', function (Blueprint $table) {
+        Schema::table('employees', function (Blueprint $table) {
             $table->decimal('salary', 10, 2)->change();
         });
     }
@@ -23,7 +23,7 @@ return new class extends Migration
     public function down(): void
     {
 
-        schema::table('employees', function (Blueprint $table) {
+        Schema::table('employees', function (Blueprint $table) {
             $table->decimal('Salary', 10, 2)->change();
         });
     }

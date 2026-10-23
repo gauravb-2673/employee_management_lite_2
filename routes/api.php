@@ -1,9 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\Api\V1\EmployeeController as V1EmployeeController;
 use App\Http\Controllers\Api\V2\EmployeeController as V2EmployeeController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------

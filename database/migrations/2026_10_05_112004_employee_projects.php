@@ -12,11 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('employee_project', function (Blueprint $table) {
-    
+
             $table->foreignId('employee_id')
-            ->constrained();
+                ->constrained();
             $table->foreignId('project_id')
-            ->constrained();
+                ->constrained();
             $table->String('role');
             $table->timestamps();
 

@@ -2,21 +2,20 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Builder;
-use Database\Factories\EmployeeFactory;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\User;
-use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Employee extends Model
 {
     use HasFactory;
     use SoftDeletes;
+
     protected $table = 'employees';
 
     protected $fillable = [
@@ -29,11 +28,11 @@ class Employee extends Model
         'user_id',
     ];
 
-
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
     }
+
     public function projects(): BelongsToMany
     {
         return $this->belongsToMany(Project::class)
@@ -42,25 +41,23 @@ class Employee extends Model
             ->withTimestamps();
     }
 
-
     protected function casts(): array
     {
         return [
-            'joining_date' => 'date', //done
-            'salary' => 'decimal:2', //done
-            'is_active' => 'boolean', //done
+            'joining_date' => 'date', // done
+            'salary' => 'decimal:2', // done
+            'is_active' => 'boolean', // done
         ];
     }
-
 
     protected function name(): Attribute
     {
         return Attribute::make(
             // Mutator: transforms the value before Eloquent stores it.
-            set: fn(string $value) => $this->alternateCase($value),
+            set: fn (string $value) => $this->alternateCase($value),
 
             // Accessor: transforms the stored value when you read it.
-            get: fn(string $value) => ucwords(strtolower($value)),
+            get: fn (string $value) => ucwords(strtolower($value)),
         );
     }
 
@@ -80,7 +77,7 @@ class Employee extends Model
                     ? strtoupper($character) // strtoupper() converts the character to uppercase. //eg if $character is 'a', it becomes 'A'.
                     : strtolower($character); // strtolower() converts the character to lowercase. //eg if $character is 'A', it becomes 'a'.
 
-                $uppercase = !$uppercase; // toggles the case state for the next letter. If it was uppercase, it becomes lowercase, and vice versa. //so if the first letter is uppercase, the next letter will be lowercase, and this alternation continues for each subsequent letter. // if first letter is lowercase, the next letter will be uppercase, and this alternation continues for each subsequent letter.
+                $uppercase = ! $uppercase; // toggles the case state for the next letter. If it was uppercase, it becomes lowercase, and vice versa. //so if the first letter is uppercase, the next letter will be lowercase, and this alternation continues for each subsequent letter. // if first letter is lowercase, the next letter will be uppercase, and this alternation continues for each subsequent letter.
             } else {
                 $result .= $character; // else, if the character is not a letter (like a space or punctuation), it is added to the result string without changing its case. //eg if $character is ' ', it remains ' ' in the result.
 
@@ -100,9 +97,8 @@ class Employee extends Model
     //         get: fn(string $value) => strtolower($value),
     //     );
 
-    //ucwords() capitalizes the first letter of each word.
-    //strtolower() converts all letters to lowercase.
-
+    // ucwords() capitalizes the first letter of each word.
+    // strtolower() converts all letters to lowercase.
 
     // Function | What it does | Example output |
     // |---|---|---|
@@ -124,26 +120,24 @@ class Employee extends Model
     // | `str_ends_with()` | Checks whether a string ends with text | `true` or `false` |
     // }
 
-
-
     protected function annualSalary(): Attribute
     {
         return Attribute::make(
-            get: fn() => (float) $this->salary * 12,
+            get: fn () => (float) $this->salary * 12,
         );
     }
 
     protected function isHighSalary(): Attribute
     {
         return Attribute::make(
-            get: fn() => (float) $this->salary > 30000,
+            get: fn () => (float) $this->salary > 30000,
         );
     }
 
     protected function daysSinceJoining(): Attribute
     {
         return Attribute::make(
-            get: fn() => $this->joining_date
+            get: fn () => $this->joining_date
                 ? (int) $this->joining_date->diffInDays(now())
                 : null,
         );
@@ -152,7 +146,7 @@ class Employee extends Model
     protected function basicInformation(): Attribute
     {
         return Attribute::make(
-            get: fn() => [
+            get: fn () => [
                 'name' => $this->name,
                 'email' => $this->email,
                 'salary' => $this->salary,
@@ -171,15 +165,16 @@ class Employee extends Model
     // | Return several values | `['name' => $this->name]` | `array` |
     // | Read a relationship | `$this->department?->department_name` | Usually `string` or `null` |
 
-
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
+
     /**
      * All documents belonging to this employee.
      */
