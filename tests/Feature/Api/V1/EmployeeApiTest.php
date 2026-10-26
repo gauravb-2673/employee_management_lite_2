@@ -10,7 +10,7 @@ use Laravel\Sanctum\Sanctum;
 use Spatie\Permission\Models\Role;
 
 // Reset the test database state between tests.
-// uses(RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 /*
 |--------------------------------------------------------------------------
@@ -428,4 +428,89 @@ it('returns the expected employee and department resource structure', function (
             'data.department.name',
             'Quality Assurance'
         );
+});
+
+
+
+
+
+
+it('HR User gets forbidden status when trying to delete a employee', function () {
+    $department = Department::factory()->create([
+        'department_name' => 'Engineering',
+    ]);
+
+    // Create the employee role.
+    Role::findOrCreate('HR', 'web');
+
+    // The currently authenticated employee.
+    $firstUser = User::factory()->create();
+    $firstUser->assignRole('HR');
+
+    // Another employee with a different user account.
+    $secondUser = User::factory()->create();
+
+    $firstEmployee = Employee::factory()->create([
+        'department_id' => $department->id,
+        'user_id' => $firstUser->id,
+    ]);
+
+    $secondEmployee = Employee::factory()->create([
+        'department_id' => $department->id,
+        'user_id' => $secondUser->id,
+    ]);
+
+    // Authenticate as the first employee.
+    Sanctum::actingAs($firstUser);
+
+    // Attempt to view the second employee's record.
+    $response = $this->deleteJson(
+        "/api/v1/employees/{$secondEmployee->id}"
+    );
+
+    // EmployeePolicy should deny access with HTTP 403.
+    $response->assertForbidden();
+});
+
+it('Negative Salary gets 422 Response', function () {
+    $department = Department::factory()->create([
+        'department_name' => 'Engineering',
+    ]);
+
+    $employee = Employee::factory()->create([
+        'department_id' => $department->id,
+    ]);
+
+    Role::findOrCreate('admin', 'web');
+
+    $user = User::factory()->create();
+    $user->assignRole('admin');
+
+    Sanctum::actingAs($user);
+
+    // The salary has fewer than two decimal places.
+    $data = [
+        'name' => 'Invalid Update Employee',
+        'email' => 'invalid.update@example.com',
+        'department_id' => $department->id,
+        'salary' => '-65000.55',
+        'joining_date' => now()->toDateString(),
+        'is_active' => true,
+        'project_ids' => [],
+        'project_roles' => [],
+    ];
+
+    $response = $this->putJson(
+        "/api/v1/employees/{$employee->id}",
+        $data
+    );
+
+    $response->assertUnprocessable()
+        ->assertJsonValidationErrors(['salary']);
+
+    // The original employee email should remain unchanged.
+    $this->assertDatabaseHas('employees', [
+        'id' => $employee->id,
+        'email' => $employee->email,
+    ]);
 });
