@@ -54,10 +54,10 @@ class Employee extends Model
     {
         return Attribute::make(
             // Mutator: transforms the value before Eloquent stores it.
-            set: fn (string $value) => $this->alternateCase($value),
+            set: fn(string $value) => $this->alternateCase($value),
 
             // Accessor: transforms the stored value when you read it.
-            get: fn (string $value) => ucwords(strtolower($value)),
+            get: fn(string $value) => ucwords(strtolower($value)),
         );
     }
 
@@ -123,21 +123,21 @@ class Employee extends Model
     protected function annualSalary(): Attribute
     {
         return Attribute::make(
-            get: fn () => (float) $this->salary * 12,
+            get: fn() => (float) $this->salary * 12,
         );
     }
 
     protected function isHighSalary(): Attribute
     {
         return Attribute::make(
-            get: fn () => (float) $this->salary > 30000,
+            get: fn() => (float) $this->salary > 30000,
         );
     }
 
     protected function daysSinceJoining(): Attribute
     {
         return Attribute::make(
-            get: fn () => $this->joining_date
+            get: fn() => $this->joining_date
                 ? (int) $this->joining_date->diffInDays(now())
                 : null,
         );
@@ -146,7 +146,7 @@ class Employee extends Model
     protected function basicInformation(): Attribute
     {
         return Attribute::make(
-            get: fn () => [
+            get: fn() => [
                 'name' => $this->name,
                 'email' => $this->email,
                 'salary' => $this->salary,
@@ -181,5 +181,10 @@ class Employee extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(EmployeeDocument::class);
+    }
+
+    public function salaryhistory(): HasMany
+    {
+        return $this->hasMany(EmployeeSalaryHistories::class);
     }
 }

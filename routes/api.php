@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\DepartmentController;
 use App\Http\Controllers\Api\V1\EmployeeController as V1EmployeeController;
 use App\Http\Controllers\Api\V2\EmployeeController as V2EmployeeController;
 use Illuminate\Support\Facades\Route;
@@ -18,6 +19,13 @@ Route::prefix('v1')
     ->middleware('auth:sanctum')
     ->group(function () {
         Route::apiResource('employees', V1EmployeeController::class);
+    });
+
+Route::prefix('v1')
+    ->name('api.v1.')
+    ->middleware('auth:sanctum')
+    ->group(function () {
+        Route::get('/department/{department}/employees', [DepartmentController::class, 'departments']);
     });
 
 /*

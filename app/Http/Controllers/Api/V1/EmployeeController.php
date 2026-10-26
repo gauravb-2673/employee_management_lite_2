@@ -33,8 +33,8 @@ class EmployeeController extends Controller
             $search = $request->input('employeesearch');
 
             $query->where(function ($subQuery) use ($search) {
-                $subQuery->where('name', 'like', $search.'%')
-                    ->orWhere('email', 'like', $search.'%');
+                $subQuery->where('name', 'like', $search . '%')
+                    ->orWhere('email', 'like', $search . '%');
             });
         }
 
@@ -72,8 +72,8 @@ class EmployeeController extends Controller
         $rolesById = $roleIds->isEmpty()
             ? collect()
             : RoleMaster::whereIn('id', $roleIds)
-                ->get()
-                ->keyBy('id');
+            ->get()
+            ->keyBy('id');
 
         // Attach the already-retrieved role to each project pivot.
         $employees->getCollection()->each(function ($employee) use ($rolesById) {
@@ -347,9 +347,9 @@ class EmployeeController extends Controller
         $timestamp = now()->format('Y-m-d_H-i-s-u');
 
         $fileName = $originalName
-            .'_employee_'.$employee->id
-            .'_'.$timestamp
-            .'.'.$extension;
+            . '_employee_' . $employee->id
+            . '_' . $timestamp
+            . '.' . $extension;
 
         $path = $file->storeAs(
             'employee-documents',
