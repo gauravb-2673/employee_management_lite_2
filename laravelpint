@@ -1,0 +1,99 @@
+laravel pint 
+
+composer require laravel/pint --dev
+
+
+server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ ./vendor/bin/pint --version
+Pint 1.30.4
+
+server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ ./vendor/bin/pint --version
+Pint 1.30.4
+server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ ./vendor/bin/pint --test
+
+  ............⨯.⨯.⨯.⨯....⨯⨯⨯⨯.⨯⨯..........⨯⨯..⨯⨯.⨯⨯⨯.⨯⨯⨯⨯⨯..⨯.........⨯...⨯.⨯...⨯.....⨯.......⨯⨯⨯
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Laravel  
+    FAIL   ............................................................................................................... 95 files, 31 style issues  
+  ⨯ app/Events/UserRoleChanged.php            braces_position, no_unused_imports, single_line_after_imports, single_line_empty_body, ordered_imports  
+  ⨯ app/Http/Controllers/Api/V1/EmployeeController.php concat_space, method_chaining_indentation, not_operator_with_successor_space, ordered_import…  
+  ⨯ app/Http/Controllers/Api/V2/EmployeeController.php concat_space, method_chaining_indentation, not_operator_with_successor_space, ordered_import…  
+  ⨯ app/Http/Controllers/EmployeeController.php class_attributes_separation, method_argument_space, single_line_comment_spacing, concat_space, meth…  
+  ⨯ app/Http/Controllers/EmployeeDocumentController.php                         class_attributes_separation, concat_space, single_line_after_imports  
+  ⨯ app/Http/Controllers/UserRoleController.php                               concat_space, unary_operator_spaces, not_operator_with_successor_space  
+  ⨯ app/Http/Middleware/EnsureUserIsActive.php                                     blank_line_after_namespace, no_extra_blank_lines, ordered_imports  
+  ⨯ app/Http/Requests/UpdateEmployeeRequest.php                   class_attributes_separation, single_line_after_imports, blank_line_after_namespace  
+  ⨯ app/Http/Resources/Api/V1/EmployeeResource.php                                                                              function_declaration  
+  ⨯ app/Http/Resources/Api/V2/EmployeeResource.php                                                                              function_declaration  
+  ⨯ app/Listeners/LogUserRoleChange.php                                                                                            no_unused_imports  
+  ⨯ app/Listeners/SendRoleChangeEmail.php                                                              single_quote, concat_space, no_unused_imports  
+  ⨯ app/Mail/WelcomeEmployeeMail.php                                                                                                 ordered_imports  
+  ⨯ app/Models/Department.php                                                        class_attributes_separation, no_unused_imports, ordered_imports  
+  ⨯ app/Models/Employee.php class_attributes_separation, function_declaration, single_line_comment_spacing, no_unused_imports, not_operator_with_su…  
+  ⨯ app/Models/Project.php                                                           class_attributes_separation, no_unused_imports, ordered_imports  
+  ⨯ app/Models/RoleMaster.php                                                                           class_attributes_separation, ordered_imports  
+  ⨯ app/Models/User.php                        class_attributes_separation, ordered_traits, no_unused_imports, no_extra_blank_lines, ordered_imports  
+  ⨯ app/Policies/EmployeePolicy.php                                                                                                no_unused_imports  
+  ⨯ bootstrap/app.php                                                                            concat_space, no_extra_blank_lines, ordered_imports  
+  ⨯ database/migrations/2026_10_05_100032_departments.php class_definition, method_argument_space, spaces_inside_parentheses, braces_position, no_w…  
+  ⨯ database/migrations/2026_10_05_105720_projects.php class_attributes_separation, class_definition, no_trailing_whitespace, braces_position, no_w…  
+  ⨯ database/migrations/2026_10_05_112004_employee_projects.php class_definition, method_chaining_indentation, braces_position, no_whitespace_in_bl…  
+  ⨯ database/migrations/2026_10_09_075601_add_employees_table_restore_for_salary_field.php class_definition, fully_qualified_strict_types, braces_p…  
+  ⨯ database/seeders/DatabaseSeeder.php                                                                                              ordered_imports  
+  ⨯ database/seeders/EmployeeProjectSeeder.php                                                                                  no_extra_blank_lines  
+  ⨯ database/seeders/RoleAndPermissionSeeder.php                                                                                     ordered_imports  
+  ⨯ routes/api.php                                                                                             no_extra_blank_lines, ordered_imports  
+  ⨯ routes/web.php                                                                          concat_space, single_line_after_imports, ordered_imports  
+  ⨯ tests/Feature/Api/V1/EmployeeApiTest.php                                                       single_line_comment_spacing, no_extra_blank_lines  
+  ⨯ tests/TestCase.php                                                                              concat_space, no_unused_imports, ordered_imports  
+
+server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ git status
+On branch features-test
+Your branch is up to date with 'origin/features-test'.
+
+nothing to commit, working tree clean
+server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ ./vendor/bin/pint
+
+  ............✓.✓.✓.✓....✓✓✓✓.✓✓..........✓✓..✓✓.✓✓✓.✓✓✓✓✓..✓.........✓...✓.✓...✓.....✓.......✓✓✓
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Laravel  
+    FIXED   ........................................................................................................ 95 files, 31 style issues fixed  
+  ✓ app/Events/UserRoleChanged.php            braces_position, no_unused_imports, single_line_after_imports, single_line_empty_body, ordered_imports  
+  ✓ app/Http/Controllers/Api/V1/EmployeeController.php concat_space, method_chaining_indentation, not_operator_with_successor_space, ordered_import…  
+  ✓ app/Http/Controllers/Api/V2/EmployeeController.php concat_space, method_chaining_indentation, not_operator_with_successor_space, ordered_import…  
+  ✓ app/Http/Controllers/EmployeeController.php class_attributes_separation, method_argument_space, single_line_comment_spacing, concat_space, meth…  
+  ✓ app/Http/Controllers/EmployeeDocumentController.php                         class_attributes_separation, concat_space, single_line_after_imports  
+  ✓ app/Http/Controllers/UserRoleController.php                               concat_space, unary_operator_spaces, not_operator_with_successor_space  
+  ✓ app/Http/Middleware/EnsureUserIsActive.php                                     blank_line_after_namespace, no_extra_blank_lines, ordered_imports  
+  ✓ app/Http/Requests/UpdateEmployeeRequest.php                   class_attributes_separation, single_line_after_imports, blank_line_after_namespace  
+  ✓ app/Http/Resources/Api/V1/EmployeeResource.php                                                                              function_declaration  
+  ✓ app/Http/Resources/Api/V2/EmployeeResource.php                                                                              function_declaration  
+  ✓ app/Listeners/LogUserRoleChange.php                                                                                            no_unused_imports  
+  ✓ app/Listeners/SendRoleChangeEmail.php                                                              single_quote, concat_space, no_unused_imports  
+  ✓ app/Mail/WelcomeEmployeeMail.php                                                                                                 ordered_imports  
+  ✓ app/Models/Department.php                                                        class_attributes_separation, no_unused_imports, ordered_imports  
+  ✓ app/Models/Employee.php class_attributes_separation, function_declaration, single_line_comment_spacing, no_unused_imports, not_operator_with_su…  
+  ✓ app/Models/Project.php                                                           class_attributes_separation, no_unused_imports, ordered_imports  
+  ✓ app/Models/RoleMaster.php                                                                           class_attributes_separation, ordered_imports  
+  ✓ app/Models/User.php                        class_attributes_separation, ordered_traits, no_unused_imports, no_extra_blank_lines, ordered_imports  
+  ✓ app/Policies/EmployeePolicy.php                                                                                                no_unused_imports  
+  ✓ bootstrap/app.php                                                                            concat_space, no_extra_blank_lines, ordered_imports  
+  ✓ database/migrations/2026_10_05_100032_departments.php class_definition, method_argument_space, spaces_inside_parentheses, braces_position, no_w…  
+  ✓ database/migrations/2026_10_05_105720_projects.php class_attributes_separation, class_definition, no_trailing_whitespace, braces_position, no_w…  
+  ✓ database/migrations/2026_10_05_112004_employee_projects.php class_definition, method_chaining_indentation, braces_position, no_whitespace_in_bl…  
+  ✓ database/migrations/2026_10_09_075601_add_employees_table_restore_for_salary_field.php class_definition, fully_qualified_strict_types, braces_p…  
+  ✓ database/seeders/DatabaseSeeder.php                                                                                              ordered_imports  
+  ✓ database/seeders/EmployeeProjectSeeder.php                                                                                  no_extra_blank_lines  
+  ✓ database/seeders/RoleAndPermissionSeeder.php                                                                                     ordered_imports  
+  ✓ routes/api.php                                                                                             no_extra_blank_lines, ordered_imports  
+  ✓ routes/web.php                                                                          concat_space, single_line_after_imports, ordered_imports  
+  ✓ tests/Feature/Api/V1/EmployeeApiTest.php                                                       single_line_comment_spacing, no_extra_blank_lines  
+  ✓ tests/TestCase.php                                                                              concat_space, no_unused_imports, ordered_imports  
+
+server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ ./vendor/bin/pint --test
+
+  ...............................................................................................
+
+  ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── Laravel  
+    PASS   ................................................................................................................................ 95 files  
+
+server@PARASIGHT-SERVER:~/Desktop/employee_management_lite_2$ 

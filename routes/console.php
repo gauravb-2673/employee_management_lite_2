@@ -1,8 +1,11 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// Run this task once every minute.
+Schedule::call(function () {
+    Log::info('Employee Management Lite scheduler is running.', [
+        'executed_at' => now()->toDateTimeString(),
+    ]);
+})->everyMinute()->name('employee-scheduler-test');
