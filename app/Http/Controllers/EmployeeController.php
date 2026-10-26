@@ -45,8 +45,8 @@ class EmployeeController extends Controller
         // Apply employee name/email search only when a value is provided.
         if ($request->filled('employeesearch')) { // filled() checks if the input field is present and not empty. It returns true if the field has a value, and false if it's empty or not present.
             $query->where(function ($subQuery) use ($employeesearch) { // where() adds a condition to the query. In this case, it adds a condition that will filter employees based on their name or email. The closure allows for grouping multiple conditions together. // use ($employeesearch) allows the closure to access the $employeesearch variable from the parent scope. if you didn't use use ($employeesearch), the closure wouldn't have access to that variable, and you'd get an error of undefined variable.
-                $subQuery->where('name', 'like', $employeesearch.'%')
-                    ->orWhere('email', 'like', $employeesearch.'%'); // $subQuery is used to build a subquery that checks if the employee's name or email starts with the value of $employeesearch. The 'like' operator is used for pattern matching, and '%' is a wildcard that matches any sequence of characters.
+                $subQuery->where('name', 'like', $employeesearch . '%')
+                    ->orWhere('email', 'like', $employeesearch . '%'); // $subQuery is used to build a subquery that checks if the employee's name or email starts with the value of $employeesearch. The 'like' operator is used for pattern matching, and '%' is a wildcard that matches any sequence of characters.
             });
         }
 
@@ -80,8 +80,8 @@ class EmployeeController extends Controller
         $rolesById = $roleIds->isEmpty()
             ? collect()
             : RoleMaster::whereIn('id', $roleIds)
-                ->get()
-                ->keyBy('id');
+            ->get()
+            ->keyBy('id');
         // $rolesById is a collection of RoleMaster models, keyed by their ID. This allows for quick access to role details when attaching them to the pivot models later. If there are no role IDs, an empty collection is created to avoid unnecessary database queries.
         // Attach each already-retrieved role to its pivot model.
 
@@ -435,9 +435,9 @@ class EmployeeController extends Controller
 
         // Create the custom filename.
         $fileName = $originalName
-            .'_employee_'.$employee->id
-            .'_'.$timestamp
-            .'.'.$extension;
+            . '_employee_' . $employee->id
+            . '_' . $timestamp
+            . '.' . $extension;
 
         // Save the file on Laravel's local disk.
         $path = $file->storeAs(
