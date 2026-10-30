@@ -1,0 +1,66 @@
+Q1. Migrations and Eloquent (10 marks)
+Your original employees migration was changed after it had already run. Why is this a problem on a live server?
+changing the migration after it has been already run create's a confict in preserving the history of the database schema, laravel doesnt support changing the migration file once the migration has been run. if changes are required, it can be added using a new migration file.
+
+Write the migration that renames the column Salary to salary, including a working down() method.
+ public function up(): void
+    {
+        Schema::table('employees', function (Blueprint $table) {
+            $table->decimal('salary', 10, 2)->change();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('employees', function (Blueprint $table) {
+
+            $table->decimal('Salary', 10, 2)->change();
+        });
+    }
+
+Explain $fillable, $guarded and $hidden in one line each. A form sends an extra field is_admin=1 that is not in the model's fillable list. What happens when you call Employee::create() with all the request data?
+
+$fillable, which specifies the attributes that are allowed. 
+$guarded provides the opposite approach- specify the attributes you want to protect.
+
+if don't want the salary to appear when the model is converted to an array or JSON.
+You can use $hidden.
+
+if field is_admin=1 which is not in fillable list is passed and the employee create is called the is_admin field value will also get stored. Thus defining fillable attributes and using request validated on requests is important.
+
+
+
+Q2. Transactions, queues and events (10 marks)
+In your store() method, the welcome email is queued inside DB::transaction(). What can go wrong if the transaction rolls back? How do you fix it?
+In this case if the rolls back the emails till gets queued becuse we have put it before the the db queries which has a posibility of failure.
+We can queue the email after the transaction is successful, instead of calling it before the Db transaction's sucess.
+
+What does php artisan queue:work do? What happens to a queued email if no worker is running?
+php artisan queue:work - Starts a worker that processes queued jobs. If no worker is running the queued mail is still pending and not cleared from the jobs table.
+
+Why did you use an event (UserRoleChanged) with listeners instead of sending the email directly from the controller?
+Due to the task mentioned for implementation of event and listner i tried this method. 
+
+Q3. APIs and testing (10 marks)
+
+Explain 401, 403, 404 and 422 with one example each from your employee API.
+401 - Unauthorized, 403 - Forbidden  404 - Not Found - 422 - Unprocessable Entity
+
+Why return an API Resource instead of returning the Employee model directly?
+API Resource Used to control how models are converted into API responses. We use it when we want to only expose the required model attributes to the api client instead of showing all the model attributes. This helps us to hide model attributes which are not necessary or which are for security purpose not exposed to the api client.
+
+What does the RefreshDatabase trait do? What happens to your tests if it is not used and you run them twice?
+RefreshDatabase is used for making the database records empty after the test has run with results. If I run first test without RefreshDatabase and then try to run the same test again second time the UniqueConstraintViolationException show up as some of the records are already inserted in the first test.
+
+For PUT /employees/5, put these in order: controller, middleware, Form Request, route model binding, Policy check.
+
+Route model binding
+Middleware
+Form Request
+Controller
+Policy check
+
+

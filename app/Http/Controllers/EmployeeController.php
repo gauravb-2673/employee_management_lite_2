@@ -202,8 +202,7 @@ class EmployeeController extends Controller
                 // Send the welcome email to the new employee.
                 // Mail::to($employee->email)
                 //     ->send(new WelcomeEmployeeMail($employee));
-                Mail::to($employee->email)
-                    ->queue(new WelcomeEmployeeMail($employee));
+
                 // Laravel will put the email job into a queue. A separate background worker will process the job and send the email.
 
                 // Save project assignments.
@@ -225,6 +224,8 @@ class EmployeeController extends Controller
                         'uploaded_by' => $request->user()->id,
                     ]);
                 }
+                Mail::to($employee->email)
+                    ->queue(new WelcomeEmployeeMail($employee));
 
                 return $employee;
             });
@@ -286,11 +287,16 @@ class EmployeeController extends Controller
         UpdateEmployeeRequest $request,
         Employee $employee
     ) {
+        //dd($request);
         // 1. Check whether the user is authorized to update this employee.
         Gate::authorize('update', $employee);
 
+        $employeeid = $employee->id;
+        //dd($employeeid);
         // 2. Get validated input and the optional uploaded file.
         $data = $request->validated();
+        //dd($request->salary);
+        //dd($employee);
         $file = $request->file('document');
 
         // 3. Extract project assignments.
@@ -315,7 +321,9 @@ class EmployeeController extends Controller
 
         // 6. Find the existing document, if one exists.
         $existingDocument = $employee->documents()->first();
+        $existingEmployeeSalary = $employee->where('id', $employeeid);
 
+        //dd($existingEmployeeSalary);
         // Keep the old physical path until the update succeeds.
         $oldPath = $existingDocument?->path;
 
@@ -365,6 +373,9 @@ class EmployeeController extends Controller
                     // No document existed, so create the first record.
                     $employee->documents()->create($documentData);
                 }
+                // if ($existingEmployeeSalary) {
+                //     $$existingEmployeeSalary->create($existingEmployeeSalary);
+                // }
             });
         } catch (Throwable $exception) {
             // Remove the new physical file if the DB transaction fails.
