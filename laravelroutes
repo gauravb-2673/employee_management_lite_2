@@ -1,0 +1,2558 @@
+# LARAVEL ROUTES AND MIDDLEWARE — COMPLETE LEARNING NOTES
+
+This document explains:
+1. What routes are.
+2. Where routes are registered.
+3. All major types of route registration.
+4. Resource routes and API resource routes.
+5. Route parameters and constraints.
+6. Named routes and route groups.
+7. What middleware is.
+8. Types of middleware.
+9. Built-in middleware.
+10. How to create custom middleware.
+11. Middleware parameters and aliases.
+12. Middleware execution order.
+13. How Laravel processes a request.
+14. Route and middleware commands.
+15. Common mistakes and security considerations.
+
+============================================================
+PART 1: UNDERSTANDING ROUTES
+============================================================
+
+1. WHAT IS A ROUTE?
+
+A route tells Laravel:
+
+- Which URL a user can access.
+- Which HTTP method is accepted.
+- Which controller method or function should execute.
+- Which middleware should process the request.
+- What response should be returned.
+
+Example:
+
+Route::get('/employees', function () {
+    return 'Employee List';
+});
+
+Explanation:
+
+Route:
+Laravel's routing facade.
+
+get():
+Registers a route that responds to HTTP GET requests.
+
+'/employees':
+The URL path.
+
+function():
+The closure that Laravel executes when the route matches.
+
+Example URL:
+
+http://localhost:8000/employees
+
+When this URL receives a GET request, Laravel returns:
+
+Employee List
+
+
+============================================================
+2. WHERE ARE ROUTES REGISTERED?
+============================================================
+
+Laravel provides different route files for different purposes.
+
+routes/web.php
+    Used for browser-based web pages, sessions, cookies, and form submissions.
+
+routes/api.php
+    Used for API endpoints, typically stateless and prefixed with /api.
+
+routes/console.php
+    Used for console commands and scheduling-related definitions.
+
+routes/channels.php
+    Used for broadcasting channel authorization when broadcasting is configured.
+
+IMPORTANT:
+
+Depending on how your Laravel application was created, routes/api.php may not exist initially.
+
+In Laravel 11 and 12, you can configure API routing using:
+
+php artisan install:api
+
+This installs the API routing setup and Laravel Sanctum as part of the standard setup process.
+
+Review the command's effects before running it in an existing application.
+
+For the Leave Management System:
+
+Web routes:
+routes/web.php
+
+API routes:
+routes/api.php
+
+Web controllers:
+app/Http/Controllers/
+
+API controllers:
+app/Http/Controllers/Api/V1/
+
+Reusable business logic:
+app/Services/
+
+
+============================================================
+PART 2: BASIC HTTP ROUTES
+============================================================
+
+3. GET ROUTE
+
+Purpose:
+Retrieve or display information.
+
+Syntax:
+
+Route::get('/employees', function () {
+    return 'Display Employees';
+});
+
+Controller version:
+
+Route::get('/employees', [
+    EmployeeController::class,
+    'index',
+]);
+
+Typical uses:
+- Display an employee list.
+- Display employee details.
+- Display a dashboard.
+- Retrieve API data.
+
+
+4. POST ROUTE
+
+Purpose:
+Submit data, commonly to create a resource or perform an action.
+
+Syntax:
+
+Route::post('/employees', function () {
+    return 'Create Employee';
+});
+
+Controller version:
+
+Route::post('/employees', [
+    EmployeeController::class,
+    'store',
+]);
+
+Typical use:
+Submit an employee creation form.
+
+
+5. PUT ROUTE
+
+Purpose:
+Replace a resource's representation, generally by submitting the complete set of fields that should be updated.
+
+Syntax:
+
+Route::put('/employees/{employee}', [
+    EmployeeController::class,
+    'update',
+]);
+
+
+6. PATCH ROUTE
+
+Purpose:
+Partially update a resource.
+
+Syntax:
+
+Route::patch('/employees/{employee}', [
+    EmployeeController::class,
+    'update',
+]);
+
+Example:
+Update only an employee's salary without submitting every employee field.
+
+PUT and PATCH often use the same Laravel controller method, but their intended HTTP semantics differ.
+
+
+7. DELETE ROUTE
+
+Purpose:
+Request deletion of a resource.
+
+Syntax:
+
+Route::delete('/employees/{employee}', [
+    EmployeeController::class,
+    'destroy',
+]);
+
+
+8. OPTIONS ROUTE
+
+Purpose:
+Respond to requests asking which communication options are available for a resource.
+
+Example:
+
+Route::options('/employees', function () {
+    return response('', 204)
+        ->header('Allow', 'GET, POST, OPTIONS');
+});
+
+This is an illustrative response. Real applications may need to account for supported methods and CORS configuration.
+
+
+9. MATCH MULTIPLE HTTP METHODS
+
+Syntax:
+
+Route::match(
+    ['get', 'post'],
+    '/employee-search',
+    function () {
+        return 'Employee Search';
+    }
+);
+
+This route accepts both GET and POST requests.
+
+
+10. ACCEPT ANY HTTP METHOD
+
+Syntax:
+
+Route::any('/webhook', function () {
+    return 'Webhook Endpoint';
+});
+
+This registers a route for all HTTP methods supported by Laravel's any() registration.
+
+Avoid using any() for sensitive operations unless you have a specific reason.
+
+Explicit HTTP methods make the application's behavior easier to understand and protect.
+
+
+============================================================
+PART 3: ROUTES CONNECTED TO CONTROLLERS
+============================================================
+
+11. ROUTE TO A CONTROLLER METHOD
+
+Syntax:
+
+Route::get(
+    '/employees',
+    [EmployeeController::class, 'index']
+);
+
+Laravel calls:
+
+EmployeeController::index()
+
+General syntax:
+
+Route::HTTP_METHOD(
+    '/url',
+    [ControllerClass::class, 'methodName']
+);
+
+Example CRUD routes:
+
+Route::get('/employees', [
+    EmployeeController::class,
+    'index',
+]);
+
+Route::get('/employees/create', [
+    EmployeeController::class,
+    'create',
+]);
+
+Route::post('/employees', [
+    EmployeeController::class,
+    'store',
+]);
+
+Route::get('/employees/{employee}', [
+    EmployeeController::class,
+    'show',
+]);
+
+Route::get('/employees/{employee}/edit', [
+    EmployeeController::class,
+    'edit',
+]);
+
+Route::put('/employees/{employee}', [
+    EmployeeController::class,
+    'update',
+]);
+
+Route::delete('/employees/{employee}', [
+    EmployeeController::class,
+    'destroy',
+]);
+
+
+12. SINGLE-ACTION CONTROLLER
+
+Create:
+
+php artisan make:controller DashboardController --invokable
+
+Controller:
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\View\View;
+
+class DashboardController extends Controller
+{
+    public function __invoke(): View
+    {
+        return view('dashboard');
+    }
+}
+
+Route:
+
+Route::get('/dashboard', DashboardController::class);
+
+Laravel calls the controller's __invoke() method.
+
+Use this when a controller has one clear responsibility.
+
+
+============================================================
+PART 4: RESOURCE ROUTES
+============================================================
+
+13. REGISTER ALL RESOURCE ROUTES
+
+Syntax:
+
+Route::resource('employees', EmployeeController::class);
+
+Laravel registers the conventional CRUD routes.
+
+HTTP METHOD    URL                              METHOD       ROUTE NAME
+
+GET            /employees                       index        employees.index
+GET            /employees/create                create       employees.create
+POST           /employees                       store        employees.store
+GET            /employees/{employee}             show         employees.show
+GET            /employees/{employee}/edit        edit         employees.edit
+PUT/PATCH      /employees/{employee}             update       employees.update
+DELETE         /employees/{employee}             destroy      employees.destroy
+
+Purpose of each controller method:
+
+index()
+    Display a list of employees.
+
+create()
+    Display the employee creation form.
+
+store()
+    Save a new employee.
+
+show()
+    Display one employee.
+
+edit()
+    Display the employee editing form.
+
+update()
+    Update an employee.
+
+destroy()
+    Delete an employee.
+
+Laravel expands the resource declaration into individual registered routes.
+
+
+14. REGISTER ONLY SELECTED RESOURCE ACTIONS
+
+Syntax:
+
+Route::resource('employees', EmployeeController::class)
+    ->only(['index', 'show']);
+
+Only the index and show routes are registered.
+
+
+15. EXCLUDE RESOURCE ACTIONS
+
+Syntax:
+
+Route::resource('employees', EmployeeController::class)
+    ->except(['destroy']);
+
+All standard resource routes except deletion are registered.
+
+
+16. API RESOURCE ROUTES
+
+Syntax:
+
+Route::apiResource('employees', EmployeeApiController::class);
+
+API resource routes include:
+
+index()
+store()
+show()
+update()
+destroy()
+
+They exclude create() and edit() because API endpoints generally do not need HTML form-display routes.
+
+
+17. REGISTER MULTIPLE RESOURCES
+
+Syntax:
+
+Route::resources([
+    'employees' => EmployeeController::class,
+    'departments' => DepartmentController::class,
+    'projects' => ProjectController::class,
+]);
+
+
+18. NESTED RESOURCE ROUTES
+
+Example:
+
+Route::resource(
+    'departments.employees',
+    DepartmentEmployeeController::class
+);
+
+Typical URLs:
+
+GET    /departments/{department}/employees
+POST   /departments/{department}/employees
+GET    /departments/{department}/employees/{employee}
+PUT    /departments/{department}/employees/{employee}
+DELETE /departments/{department}/employees/{employee}
+
+Use nested resources when an operation is scoped to a parent resource.
+
+IMPORTANT:
+
+Nested URLs do not automatically guarantee that an employee belongs to the specified department.
+
+Use scoped route-model binding or appropriate application logic and authorization.
+
+
+============================================================
+PART 5: VIEW ROUTES AND REDIRECT ROUTES
+============================================================
+
+19. RETURN A VIEW DIRECTLY
+
+Syntax:
+
+Route::view('/about', 'about');
+
+Laravel displays:
+
+resources/views/about.blade.php
+
+Pass data to the view:
+
+Route::view('/welcome', 'welcome', [
+    'name' => 'Rahul',
+]);
+
+Inside welcome.blade.php:
+
+<h1>Welcome, {{ $name }}</h1>
+
+Use Route::view() when the route only needs to display a simple view.
+
+
+20. REDIRECT TO ANOTHER URL
+
+Syntax:
+
+Route::redirect('/old-employees', '/employees');
+
+
+21. REDIRECT TO A NAMED ROUTE
+
+Syntax:
+
+Route::get('/employee-home', function () {
+    return redirect()->route('employees.index');
+});
+
+
+22. PERMANENT REDIRECT
+
+Syntax:
+
+Route::redirect('/old-employees', '/employees', 301);
+
+HTTP 301 indicates a permanent redirect.
+
+
+============================================================
+PART 6: NAMED ROUTES
+============================================================
+
+23. REGISTER A NAMED ROUTE
+
+Syntax:
+
+Route::get('/employees', [
+    EmployeeController::class,
+    'index',
+])->name('employees.index');
+
+
+24. GENERATE ITS URL
+
+$url = route('employees.index');
+
+
+25. REDIRECT TO THE NAMED ROUTE
+
+return redirect()->route('employees.index');
+
+
+26. GENERATE A URL WITH A PARAMETER
+
+Route:
+
+Route::get('/employees/{employee}', [
+    EmployeeController::class,
+    'show',
+])->name('employees.show');
+
+Generate URL:
+
+$url = route('employees.show', [
+    'employee' => 10,
+]);
+
+Resulting path:
+
+/employees/10
+
+
+27. USE A NAMED ROUTE IN BLADE
+
+<a href="{{ route('employees.index') }}">
+    View Employees
+</a>
+
+BENEFITS:
+
+- Avoids hardcoding URLs throughout the application.
+- Makes redirects easier to maintain.
+- Makes Blade links easier to read.
+- Allows URL paths to change without changing every reference.
+
+
+============================================================
+PART 7: ROUTE PARAMETERS AND CONSTRAINTS
+============================================================
+
+28. REQUIRED PARAMETER
+
+Syntax:
+
+Route::get('/employees/{id}', function ($id) {
+    return "Employee ID: {$id}";
+});
+
+URL:
+
+/employees/25
+
+Output:
+
+Employee ID: 25
+
+
+29. MULTIPLE PARAMETERS
+
+Syntax:
+
+Route::get(
+    '/departments/{department}/employees/{employee}',
+    function ($department, $employee) {
+        return "Department: {$department}, Employee: {$employee}";
+    }
+);
+
+Example URL:
+
+/departments/3/employees/25
+
+
+30. OPTIONAL PARAMETER
+
+Syntax:
+
+Route::get('/employees/{name?}', function ($name = null) {
+    return $name ?? 'All Employees';
+});
+
+Examples:
+
+/employees
+/employees/Rahul
+
+The question mark makes the parameter optional.
+
+Give the corresponding argument a default value.
+
+
+31. NUMERIC CONSTRAINT
+
+Syntax:
+
+Route::get('/employees/{id}', function ($id) {
+    return $id;
+})->whereNumber('id');
+
+
+32. ALPHABETIC CONSTRAINT
+
+Syntax:
+
+Route::get('/employees/{name}', function ($name) {
+    return $name;
+})->whereAlpha('name');
+
+
+33. ALPHANUMERIC CONSTRAINT
+
+Syntax:
+
+Route::get('/departments/{department}', function ($department) {
+    return $department;
+})->whereAlphaNumeric('department');
+
+
+34. CUSTOM REGULAR EXPRESSION
+
+Syntax:
+
+Route::get('/employees/{id}', function ($id) {
+    return $id;
+})->where('id', '[0-9]+');
+
+
+35. CONSTRAIN MULTIPLE PARAMETERS
+
+Syntax:
+
+Route::get(
+    '/employees/{employee}/projects/{project}',
+    function ($employee, $project) {
+        return 'Employee and Project';
+    }
+)->where([
+    'employee' => '[0-9]+',
+    'project' => '[0-9]+',
+]);
+
+
+36. GLOBAL ROUTE PARAMETER PATTERN
+
+File:
+
+app/Providers/AppServiceProvider.php
+
+Inside the boot() method:
+
+use Illuminate\Support\Facades\Route;
+
+public function boot(): void
+{
+    Route::pattern('id', '[0-9]+');
+}
+
+This constrains route parameters named id across routes.
+
+IMPORTANT:
+
+A route constraint checks the URL parameter's format.
+
+It does not prove that a database record exists or that the current user is authorized to access it.
+
+
+============================================================
+PART 8: ROUTE GROUPS
+============================================================
+
+37. GROUP ROUTES WITH MIDDLEWARE
+
+Syntax:
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', [
+        DashboardController::class,
+        'index',
+    ]);
+
+    Route::get('/employees', [
+        EmployeeController::class,
+        'index',
+    ]);
+});
+
+All routes in the group receive the specified middleware.
+
+
+38. GROUP ROUTES WITH A URL PREFIX
+
+Syntax:
+
+Route::prefix('admin')->group(function () {
+    Route::get('/dashboard', [
+        AdminDashboardController::class,
+        'index',
+    ]);
+
+    Route::get('/employees', [
+        AdminEmployeeController::class,
+        'index',
+    ]);
+});
+
+Resulting URLs:
+
+/admin/dashboard
+/admin/employees
+
+
+39. GROUP ROUTES WITH A NAME PREFIX
+
+Syntax:
+
+Route::name('admin.')->group(function () {
+    Route::get('/dashboard', [
+        AdminDashboardController::class,
+        'index',
+    ])->name('dashboard');
+
+    Route::get('/employees', [
+        AdminEmployeeController::class,
+        'index',
+    ])->name('employees');
+});
+
+Route names:
+
+admin.dashboard
+admin.employees
+
+IMPORTANT:
+
+prefix('admin')
+    Changes URL paths.
+
+name('admin.')
+    Changes route names.
+
+They are different features.
+
+
+40. COMBINE PREFIX, NAME, AND MIDDLEWARE
+
+Syntax:
+
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', 'can:access-admin'])
+    ->group(function () {
+        Route::get('/dashboard', [
+            AdminDashboardController::class,
+            'index',
+        ])->name('dashboard');
+
+        Route::resource(
+            'employees',
+            AdminEmployeeController::class
+        );
+    });
+
+Examples:
+
+URL:
+    /admin/dashboard
+
+Route name:
+    admin.dashboard
+
+URL:
+    /admin/employees
+
+Route name:
+    admin.employees.index
+
+The access-admin authorization ability must be configured.
+
+
+41. GROUP ROUTES BY CONTROLLER
+
+Syntax:
+
+Route::controller(ReportController::class)->group(function () {
+    Route::get('/reports', 'index')->name('reports.index');
+
+    Route::get('/reports/monthly', 'monthly')
+        ->name('reports.monthly');
+
+    Route::get('/reports/annual', 'annual')
+        ->name('reports.annual');
+});
+
+
+42. NESTED ROUTE GROUPS
+
+Syntax:
+
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth'])
+    ->group(function () {
+        Route::get('/dashboard', [
+            AdminDashboardController::class,
+            'index',
+        ])->name('dashboard');
+
+        Route::prefix('hr')
+            ->name('hr.')
+            ->group(function () {
+                Route::get('/employees', [
+                    HrEmployeeController::class,
+                    'index',
+                ])->name('employees.index');
+            });
+    });
+
+Nested HR route:
+
+URL:
+    /admin/hr/employees
+
+Route name:
+    admin.hr.employees.index
+
+
+43. DOMAIN ROUTES
+
+Syntax:
+
+Route::domain('admin.example.com')->group(function () {
+    Route::get('/dashboard', [
+        AdminDashboardController::class,
+        'index',
+    ]);
+});
+
+Resulting URL:
+
+admin.example.com/dashboard
+
+DNS and web server configuration must direct the domain to the Laravel application.
+
+
+44. SUBDOMAIN PARAMETERS
+
+Syntax:
+
+Route::domain('{tenant}.example.com')->group(function () {
+    Route::get('/dashboard', function (string $tenant) {
+        return "Tenant: {$tenant}";
+    });
+});
+
+The tenant value is taken from the subdomain.
+
+A multi-tenant application must verify that the tenant exists and that the authenticated user is permitted to access it.
+
+
+============================================================
+PART 9: SPECIAL ROUTE REGISTRATIONS
+============================================================
+
+45. FALLBACK ROUTE
+
+Syntax:
+
+Route::fallback(function () {
+    return response()->view('errors.404', [], 404);
+});
+
+Create the view:
+
+resources/views/errors/404.blade.php
+
+Purpose:
+Display a custom not-found page for requests that do not match another route.
+
+Register fallback routes after ordinary routes.
+
+Laravel also handles other 404 conditions, including model-not-found exceptions.
+
+
+46. RATE-LIMIT A ROUTE
+
+Syntax:
+
+Route::get('/reports', [
+    ReportController::class,
+    'index',
+])->middleware('throttle:60,1');
+
+This applies a limit of 60 requests per minute using the standard throttle syntax.
+
+Actual behavior depends on limiter configuration and how requests are counted.
+
+
+47. SIGNED URLS
+
+Generate a temporary signed URL:
+
+use Illuminate\Support\Facades\URL;
+
+$url = URL::temporarySignedRoute(
+    'invoices.download',
+    now()->addMinutes(30),
+    ['invoice' => $invoice->id]
+);
+
+Register the route:
+
+Route::get('/invoices/{invoice}/download', [
+    InvoiceController::class,
+    'download',
+])
+    ->middleware('signed')
+    ->name('invoices.download');
+
+Laravel checks the signature and expiration.
+
+IMPORTANT:
+
+A valid signed URL does not automatically authorize access to a private resource.
+
+Use authorization checks when required.
+
+
+48. SCOPED ROUTE-MODEL BINDING
+
+Example:
+
+Route::get(
+    '/departments/{department}/employees/{employee}',
+    [DepartmentEmployeeController::class, 'show']
+)->scopeBindings();
+
+Controller:
+
+public function show(
+    Department $department,
+    Employee $employee
+) {
+    return view('employees.show', compact('department', 'employee'));
+}
+
+With correctly defined Eloquent relationships, scoped binding can resolve the employee through the department's employees relationship.
+
+This helps prevent a request from combining a department ID with an employee belonging to another department.
+
+
+49. INSPECT REGISTERED ROUTES
+
+List all routes:
+
+php artisan route:list
+
+Show middleware information:
+
+php artisan route:list -v
+
+Show expanded middleware information:
+
+php artisan route:list -vv
+
+Filter by route name:
+
+php artisan route:list --name=employees
+
+Filter by URL path:
+
+php artisan route:list --path=employees
+
+
+============================================================
+PART 10: UNDERSTANDING MIDDLEWARE
+============================================================
+
+50. WHAT IS MIDDLEWARE?
+
+Middleware is code that processes an HTTP request before it reaches its destination and can process the response as it travels back.
+
+Think of middleware as a security checkpoint.
+
+For example, when a user accesses:
+
+/employees
+
+The application may check:
+
+1. Is the user authenticated?
+2. Is the user authorized?
+3. Is the user verified?
+4. Has the user exceeded a rate limit?
+5. Is the request otherwise acceptable?
+
+Middleware can perform these checks before the controller executes.
+
+Example:
+
+Route::get('/dashboard', [
+    DashboardController::class,
+    'index',
+])->middleware('auth');
+
+If authentication succeeds, the request can proceed, provided other checks succeed.
+
+If authentication fails, Laravel normally redirects browser requests to a login page or returns an unauthenticated response for an API request, depending on the application's configuration and request handling.
+
+
+51. MIDDLEWARE VERSUS CONTROLLER
+
+MIDDLEWARE:
+- Processes requests and responses around the destination.
+- Commonly checks authentication and request conditions.
+- Can reject a request before the controller executes.
+- Can inspect or modify the outgoing response.
+- Can be shared across many routes.
+
+CONTROLLER:
+- Handles the matched route's action.
+- Commonly validates input and coordinates application operations.
+- Calls models and services.
+- Chooses or returns a response.
+
+Example:
+
+Middleware:
+    Check whether the user is authenticated.
+
+Controller:
+    Retrieve the employee list.
+
+
+============================================================
+PART 11: TYPES OF MIDDLEWARE
+============================================================
+
+52. GLOBAL MIDDLEWARE
+
+Global middleware applies to requests passing through the global HTTP middleware pipeline.
+
+In modern Laravel applications, middleware configuration is commonly found in:
+
+bootstrap/app.php
+
+Example configuration:
+
+use Illuminate\Foundation\Configuration\Middleware;
+
+->withMiddleware(function (Middleware $middleware): void {
+    // Configure middleware here.
+})
+
+Create middleware:
+
+php artisan make:middleware LogRequest
+
+Register it globally:
+
+use App\Http\Middleware\LogRequest;
+use Illuminate\Foundation\Configuration\Middleware;
+
+->withMiddleware(function (Middleware $middleware): void {
+    $middleware->append(LogRequest::class);
+});
+
+append():
+    Adds middleware to the end of the global stack.
+
+prepend():
+    Adds middleware to the beginning of the global stack.
+
+Example:
+
+$middleware->prepend(LogRequest::class);
+
+Use global middleware when the behavior should apply broadly to HTTP requests.
+
+Middleware ordering matters.
+
+
+53. ROUTE MIDDLEWARE
+
+Route middleware is attached to an individual route.
+
+Example:
+
+Route::get('/employees', [
+    EmployeeController::class,
+    'index',
+])->middleware('auth');
+
+Multiple middleware:
+
+Route::get('/employees', [
+    EmployeeController::class,
+    'index',
+])->middleware(['auth', 'verified']);
+
+Middleware can also be attached to POST routes:
+
+Route::post('/employees', [
+    EmployeeController::class,
+    'store',
+])->middleware(['auth', 'can:create-employees']);
+
+The create-employees authorization ability must be defined.
+
+
+54. MIDDLEWARE GROUPS
+
+A middleware group is a named collection of middleware.
+
+Common Laravel groups:
+
+web:
+    Used for typical browser-based web requests.
+
+api:
+    Used for API requests.
+
+The exact middleware stack depends on application configuration and Laravel version.
+
+
+55. THE WEB MIDDLEWARE GROUP
+
+The web group provides middleware for typical browser-based applications.
+
+Its standard responsibilities include:
+
+- Cookie handling.
+- Session handling.
+- CSRF protection.
+- Route-model binding.
+
+Example:
+
+Route::middleware('web')->group(function () {
+    Route::get('/employees', [
+        EmployeeController::class,
+        'index',
+    ]);
+});
+
+In a standard Laravel application, routes in routes/web.php normally receive the web middleware group automatically.
+
+
+56. THE API MIDDLEWARE GROUP
+
+The api group is designed for API requests.
+
+Depending on configuration, it may include middleware for API-related behavior such as throttling and route-model binding.
+
+Example:
+
+Route::middleware('api')->group(function () {
+    Route::get('/employees', [
+        EmployeeApiController::class,
+        'index',
+    ]);
+});
+
+When routes/api.php is configured normally, Laravel applies the API middleware group and configured API prefix automatically.
+
+You generally do not need to apply the api group manually to every route in routes/api.php.
+
+
+57. CREATE A CUSTOM MIDDLEWARE GROUP
+
+In Laravel 12, configure a custom group in bootstrap/app.php.
+
+Example:
+
+use App\Http\Middleware\CheckEmployeeStatus;
+use App\Http\Middleware\EnsureHrRole;
+use Illuminate\Foundation\Configuration\Middleware;
+
+->withMiddleware(function (Middleware $middleware): void {
+    $middleware->group('hr', [
+        CheckEmployeeStatus::class,
+        EnsureHrRole::class,
+    ]);
+});
+
+Apply it:
+
+Route::middleware('hr')->group(function () {
+    Route::get('/hr/employees', [
+        HrEmployeeController::class,
+        'index',
+    ]);
+});
+
+A custom group does not automatically implement authorization. The middleware classes must contain the required logic.
+
+
+58. MIDDLEWARE ALIASES
+
+An alias is a short name for a middleware class.
+
+Example:
+
+Route::get('/dashboard', [
+    DashboardController::class,
+    'index',
+])->middleware('auth');
+
+Here, auth is a middleware alias.
+
+
+59. REGISTER A CUSTOM MIDDLEWARE ALIAS
+
+Create middleware:
+
+php artisan make:middleware EnsureHrRole
+
+In bootstrap/app.php:
+
+use App\Http\Middleware\EnsureHrRole;
+use Illuminate\Foundation\Configuration\Middleware;
+
+->withMiddleware(function (Middleware $middleware): void {
+    $middleware->alias([
+        'hr' => EnsureHrRole::class,
+    ]);
+});
+
+Use it:
+
+Route::get('/hr/dashboard', [
+    HrDashboardController::class,
+    'index',
+])->middleware(['auth', 'hr']);
+
+
+60. REGISTER MULTIPLE ALIASES
+
+$middleware->alias([
+    'hr' => EnsureHrRole::class,
+    'employee.active' => CheckEmployeeStatus::class,
+]);
+
+Use them:
+
+Route::middleware([
+    'auth',
+    'employee.active',
+    'hr',
+])->group(function () {
+    Route::get('/hr/employees', [
+        HrEmployeeController::class,
+        'index',
+    ]);
+});
+
+
+============================================================
+PART 12: MIDDLEWARE WITH PARAMETERS
+============================================================
+
+61. ROUTE WITH A MIDDLEWARE PARAMETER
+
+Example:
+
+Route::get('/admin/dashboard', [
+    AdminDashboardController::class,
+    'index',
+])->middleware(['auth', 'role:admin']);
+
+Here:
+
+role:
+    Middleware alias.
+
+admin:
+    Middleware parameter.
+
+
+62. CREATE ROLE MIDDLEWARE
+
+File:
+
+app/Http/Middleware/CheckRole.php
+
+Example:
+
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class CheckRole
+{
+    public function handle(
+        Request $request,
+        Closure $next,
+        string $role
+    ): Response {
+        if (
+            ! $request->user()
+            || $request->user()->role !== $role
+        ) {
+            abort(403);
+        }
+
+        return $next($request);
+    }
+}
+
+Register the alias in bootstrap/app.php:
+
+use App\Http\Middleware\CheckRole;
+use Illuminate\Foundation\Configuration\Middleware;
+
+->withMiddleware(function (Middleware $middleware): void {
+    $middleware->alias([
+        'role' => CheckRole::class,
+    ]);
+});
+
+Use it:
+
+Route::get('/admin/dashboard', [
+    AdminDashboardController::class,
+    'index',
+])->middleware(['auth', 'role:admin']);
+
+This example assumes the authenticated user has a role attribute.
+
+In applications with multiple roles and permissions, policies, Gates, or a proper permission system may be more appropriate.
+
+
+63. MIDDLEWARE WITH MULTIPLE PARAMETERS
+
+Route:
+
+Route::get('/reports', [
+    ReportController::class,
+    'index',
+])->middleware('role:hr,admin');
+
+Middleware:
+
+public function handle(
+    Request $request,
+    Closure $next,
+    string ...$roles
+): Response {
+    $user = $request->user();
+
+    if (
+        ! $user
+        || ! in_array($user->role, $roles, true)
+    ) {
+        abort(403);
+    }
+
+    return $next($request);
+}
+
+This example allows users whose role matches one of the supplied values.
+
+Make sure the user model and authorization design match the application's actual requirements.
+
+
+============================================================
+PART 13: CREATE CUSTOM MIDDLEWARE STEP BY STEP
+============================================================
+
+64. STEP 1: GENERATE MIDDLEWARE
+
+Command:
+
+php artisan make:middleware CheckEmployeeStatus
+
+Laravel creates:
+
+app/Http/Middleware/CheckEmployeeStatus.php
+
+
+65. STEP 2: WRITE THE MIDDLEWARE
+
+Example:
+
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class CheckEmployeeStatus
+{
+    public function handle(
+        Request $request,
+        Closure $next
+    ): Response {
+        $user = $request->user();
+
+        if (! $user || ! $user->is_active) {
+            abort(403, 'Your account is inactive.');
+        }
+
+        return $next($request);
+    }
+}
+
+This example assumes the authenticated user model has an is_active attribute.
+
+If employee status is stored on a separate Employee model, retrieve and check that relationship instead.
+
+
+66. STEP 3: REGISTER THE ALIAS
+
+In bootstrap/app.php:
+
+use App\Http\Middleware\CheckEmployeeStatus;
+use Illuminate\Foundation\Configuration\Middleware;
+
+->withMiddleware(function (Middleware $middleware): void {
+    $middleware->alias([
+        'employee.active' => CheckEmployeeStatus::class,
+    ]);
+});
+
+If a withMiddleware() callback already exists, add the alias to the existing callback instead of creating a duplicate callback chain.
+
+
+67. STEP 4: APPLY THE MIDDLEWARE
+
+Route:
+
+Route::get('/employee/dashboard', [
+    EmployeeDashboardController::class,
+    'index',
+])->middleware(['auth', 'employee.active']);
+
+
+68. STEP 5: TEST THE BEHAVIOR
+
+Test these cases:
+
+1. A guest tries to access the dashboard.
+2. An authenticated active employee accesses the dashboard.
+3. An authenticated inactive employee accesses the dashboard.
+
+Expected behavior:
+
+Guest:
+    Authentication middleware handles the request.
+
+Active employee:
+    Can proceed if all other checks pass.
+
+Inactive employee:
+    Receives a forbidden response.
+
+IMPORTANT:
+
+The middleware's behavior depends on the actual user and employee data structure.
+
+
+69. UNDERSTAND $next($request)
+
+Example:
+
+public function handle(
+    Request $request,
+    Closure $next
+): Response {
+    // Code before the downstream pipeline.
+
+    $response = $next($request);
+
+    // Code after the downstream pipeline returns.
+
+    return $response;
+}
+
+$next($request) tells Laravel to continue processing through the remaining pipeline.
+
+If middleware returns a response before calling $next($request), the downstream middleware and controller do not execute for that request.
+
+Middleware does not have to call $next() in every branch. It can intentionally terminate processing.
+
+
+============================================================
+PART 14: BUILT-IN LARAVEL MIDDLEWARE
+============================================================
+
+70. AUTH MIDDLEWARE
+
+Purpose:
+Require the user to be authenticated.
+
+Example:
+
+Route::get('/dashboard', [
+    DashboardController::class,
+    'index',
+])->middleware('auth');
+
+Protect multiple routes:
+
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [
+        DashboardController::class,
+        'index',
+    ]);
+
+    Route::resource('employees', EmployeeController::class);
+});
+
+Specify a guard:
+
+Route::get('/admin/dashboard', [
+    AdminDashboardController::class,
+    'index',
+])->middleware('auth:admin');
+
+The admin guard must be configured in config/auth.php.
+
+
+71. GUEST MIDDLEWARE
+
+Purpose:
+Restrict a route to users who are not authenticated for the applicable guard.
+
+Example:
+
+Route::get('/login', [
+    AuthController::class,
+    'showLoginForm',
+])->middleware('guest');
+
+Difference:
+
+auth:
+    User must be authenticated.
+
+guest:
+    User must not be authenticated.
+
+The example assumes the controller method exists.
+
+
+72. VERIFIED MIDDLEWARE
+
+Purpose:
+Require the authenticated user to have a verified email address.
+
+Example:
+
+Route::get('/dashboard', [
+    DashboardController::class,
+    'index',
+])->middleware(['auth', 'verified']);
+
+This requires the application's email-verification workflow to be configured.
+
+
+73. CAN MIDDLEWARE
+
+Purpose:
+Check authorization using an ability.
+
+Example:
+
+Route::get('/employees/{employee}/edit', [
+    EmployeeController::class,
+    'edit',
+])->middleware('can:update,employee');
+
+The update ability must be defined through Laravel's authorization system.
+
+Example policy:
+
+public function update(
+    User $user,
+    Employee $employee
+): bool {
+    return $user->id === $employee->user_id;
+}
+
+This assumes Employee has a user_id identifying its owner.
+
+
+74. THROTTLE MIDDLEWARE
+
+Purpose:
+Limit request frequency.
+
+Example:
+
+Route::post('/login', [
+    AuthController::class,
+    'login',
+])->middleware('throttle:5,1');
+
+This uses a limit of five requests per minute.
+
+A named rate limiter can also be configured and referenced:
+
+Route::post('/reports', [
+    ReportController::class,
+    'store',
+])->middleware('throttle:reports');
+
+The reports limiter must be registered in the application.
+
+
+75. PASSWORD.CONFIRM MIDDLEWARE
+
+Purpose:
+Require password confirmation before a sensitive operation.
+
+Example:
+
+Route::delete('/account', [
+    AccountController::class,
+    'destroy',
+])->middleware(['auth', 'password.confirm']);
+
+This depends on the application's password-confirmation workflow.
+
+
+76. SIGNED MIDDLEWARE
+
+Purpose:
+Validate a signed URL.
+
+Example:
+
+Route::get('/invitations/{invitation}', [
+    InvitationController::class,
+    'show',
+])->middleware('signed');
+
+A signed URL should be generated using Laravel's signing mechanisms.
+
+A signature does not automatically establish that the current user has permission to access the resource.
+
+
+77. CSRF PROTECTION
+
+CSRF means Cross-Site Request Forgery.
+
+It helps prevent unwanted authenticated browser requests.
+
+A Blade form should include:
+
+<form action="{{ route('employees.store') }}" method="POST">
+    @csrf
+
+    <input type="text" name="name">
+
+    <button type="submit">Create Employee</button>
+</form>
+
+For a PUT request:
+
+<form
+    action="{{ route('employees.update', $employee) }}"
+    method="POST"
+>
+    @csrf
+    @method('PUT')
+
+    <input
+        type="text"
+        name="name"
+        value="{{ $employee->name }}"
+    >
+
+    <button type="submit">Update Employee</button>
+</form>
+
+The browser submits POST, while @method('PUT') tells Laravel to interpret it as PUT.
+
+IMPORTANT:
+
+- CSRF protection is different from authentication.
+- Browser requests using sessions and cookies have different security considerations from typical stateless API requests using bearer tokens.
+- Do not disable CSRF protection merely to fix a form error.
+
+
+78. ROUTE-MODEL BINDING MIDDLEWARE
+
+Laravel includes SubstituteBindings in the normal routing process.
+
+Example route:
+
+Route::get('/employees/{employee}', [
+    EmployeeController::class,
+    'show',
+]);
+
+Controller:
+
+public function show(Employee $employee)
+{
+    return view('employees.show', compact('employee'));
+}
+
+Laravel resolves the employee route parameter into an Employee model.
+
+If the employee cannot be found, Laravel normally returns a 404 response.
+
+Route-model binding does not automatically authorize the user to access the employee.
+
+
+79. OTHER USEFUL MIDDLEWARE AND FEATURES
+
+auth:
+    Require authentication.
+
+guest:
+    Restrict access to guests.
+
+verified:
+    Require email verification.
+
+can:
+    Check an authorization ability.
+
+throttle:
+    Limit request frequency.
+
+signed:
+    Validate signed URLs.
+
+password.confirm:
+    Require password confirmation.
+
+SubstituteBindings:
+    Resolve route-model binding.
+
+web:
+    Web-oriented middleware group.
+
+api:
+    API-oriented middleware group.
+
+Custom middleware:
+    Application-specific request checks.
+
+Other middleware concerns can include:
+
+- Cookie encryption.
+- Session handling.
+- String normalization.
+- Request logging.
+- Security headers.
+- Trusted proxies.
+- CORS.
+- HTTPS behavior.
+
+The exact middleware classes and ordering depend on the Laravel version and application configuration.
+
+
+============================================================
+PART 15: HOW LARAVEL PROCESSES A REQUEST
+============================================================
+
+80. COMPLETE REQUEST LIFECYCLE
+
+Example route:
+
+Route::get('/employees', [
+    EmployeeController::class,
+    'index',
+])->middleware(['auth', 'verified']);
+
+Request:
+
+GET /employees
+
+Simplified lifecycle:
+
+1. Browser sends an HTTP request.
+2. Web server forwards it to Laravel.
+3. Laravel bootstraps the application.
+4. Global middleware executes.
+5. Laravel matches the URL and HTTP method.
+6. Applicable route middleware executes.
+7. Route-model binding and other route processing occur.
+8. Controller method executes.
+9. Models and services perform application operations.
+10. Database operations occur as required.
+11. Controller returns a response.
+12. Middleware may process the response on the way back.
+13. Laravel sends the response to the browser.
+
+This is a simplified conceptual sequence. The exact ordering depends on application configuration and the middleware stack.
+
+
+81. STEP 1: BROWSER SENDS A REQUEST
+
+Example:
+
+GET /employees
+
+
+82. STEP 2: WEB SERVER FORWARDS THE REQUEST
+
+A web server such as Apache or Nginx forwards appropriate requests to Laravel's front controller:
+
+public/index.php
+
+
+83. STEP 3: LARAVEL BOOTSTRAPS THE APPLICATION
+
+Laravel loads the application and prepares its services and HTTP request handling.
+
+
+84. STEP 4: GLOBAL MIDDLEWARE EXECUTES
+
+Global middleware can inspect or process the request.
+
+Example:
+A logging middleware may record information about the request.
+
+
+85. STEP 5: LARAVEL MATCHES THE ROUTE
+
+Laravel matches:
+
+GET /employees
+
+To:
+
+EmployeeController::index()
+
+
+86. STEP 6: ROUTE MIDDLEWARE EXECUTES
+
+The route requires:
+
+['auth', 'verified']
+
+Authentication middleware checks the user's authentication state.
+
+Email-verification middleware checks whether the user meets the verification requirement.
+
+If a check fails, the request may be redirected or rejected before the controller executes normally.
+
+
+87. STEP 7: ROUTE-MODEL BINDING
+
+If the route contains model parameters, Laravel resolves them through route-model binding.
+
+The example route has no model parameter to resolve.
+
+
+88. STEP 8: CONTROLLER EXECUTES
+
+Example:
+
+public function index()
+{
+    $employees = Employee::paginate(10);
+
+    return view('employees.index', compact('employees'));
+}
+
+
+89. STEP 9: DATABASE IS QUERIED
+
+Eloquent retrieves the employees required for the current page.
+
+
+90. STEP 10: RESPONSE IS CREATED
+
+Laravel renders:
+
+resources/views/employees/index.blade.php
+
+The resulting HTML becomes the response.
+
+
+91. STEP 11: MIDDLEWARE PROCESSES THE RESPONSE
+
+Middleware that wraps the downstream request can inspect or modify the response as it travels back through the pipeline.
+
+
+92. STEP 12: BROWSER RECEIVES THE RESPONSE
+
+The browser displays the employee page.
+
+KEY IDEA:
+
+Middleware does not replace routes or controllers.
+
+It forms part of the pipeline through which requests and responses travel.
+
+
+============================================================
+PART 16: MIDDLEWARE EXECUTION ORDER
+============================================================
+
+93. UNDERSTAND MIDDLEWARE ORDER
+
+Example:
+
+Route::get('/employees', [
+    EmployeeController::class,
+    'index',
+])->middleware([
+    'auth',
+    'verified',
+    'log.flow',
+]);
+
+Conceptual flow:
+
+Request
+    |
+    v
+auth: before
+    |
+    v
+verified: before
+    |
+    v
+log.flow: before
+    |
+    v
+Controller
+    |
+    v
+log.flow: after
+    |
+    v
+verified: after
+    |
+    v
+auth: after
+    |
+    v
+Response
+
+This illustrates the wrapping behavior of middleware that calls $next($request) and continues processing the response afterward.
+
+IMPORTANT:
+
+Do not assume that written order is always the final execution order in every configuration.
+
+Laravel's middleware priority configuration and other framework processing can affect effective ordering.
+
+Order matters when middleware depends on authentication, sessions, or resolved route parameters.
+
+
+94. LOGGING BEFORE AND AFTER THE DOWNSTREAM PIPELINE
+
+Create middleware:
+
+php artisan make:middleware LogRequestFlow
+
+Implementation:
+
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response;
+
+class LogRequestFlow
+{
+    public function handle(
+        Request $request,
+        Closure $next
+    ): Response {
+        Log::info('Before the controller');
+
+        $response = $next($request);
+
+        Log::info('After the controller');
+
+        return $response;
+    }
+}
+
+Register the alias:
+
+$middleware->alias([
+    'log.flow' => LogRequestFlow::class,
+]);
+
+Apply it:
+
+Route::get('/employees', [
+    EmployeeController::class,
+    'index',
+])->middleware('log.flow');
+
+Expected log messages when the middleware completes normally:
+
+Before the controller
+After the controller
+
+IMPORTANT:
+
+The second message does not necessarily mean the controller executed.
+
+A downstream middleware might have returned a response before the controller was reached.
+
+
+============================================================
+PART 17: TERMINABLE MIDDLEWARE
+============================================================
+
+95. WHAT IS TERMINABLE MIDDLEWARE?
+
+A terminable middleware class has a terminate() method.
+
+Laravel can call it after the response has been sent to the client, provided the application lifecycle and server environment support the normal termination process.
+
+Create middleware:
+
+php artisan make:middleware LogAfterResponse
+
+Example:
+
+<?php
+
+namespace App\Http\Middleware;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpFoundation\Response;
+
+class LogAfterResponse
+{
+    public function handle(
+        Request $request,
+        \Closure $next
+    ): Response {
+        return $next($request);
+    }
+
+    public function terminate(
+        Request $request,
+        Response $response
+    ): void {
+        Log::info('Request completed', [
+            'url' => $request->fullUrl(),
+            'status' => $response->getStatusCode(),
+        ]);
+    }
+}
+
+Register and attach the middleware in the usual way.
+
+Possible uses:
+
+- Request-completion logging.
+- Recording response metadata.
+- Suitable post-response operations.
+
+IMPORTANT:
+
+Terminable middleware is not a replacement for Laravel queues.
+
+For reliable asynchronous processing, retries, failure handling, or long-running work, a queued job is generally more appropriate.
+
+
+============================================================
+PART 18: EXCLUDING MIDDLEWARE
+============================================================
+
+96. EXCLUDE MIDDLEWARE FROM ROUTES
+
+Laravel provides withoutMiddleware() for excluding applicable route middleware.
+
+Example:
+
+Route::resource('employees', EmployeeController::class)
+    ->middleware('auth')
+    ->withoutMiddleware(['auth']);
+
+This excludes auth from the generated resource routes.
+
+This example is only for demonstrating the syntax. It is not appropriate if all employee routes must require authentication.
+
+If only some actions need different protection, consider registering the routes separately.
+
+Example:
+
+Route::get('/employees', [
+    EmployeeController::class,
+    'index',
+])->middleware('auth');
+
+Route::get('/public-employees', [
+    PublicEmployeeController::class,
+    'index',
+]);
+
+IMPORTANT:
+
+Excluding route middleware does not automatically remove global middleware or every other applicable middleware layer.
+
+
+============================================================
+PART 19: ROUTE ORDER AND COMMON MISTAKES
+============================================================
+
+97. SPECIFIC ROUTES BEFORE CONFLICTING DYNAMIC ROUTES
+
+Potentially confusing registration:
+
+Route::get('/employees/{employee}', [
+    EmployeeController::class,
+    'show',
+]);
+
+Route::get('/employees/create', [
+    EmployeeController::class,
+    'create',
+]);
+
+The dynamic parameter could match the word create unless the routes or constraints distinguish the paths.
+
+Clearer order:
+
+Route::get('/employees/create', [
+    EmployeeController::class,
+    'create',
+]);
+
+Route::get('/employees/{employee}', [
+    EmployeeController::class,
+    'show',
+]);
+
+Alternatively:
+
+Route::get('/employees/{employee}', [
+    EmployeeController::class,
+    'show',
+])->whereNumber('employee');
+
+Use meaningful parameter constraints and avoid ambiguous route definitions.
+
+
+98. COMMON ROUTING MISTAKES
+
+Mistake 1:
+Using the wrong HTTP method.
+
+Solution:
+Ensure the form or client method matches the route registration.
+
+Mistake 2:
+Forgetting the CSRF token.
+
+Solution:
+Include @csrf in applicable Blade forms.
+
+Mistake 3:
+Defining conflicting routes.
+
+Solution:
+Inspect php artisan route:list.
+
+Mistake 4:
+Using auth without authorization.
+
+Solution:
+Use policies, Gates, or another suitable authorization mechanism.
+
+Mistake 5:
+Assuming a route parameter proves a record exists.
+
+Solution:
+Retrieve the record or use route-model binding.
+
+Mistake 6:
+Using an unregistered middleware alias.
+
+Solution:
+Register the alias in bootstrap/app.php.
+
+Mistake 7:
+Confusing URL prefixes with route-name prefixes.
+
+Solution:
+Remember that prefix() changes URL paths and name() changes route names.
+
+Mistake 8:
+Assuming web and API routes have identical behavior.
+
+Solution:
+Use appropriate authentication, CSRF expectations, and response formats for each type of client.
+
+
+============================================================
+PART 20: ROUTE AND MIDDLEWARE COMMANDS
+============================================================
+
+99. CREATE A CONTROLLER
+
+php artisan make:controller EmployeeController
+
+
+100. CREATE A RESOURCE CONTROLLER
+
+php artisan make:controller EmployeeController --resource
+
+
+101. CREATE AN API CONTROLLER
+
+php artisan make:controller EmployeeApiController --api
+
+
+102. CREATE AN INVOKABLE CONTROLLER
+
+php artisan make:controller DashboardController --invokable
+
+
+103. CREATE MIDDLEWARE
+
+php artisan make:middleware CheckEmployeeStatus
+
+
+104. LIST REGISTERED ROUTES
+
+php artisan route:list
+
+
+105. SHOW ROUTE MIDDLEWARE
+
+php artisan route:list -v
+
+
+106. SHOW EXPANDED MIDDLEWARE INFORMATION
+
+php artisan route:list -vv
+
+
+107. FILTER ROUTES BY NAME
+
+php artisan route:list --name=employees
+
+
+108. FILTER ROUTES BY PATH
+
+php artisan route:list --path=employees
+
+
+109. CLEAR ROUTE CACHE
+
+php artisan route:clear
+
+
+110. CACHE ROUTES
+
+php artisan route:cache
+
+Route caching is a deployment optimization.
+
+Ensure your route definitions are compatible with caching before using it.
+
+
+============================================================
+PART 21: COMPLETE EMPLOYEE MANAGEMENT ROUTE EXAMPLE
+============================================================
+
+111. FILE: routes/web.php
+
+Example:
+
+<?php
+
+use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\ProfileController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/', function () {
+    return view('welcome');
+})->name('home');
+
+
+/*
+|--------------------------------------------------------------------------
+| Guest Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [
+        ProfileController::class,
+        'showLoginForm',
+    ])->name('login');
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Authenticated Employee Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [
+        ProfileController::class,
+        'dashboard',
+    ])->name('dashboard');
+
+    Route::resource('employees', EmployeeController::class);
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Admin Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('admin')
+    ->name('admin.')
+    ->middleware(['auth', 'can:access-admin'])
+    ->group(function () {
+        Route::get('/dashboard', [
+            AdminDashboardController::class,
+            'index',
+        ])->name('dashboard');
+    });
+
+IMPORTANT:
+
+This is an illustrative configuration.
+
+The controller methods must exist.
+
+Authentication must be configured.
+
+The access-admin authorization ability must be defined.
+
+The example login route assumes the relevant login workflow is implemented.
+
+In an application using Laravel Breeze, Fortify, or another authentication solution, use its actual authentication routes and controllers.
+
+
+============================================================
+PART 22: RECOMMENDED LEARNING ORDER
+============================================================
+
+LEVEL 1: BASIC ROUTES
+
+1. Route::get()
+2. Route::post()
+3. Route::put()
+4. Route::patch()
+5. Route::delete()
+6. Routes pointing to controller methods.
+7. Named routes.
+8. Route parameters.
+9. Optional parameters.
+10. Route constraints.
+
+LEVEL 2: ADVANCED ROUTES
+
+11. Route::resource()
+12. Route::apiResource()
+13. only() and except()
+14. Route::view()
+15. Route::redirect()
+16. Route::fallback()
+17. Route groups.
+18. URL prefixes.
+19. Route-name prefixes.
+20. Controller groups.
+21. Domain and subdomain routes.
+22. Scoped route-model binding.
+
+LEVEL 3: MIDDLEWARE FUNDAMENTALS
+
+23. What middleware does.
+24. Global middleware.
+25. Route middleware.
+26. Middleware groups.
+27. Middleware aliases.
+28. Middleware parameters.
+29. Custom middleware.
+30. $next($request).
+31. Middleware execution order.
+32. Response processing.
+33. Terminable middleware.
+
+LEVEL 4: SECURITY
+
+34. auth
+35. guest
+36. verified
+37. can
+38. throttle
+39. signed
+40. password.confirm
+41. CSRF protection.
+42. Authentication versus authorization.
+43. Policies and Gates.
+
+LEVEL 5: PRODUCTION READINESS
+
+44. Route caching.
+45. Route debugging.
+46. Middleware ordering.
+47. Web versus API middleware.
+48. Rate limiting.
+49. Feature tests for routes.
+50. Testing authentication and authorization failures.
+
+
+============================================================
+FINAL SUMMARY
+============================================================
+
+1. ROUTES DECIDE WHERE A REQUEST GOES.
+
+Example:
+
+Route::get('/employees', [
+    EmployeeController::class,
+    'index',
+]);
+
+
+2. ROUTE GROUPS APPLY SHARED CONFIGURATION.
+
+Example:
+
+Route::middleware('auth')->group(function () {
+    // Protected routes.
+});
+
+
+3. MIDDLEWARE PROCESSES REQUESTS AND RESPONSES.
+
+Example:
+
+public function handle(
+    Request $request,
+    Closure $next
+): Response {
+    // Check the request.
+
+    return $next($request);
+}
+
+
+4. AUTHENTICATION AND AUTHORIZATION ARE DIFFERENT.
+
+Authentication:
+
+->middleware('auth')
+
+Checks whether the user is authenticated.
+
+Authorization:
+
+->middleware('can:update,employee')
+
+Checks whether the user is authorized to perform an action, assuming the relevant ability or policy is configured.
+
+
+5. ROUTE-MODEL BINDING DOES NOT REPLACE AUTHORIZATION.
+
+Laravel can find a model, but your application must still check whether the user is permitted to access it.
+
+
+6. WEB AND API ROUTES MAY REQUIRE DIFFERENT SECURITY CONFIGURATIONS.
+
+Web routes commonly use session-based authentication and CSRF protection.
+
+API routes commonly use stateless authentication mechanisms such as bearer tokens.
+
+Choose the approach that fits the type of client and application.
+
+
+7. FOR THE LEAVE MANAGEMENT SYSTEM:
+
+Keep web routes in:
+
+routes/web.php
+
+Keep API routes in:
+
+routes/api.php
+
+Keep web controllers and API controllers separate where their responsibilities differ.
+
+Place reusable business logic in:
+
+app/Services/
+
+Use middleware for request-level concerns such as authentication and other applicable checks.
+
+Use policies or Gates for authorization.
+
+Use transactions and appropriate concurrency controls for sensitive operations such as leave approval and balance deduction.
+
+Test successful requests, validation failures, authentication failures, and authorization failures.
+
+If you understand these concepts and can implement them in a practical Laravel project, you will have a strong foundation in Laravel routing and middleware.

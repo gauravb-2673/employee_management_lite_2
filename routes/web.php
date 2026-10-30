@@ -76,4 +76,4 @@ Route::middleware(['auth', 'active'])->group(function () {
     )->name('employee-documents.view');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

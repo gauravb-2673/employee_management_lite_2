@@ -1,0 +1,609 @@
+LARAVEL ELOQUENT: RETRIEVING DATA IN DIFFERENT FORMATS
+
+PURPOSE
+
+This guide explains how to retrieve data through Laravel Eloquent
+models. Examples use an Employee model connected to an employees table.
+
+The examples focus on retrieval. They assume your model, migrations, and
+database connection already exist.
+
+Common import: use App;
+
+1. RETRIEVE ALL RECORDS
+
+A. all()
+
+    $employees = Employee::all();
+
+Retrieves all records and all columns. The result is an Eloquent
+Collection containing Employee model objects.
+
+B. get()
+
+    $employees = Employee::where('is_active', true)->get();
+
+Retrieves records matching a query.
+
+You can select columns:
+
+    $employees = Employee::get(['id', 'name', 'email']);
+
+Difference: - all() retrieves every record without query conditions. -
+get() executes a query that you can customize with conditions, sorting,
+selected columns, and other query options.
+
+2. RETRIEVE A SINGLE RECORD
+
+A. find()
+
+    $employee = Employee::find(5);
+
+Retrieves a record using its primary key, usually id. Returns null if no
+matching record exists.
+
+B. findOrFail()
+
+    $employee = Employee::findOrFail(5);
+
+Returns the model or throws a model-not-found exception. In a typical
+HTTP request, Laravel usually converts this to a 404 response.
+
+C. first()
+
+    $employee = Employee::where('is_active', true)->first();
+
+Returns the first matching model, or null if no match exists.
+
+D. firstOrFail()
+
+    $employee = Employee::where('email', 'amit@example.com')->firstOrFail();
+
+Returns the first match or triggers Laravel’s not-found handling.
+
+E. sole()
+
+    $employee = Employee::where('email', 'amit@example.com')->sole();
+
+Use when exactly one matching record is expected: - No matches: throws a
+not-found exception. - More than one match: throws a multiple-record
+exception.
+
+3. RETRIEVE SPECIFIC COLUMNS
+
+Use select():
+
+    $employees = Employee::select('id', 'name', 'email')->get();
+
+Or pass the columns to get():
+
+    $employees = Employee::get(['id', 'name', 'email']);
+
+The result is still an Eloquent Collection of Employee models, but only
+the selected attributes are loaded.
+
+Use this when you do not need every column. Include the primary key and
+any foreign keys needed for relationships. If an omitted attribute is
+needed later, you must retrieve it separately.
+
+4. RETRIEVE ONE COLUMN VALUE
+
+A. value()
+
+    $name = Employee::where('id', 5)->value('name');
+
+Returns the value of the requested column from the first matching
+record. For example, the result might be “Amit”. If no record matches,
+it returns null.
+
+Another example:
+
+    $salary = Employee::where('email', 'amit@example.com')->value('salary');
+
+B. valueOrFail()
+
+In Laravel versions that support it:
+
+    $name = Employee::where('id', 5)->valueOrFail('name');
+
+Retrieves the column value or throws a not-found exception. Check your
+installed Laravel version to confirm support.
+
+Compare:
+
+    $employee = Employee::find(5);
+    $name = $employee?->name;
+
+This retrieves the model first, then accesses its name.
+
+    $name = Employee::where('id', 5)->value('name');
+
+This retrieves just the name value directly.
+
+5. RETRIEVE ONE COLUMN FROM MANY RECORDS
+
+A. pluck()
+
+    $names = Employee::pluck('name');
+
+Returns a Support Collection of name values, rather than a collection of
+Employee model objects.
+
+B. Retrieve emails:
+
+    $emails = Employee::pluck('email');
+
+C. Use IDs as keys:
+
+    $employees = Employee::pluck('name', 'id');
+
+Example result:
+
+    [
+        1 => "Amit",
+        2 => "Priya",
+        3 => "Rahul"
+    ]
+
+D. Filter first, then pluck:
+
+    $names = Employee::where('is_active', true)->pluck('name');
+
+Use pluck() when you need a list of names, emails, IDs, or ID-to-name
+mappings, but do not need complete model objects.
+
+6. CONVERT RESULTS TO A PHP ARRAY
+
+A. toArray()
+
+    $employees = Employee::select('id', 'name', 'email')->get();
+    $data = $employees->toArray();
+
+You can also convert a single model:
+
+    $employee = Employee::findOrFail(5);
+    $data = $employee->toArray();
+
+toArray() converts a model or collection into a PHP array. Loaded
+relationships are recursively converted as well.
+
+B. attributesToArray()
+
+    $employee = Employee::findOrFail(5);
+    $data = $employee->attributesToArray();
+
+Converts the model’s attributes into an array, without recursively
+converting loaded relationships as part of the result.
+
+Quick comparison: - toArray(): model attributes and loaded
+relationships. - attributesToArray(): model attributes only. - get():
+retrieves an Eloquent Collection. - pluck(): retrieves values from one
+column as a Support Collection.
+
+7. CONVERT RESULTS TO JSON
+
+A. toJson()
+
+    $employees = Employee::select('id', 'name', 'email')->get();
+    $json = $employees->toJson();
+
+toJson() returns a JSON string.
+
+B. Return JSON from a controller:
+
+    public function index()
+    {
+        $employees = Employee::select('id', 'name', 'email')->get();
+
+        return response()->json($employees);
+    }
+
+Laravel serializes the collection into a JSON HTTP response.
+
+You can also return the collection directly:
+
+    public function index()
+    {
+        return Employee::select('id', 'name', 'email')->get();
+    }
+
+Laravel automatically serializes the result.
+
+Use response()->json() when you want to control the response structure
+or status code explicitly.
+
+8. RETRIEVE RECORDS USING CONDITIONS
+
+A. where()
+
+    $employees = Employee::where('is_active', true)->get();
+
+B. Multiple conditions:
+
+    $employees = Employee::where('is_active', true)
+        ->where('salary', '>', 50000)
+        ->get();
+
+C. orWhere():
+
+    $employees = Employee::where('salary', '>', 70000)
+        ->orWhere('is_active', false)
+        ->get();
+
+This retrieves employees whose salary is greater than 70,000 OR who are
+inactive.
+
+D. whereIn():
+
+    $employees = Employee::whereIn('id', [1, 3, 5])->get();
+
+E. whereBetween():
+
+    $employees = Employee::whereBetween('salary', [30000, 60000])->get();
+
+The range is inclusive.
+
+F. whereDate():
+
+    $employees = Employee::whereDate('joining_date', '2026-01-01')->get();
+
+Matches the date portion of the column.
+
+G. distinct():
+
+    $employees = Employee::select('department_id')->distinct()->get();
+
+Retrieves distinct department IDs.
+
+To retrieve the distinct IDs as a list:
+
+    $departmentIds = Employee::distinct()->pluck('department_id');
+
+9. RETRIEVE RECORDS IN A PARTICULAR ORDER
+
+A. orderBy():
+
+    $employees = Employee::orderBy('name', 'asc')->get();
+
+Orders names from A to Z.
+
+    $employees = Employee::orderBy('salary', 'desc')->get();
+
+Orders highest salary first.
+
+B. latest():
+
+    $employees = Employee::latest('joining_date')->get();
+
+Orders by joining_date descending.
+
+C. oldest():
+
+    $employees = Employee::oldest('joining_date')->get();
+
+Orders by joining_date ascending.
+
+D. limit() or take():
+
+    $employees = Employee::orderBy('salary', 'desc')
+        ->limit(5)
+        ->get();
+
+This retrieves the five highest-paid employees.
+
+For stable ordering when values can be equal, add a secondary ordering
+column:
+
+    $employees = Employee::orderBy('salary', 'desc')
+        ->orderBy('id')
+        ->get();
+
+10. RETRIEVE COUNTS AND CALCULATED VALUES
+
+A. count():
+
+    $totalEmployees = Employee::count();
+
+B. Count active employees:
+
+    $activeEmployees = Employee::where('is_active', true)->count();
+
+C. exists():
+
+    $exists = Employee::where('email', 'amit@example.com')->exists();
+
+Returns true if a matching record exists; otherwise false.
+
+D. doesntExist():
+
+    $notFound = Employee::where('email', 'unknown@example.com')->doesntExist();
+
+Returns true if no matching record exists.
+
+E. sum():
+
+    $totalSalary = Employee::sum('salary');
+
+F. avg():
+
+    $averageSalary = Employee::avg('salary');
+
+G. min() and max():
+
+    $lowestSalary = Employee::min('salary');
+    $highestSalary = Employee::max('salary');
+
+These methods return calculated values, not collections of models.
+
+Summary: - count(): number of matching records. - exists(): boolean
+indicating whether a match exists. - doesntExist(): boolean indicating
+whether no match exists. - sum(): sum of a column. - avg(): average of a
+column. - min(): minimum value. - max(): maximum value.
+
+11. RETRIEVE RECORDS USING PAGINATION
+
+A. paginate():
+
+    $employees = Employee::orderBy('id')->paginate(10);
+
+Retrieves ten records per page and includes pagination metadata, such as
+current page, total records, and total pages.
+
+Controller example:
+
+    public function index()
+    {
+        $employees = Employee::orderBy('id')->paginate(10);
+
+        return response()->json($employees);
+    }
+
+B. simplePaginate():
+
+    $employees = Employee::orderBy('id')->simplePaginate(10);
+
+Provides simpler next/previous pagination without calculating the total
+number of records.
+
+C. cursorPaginate():
+
+    $employees = Employee::orderBy('id')->cursorPaginate(10);
+
+Uses cursor-based pagination. This can be useful for large datasets. Use
+suitable ordering, normally involving a unique column or a combination
+that uniquely orders records.
+
+Choose: - paginate(): when you need total pages and total counts. -
+simplePaginate(): when next/previous navigation is enough. -
+cursorPaginate(): for cursor-based navigation through large datasets.
+
+12. PROCESS LARGE DATASETS EFFICIENTLY
+
+A. chunk():
+
+    Employee::orderBy('id')->chunk(500, function ($employees) {
+        foreach ($employees as $employee) {
+            // Process each employee.
+        }
+    });
+
+Retrieves records in batches of 500 and invokes the callback for each
+batch. Use stable ordering when processing records in chunks.
+
+B. lazy():
+
+    foreach (Employee::orderBy('id')->lazy(500) as $employee) {
+        // Process one employee at a time.
+    }
+
+Retrieves records in chunks but exposes them as a lazy collection.
+
+C. cursor():
+
+    foreach (Employee::cursor() as $employee) {
+        // Process one employee at a time.
+    }
+
+Iterates without loading a complete Eloquent collection into memory at
+once. However, cursor() uses a single query and has database-driver
+limitations for very large result sets. lazy() or chunk() may be more
+appropriate for extensive processing.
+
+Typical uses include exports, reports, and maintenance jobs.
+
+13. RETRIEVE RELATED RECORDS
+
+Assume Employee has a department() relationship.
+
+A. Retrieve a model, then its department:
+
+    $employee = Employee::findOrFail(5);
+    $department = $employee->department;
+
+B. Eager load the department:
+
+    $employees = Employee::with('department')->get();
+
+Example:
+
+    $employees = Employee::with('department')->get();
+
+    foreach ($employees as $employee) {
+        echo $employee->name;
+        echo $employee->department?->department_name;
+    }
+
+Eager loading can prevent the N+1 query problem, where accessing a
+relationship inside a loop otherwise causes a query for each employee.
+
+C. Retrieve employees that have a department:
+
+    $employees = Employee::has('department')->get();
+
+D. Filter by a related department:
+
+    $employees = Employee::whereHas('department', function ($query) {
+        $query->where('department_name', 'IT');
+    })->get();
+
+These examples require the department() relationship to exist in the
+Employee model. The null-safe operator ?-> prevents an error if the
+department is null.
+
+14. ACCESS ATTRIBUTES ON AN ALREADY-RETRIEVED MODEL
+
+    $employee = Employee::findOrFail(5);
+
+    $id = $employee->id;
+    $name = $employee->name;
+    $email = $employee->email;
+    $salary = $employee->salary;
+
+No extra query is needed to read attributes already loaded on the model.
+
+A. getAttribute():
+
+    $name = $employee->getAttribute('name');
+
+This uses Eloquent’s attribute-access mechanism. The common shorthand
+is:
+
+    $name = $employee->name;
+
+B. getOriginal():
+
+    $originalName = $employee->getOriginal('name');
+
+Retrieves the original attribute value tracked by the model.
+
+C. getRawOriginal():
+
+    $rawOriginalName = $employee->getRawOriginal('name');
+
+Retrieves the original, untransformed stored attribute value tracked by
+the model.
+
+Example:
+
+    $employee = Employee::findOrFail(5);
+
+    $oldName = $employee->getOriginal('name');
+
+    $employee->name = 'Amit Sharma';
+
+    $newName = $employee->name;
+
+At this point, $oldName contains the original name and $newName contains
+the newly assigned value. Assigning a value does not itself save the
+change.
+
+15. TRANSFORM AND ORGANIZE COLLECTIONS
+
+A. map():
+
+    $employees = Employee::get(['id', 'name', 'salary']);
+
+    $data = $employees->map(function ($employee) {
+        return [
+            'employee_id' => $employee->id,
+            'employee_name' => $employee->name,
+            'annual_salary' => $employee->salary * 12,
+        ];
+    });
+
+This returns a collection of transformed arrays. The example assumes
+salary represents monthly salary.
+
+B. filter():
+
+    $employees = Employee::all();
+
+    $highSalaryEmployees = $employees->filter(function ($employee) {
+        return $employee->salary > 50000;
+    });
+
+filter() operates in PHP after records have been retrieved. For large
+tables, filter in the database instead:
+
+    $highSalaryEmployees = Employee::where('salary', '>', 50000)->get();
+
+C. keyBy():
+
+    $employees = Employee::all()->keyBy('id');
+
+Creates a collection keyed by each employee’s ID.
+
+D. groupBy():
+
+    $employeesByStatus = Employee::all()->groupBy('is_active');
+
+Groups the retrieved employees by is_active.
+
+Collection methods are useful for transforming or organizing data after
+retrieval. Database filters are usually more efficient when only
+matching rows are needed.
+
+16. QUICK REFERENCE TABLE
+
+  Goal                                Method
+  ----------------------------------- ---------------------
+  All records                         Employee::all()
+  Matching records                    where(…)->get()
+  Specific columns                    select(…)->get()
+  One record by primary key           find($id)
+  One record or not-found error       findOrFail($id)
+  First matching record               first()
+  First match or not-found error      firstOrFail()
+  One column value                    value(‘name’)
+  One column from many records        pluck(‘name’)
+  Names keyed by IDs                  pluck(‘name’, ‘id’)
+  Convert models to array             toArray()
+  Convert model attributes to array   attributesToArray()
+  Convert results to JSON text        toJson()
+  Return JSON response                response()->json(…)
+  Count matching records              count()
+  Check whether a match exists        exists()
+  Calculate total                     sum(‘salary’)
+  Calculate average                   avg(‘salary’)
+  Retrieve a page                     paginate(10)
+  Process records in batches          chunk()
+  Iterate lazily                      lazy() / cursor()
+  Load related data                   with(‘department’)
+
+17. THE MOST IMPORTANT FOUR EXAMPLES
+
+    // 1. Get model objects for all employees.
+    $employees = Employee::all();
+
+    // 2. Get one employee model.
+    $employee = Employee::find(5);
+
+    // 3. Get only the name value for one employee.
+    $name = Employee::where('id', 5)->value('name');
+
+    // 4. Get a list of employee names.
+    $names = Employee::pluck('name');
+
+Their result types differ: - all(): Eloquent Collection of Employee
+models. - find(): one Employee model or null. - value(): one column
+value or null. - pluck(): Support Collection containing column values.
+
+FINAL ADVICE
+
+1.  Use all() for small tables when you genuinely need every record.
+2.  Use where(…)->get() to retrieve matching records.
+3.  Use select() to avoid loading unnecessary columns.
+4.  Use findOrFail() when a missing record should result in not-found
+    handling.
+5.  Use value() when you need one column from one matching record.
+6.  Use pluck() when you need one column from multiple records.
+7.  Use paginate() for user-facing lists.
+8.  Use with() to eager load relationships and help prevent N+1 queries.
+9.  Use chunk(), lazy(), or cursor() for large-scale processing.
+10. Remember that a model, an Eloquent Collection, a Support Collection,
+    a PHP array, a scalar value, and a JSON string are different result
+    types.
+
+The key question before choosing a method is: “Do I need a model, many
+models, one value, a list of values, an array, JSON, a calculation, a
+page of records, or related data?”

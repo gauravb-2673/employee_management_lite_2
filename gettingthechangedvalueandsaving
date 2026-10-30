@@ -1,0 +1,831 @@
+HOW TO LOG OLD DATA WHEN NEW DATA COMES IN A REQUEST
+====================================================
+
+Example: Employee Salary History in Laravel Eloquent
+
+
+1. UNDERSTANDING THE REQUIREMENT
+--------------------------------
+
+Suppose your employees table contains this record:
+
+employees
+------------------------------------------------
+id       name       salary
+------------------------------------------------
+1        Amit       50000
+------------------------------------------------
+
+Now, a request comes in with a new salary:
+
+{
+    "salary": 60000
+}
+
+You want to:
+1. Retrieve the employee's existing salary.
+2. Compare the old salary with the new salary.
+3. Save the new salary in the employees table.
+4. Store the old and new salaries in a salary_history table.
+
+salary_histories
+------------------------------------------------
+id   employee_id   old_salary   new_salary
+------------------------------------------------
+1    1             50000         60000
+------------------------------------------------
+
+IMPORTANT:
+Never trust the request to provide the old salary.
+Always retrieve the old value from the database.
+
+The request should provide the new salary.
+The database should provide the old salary.
+
+
+2. METHOD 1: HANDLE EVERYTHING IN THE CONTROLLER
+------------------------------------------------
+
+This is a straightforward approach for understanding the process.
+
+Example:
+
+use App\Models\Employee;
+use App\Models\SalaryHistory;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+public function updateSalary(Request $request, int $id)
+{
+    // Step 1: Validate the new salary.
+    $validated = $request->validate([
+        'salary' => ['required', 'numeric', 'min:0'],
+    ]);
+
+    // Step 2: Use a transaction so both database operations
+    // succeed or fail together.
+    DB::transaction(function () use ($validated, $id) {
+
+        // Step 3: Retrieve the employee and lock the row
+        // while this transaction is running.
+        $employee = Employee::whereKey($id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        // Step 4: Retrieve the old salary from the database.
+        $oldSalary = $employee->getRawOriginal('salary');
+
+        // Step 5: Assign the new salary from the validated request.
+        $employee->salary = $validated['salary'];
+
+        // Step 6: Check whether the salary actually changed.
+        if ($employee->isDirty('salary')) {
+
+            // Step 7: Get the new salary from the model.
+            $newSalary = $employee->salary;
+
+            // Step 8: Insert the salary history record.
+            SalaryHistory::create([
+                'employee_id' => $employee->id,
+                'old_salary' => $oldSalary,
+                'new_salary' => $newSalary,
+            ]);
+
+            // Step 9: Save the employee's new salary.
+            $employee->save();
+        }
+    });
+
+    // Step 10: Return a response.
+    return response()->json([
+        'message' => 'Salary updated successfully.',
+    ]);
+}
+
+
+HOW THIS WORKS
+--------------
+
+getRawOriginal('salary')
+    Retrieves the original stored salary before you change it.
+
+$employee->salary = $validated['salary'];
+    Assigns the new salary to the model in memory.
+
+isDirty('salary')
+    Checks whether the salary differs from its original value.
+
+SalaryHistory::create([...])
+    Inserts a record into the salary history table.
+
+$employee->save()
+    Saves the new salary in the employees table.
+
+DB::transaction(...)
+    Ensures that the history insert and employee update succeed
+    or fail together.
+
+lockForUpdate()
+    Locks the selected database row during the transaction.
+    This helps prevent competing transactions from changing
+    the same employee row at the same time.
+
+IMPORTANT:
+lockForUpdate() should be used inside a transaction.
+It is meaningful when the database supports row locking,
+such as MySQL using the InnoDB storage engine.
+
+
+3. METHOD 2: USE ELOQUENT'S ORIGINAL AND DIRTY METHODS
+-----------------------------------------------------
+
+Laravel provides methods that help you track model changes.
+
+The most useful methods are:
+
+A. getOriginal()
+B. getRawOriginal()
+C. isDirty()
+D. isClean()
+E. getChanges()
+F. wasChanged()
+
+
+A. getOriginal()
+
+Returns an attribute's original value before it was changed.
+
+Example:
+
+$employee = Employee::findOrFail(1);
+
+$oldSalary = $employee->getOriginal('salary');
+
+$employee->salary = 60000;
+
+Explanation:
+
+Before changing the salary, getOriginal('salary') returns
+the original salary stored in the model.
+
+Use it when you need the old value before changing an attribute.
+
+
+B. getRawOriginal()
+
+Example:
+
+$employee = Employee::findOrFail(1);
+
+$oldSalary = $employee->getRawOriginal('salary');
+
+Explanation:
+
+Returns the original stored attribute value without applying
+the model's normal attribute transformations or casts.
+
+This can be useful when you need the raw database representation.
+
+For salary history, choose the method that matches how you want
+to represent the old salary. Be consistent with decimal values.
+
+
+C. isDirty()
+
+Example:
+
+$employee = Employee::findOrFail(1);
+
+$employee->salary = 60000;
+
+if ($employee->isDirty('salary')) {
+    echo "Salary has changed.";
+}
+
+Explanation:
+
+isDirty('salary') returns true when the current in-memory salary
+differs from the model's original salary.
+
+It does not save the model.
+It does not insert a history record.
+It only checks whether an attribute has changed.
+
+
+D. isClean()
+
+Example:
+
+$employee = Employee::findOrFail(1);
+
+if ($employee->isClean('salary')) {
+    echo "Salary has not changed.";
+}
+
+Explanation:
+
+isClean('salary') checks whether the salary is unchanged
+relative to the model's original value.
+
+It is the opposite of isDirty('salary').
+
+
+E. getChanges()
+
+Example:
+
+$employee = Employee::findOrFail(1);
+
+$employee->salary = 60000;
+$employee->save();
+
+$changes = $employee->getChanges();
+
+Explanation:
+
+getChanges() returns the attributes changed by the model's
+most recent save operation.
+
+It is useful for inspecting new values that were saved.
+
+IMPORTANT:
+Do not use getChanges() to retrieve the old salary.
+It tells you about the saved changes, not the previous value.
+
+
+F. wasChanged()
+
+Example:
+
+$employee = Employee::findOrFail(1);
+
+$employee->salary = 60000;
+$employee->save();
+
+if ($employee->wasChanged('salary')) {
+    echo "Salary changed during the last save.";
+}
+
+Explanation:
+
+wasChanged('salary') checks whether the salary changed
+during the model's most recent save operation.
+
+It does not create a salary history record automatically.
+
+
+4. METHOD 3: USE THE MODEL'S UPDATING EVENT
+-------------------------------------------
+
+You can place salary-history logic in the Employee model.
+
+File:
+app/Models/Employee.php
+
+Example:
+
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Employee extends Model
+{
+    protected $fillable = [
+        'name',
+        'salary',
+    ];
+
+    protected static function booted(): void
+    {
+        static::updating(function (Employee $employee) {
+
+            // Check whether the salary is changing.
+            if ($employee->isDirty('salary')) {
+
+                // Retrieve the old salary.
+                $oldSalary = $employee->getRawOriginal('salary');
+
+                // Retrieve the new salary.
+                $newSalary = $employee->salary;
+
+                // Create the history record.
+                SalaryHistory::create([
+                    'employee_id' => $employee->id,
+                    'old_salary' => $oldSalary,
+                    'new_salary' => $newSalary,
+                ]);
+            }
+        });
+    }
+}
+
+Explanation:
+
+The updating event runs before an existing Eloquent model
+is updated in the database.
+
+When the salary changes:
+1. Laravel triggers the updating event.
+2. isDirty('salary') checks whether the salary changed.
+3. The old salary is retrieved.
+4. The new salary is retrieved.
+5. A salary history record is created.
+6. Laravel continues with the model update.
+
+IMPORTANT:
+The SalaryHistory model must be imported if it is in a
+different namespace.
+
+Also, the employee update and history insert should be wrapped
+in a database transaction at the operation level if they must
+succeed or fail together.
+
+This event does not run for every possible database update.
+
+For example, this query bypasses normal per-model update events:
+
+Employee::where('id', 1)->update([
+    'salary' => 60000,
+]);
+
+If you need reliable auditing, make sure all update paths are
+designed to use the appropriate auditing mechanism.
+
+
+5. METHOD 4: USE AN ELOQUENT OBSERVER
+-------------------------------------
+
+An observer keeps model-event logic separate from the model.
+
+This is useful when an application has several model events
+or when you want to organize auditing code more clearly.
+
+
+STEP 1: Create the observer.
+
+Command:
+
+php artisan make:observer EmployeeObserver --model=Employee
+
+
+STEP 2: Open the observer.
+
+File:
+app/Observers/EmployeeObserver.php
+
+Example:
+
+<?php
+
+namespace App\Observers;
+
+use App\Models\Employee;
+use App\Models\SalaryHistory;
+
+class EmployeeObserver
+{
+    public function updating(Employee $employee): void
+    {
+        if ($employee->isDirty('salary')) {
+
+            SalaryHistory::create([
+                'employee_id' => $employee->id,
+                'old_salary' => $employee->getRawOriginal('salary'),
+                'new_salary' => $employee->salary,
+            ]);
+        }
+    }
+}
+
+
+STEP 3: Register the observer.
+
+For example, in AppServiceProvider:
+
+File:
+app/Providers/AppServiceProvider.php
+
+Add the necessary imports:
+
+use App\Models\Employee;
+use App\Observers\EmployeeObserver;
+
+Then register it inside the boot() method:
+
+public function boot(): void
+{
+    Employee::observe(EmployeeObserver::class);
+}
+
+
+HOW IT WORKS
+------------
+
+When an existing Employee model is updated through normal
+Eloquent model-saving operations, Laravel calls the observer's
+updating() method before performing the update.
+
+The observer checks whether the salary changed and creates
+a history record when appropriate.
+
+BENEFITS
+--------
+
+1. Keeps controller code cleaner.
+2. Centralizes model-event logic.
+3. Can cover normal Eloquent model updates from multiple places.
+
+LIMITATION
+----------
+
+Bulk query-builder updates bypass per-model Eloquent events.
+
+For atomic history logging, wrap the overall update operation
+in a transaction. Remember that an observer by itself does not
+guarantee that the history insert and employee update are atomic.
+
+
+6. METHOD 5: USE A SERVICE CLASS
+--------------------------------
+
+For a larger application, a service class is often a good
+place for reusable business logic.
+
+This is particularly useful when both your web interface and
+future API endpoints need to update employee salaries.
+
+The controller receives and validates the request.
+The service handles the salary-update business logic.
+Both web and API controllers can call the same service.
+
+
+Example service:
+
+File:
+app/Services/EmployeeSalaryService.php
+
+<?php
+
+namespace App\Services;
+
+use App\Models\Employee;
+use App\Models\SalaryHistory;
+use Illuminate\Support\Facades\DB;
+
+class EmployeeSalaryService
+{
+    public function updateSalary(int $employeeId, string|int|float $salary): void
+    {
+        DB::transaction(function () use ($employeeId, $salary) {
+
+            // Retrieve and lock the employee.
+            $employee = Employee::whereKey($employeeId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            // Retrieve the old salary.
+            $oldSalary = $employee->getRawOriginal('salary');
+
+            // Assign the new salary.
+            $employee->salary = $salary;
+
+            // Only record history when the salary changes.
+            if ($employee->isDirty('salary')) {
+
+                SalaryHistory::create([
+                    'employee_id' => $employee->id,
+                    'old_salary' => $oldSalary,
+                    'new_salary' => $employee->salary,
+                ]);
+
+                // Save the new salary.
+                $employee->save();
+            }
+        });
+    }
+}
+
+
+HOW A CONTROLLER USES THE SERVICE
+---------------------------------
+
+Example:
+
+use App\Services\EmployeeSalaryService;
+use Illuminate\Http\Request;
+
+public function updateSalary(
+    Request $request,
+    int $id,
+    EmployeeSalaryService $salaryService
+) {
+    $validated = $request->validate([
+        'salary' => ['required', 'numeric', 'min:0'],
+    ]);
+
+    $salaryService->updateSalary($id, $validated['salary']);
+
+    return response()->json([
+        'message' => 'Salary updated successfully.',
+    ]);
+}
+
+
+WHY USE A SERVICE?
+------------------
+
+Without a service:
+    Web controller contains salary-update logic.
+    API controller may contain duplicate salary-update logic.
+
+With a service:
+    Web controller calls the service.
+    API controller calls the same service.
+    Salary-update logic exists in one place.
+
+This is a good approach when the application has reusable
+business rules or multiple interfaces.
+
+
+7. METHOD 6: RETRIEVE A SINGLE VALUE WITH value()
+-------------------------------------------------
+
+If you only need one database column, you can use value().
+
+Example:
+
+$oldSalary = Employee::whereKey(1)->value('salary');
+
+Explanation:
+
+value('salary') retrieves the salary column for the first
+matching record.
+
+It does not return a complete Employee model.
+
+You can also retrieve a specific employee first:
+
+$employee = Employee::findOrFail(1);
+
+$oldSalary = $employee->salary;
+
+IMPORTANT:
+Retrieving the old value and then updating the database in a
+separate operation can create a concurrency problem.
+
+Another request could update the salary between those steps.
+
+For critical operations such as salary history, prefer a
+transaction with an appropriate row lock and update the
+employee and history record together.
+
+
+8. METHOD 7: USE A DATABASE TRIGGER
+-----------------------------------
+
+MySQL can automatically record salary changes using a trigger.
+
+A trigger runs when a database operation meets its conditions.
+
+For example, a MySQL trigger can compare:
+
+OLD.salary
+    The value before the database update.
+
+NEW.salary
+    The value after the database update.
+
+Conceptual example:
+
+IF OLD.salary <> NEW.salary THEN
+
+    INSERT INTO salary_histories (
+        employee_id,
+        old_salary,
+        new_salary
+    )
+    VALUES (
+        OLD.id,
+        OLD.salary,
+        NEW.salary
+    );
+
+END IF;
+
+
+BENEFITS
+--------
+
+1. Can audit changes made by different applications.
+2. Can cover database updates that do not use Eloquent.
+3. The history logic runs inside the database.
+
+LIMITATIONS
+-----------
+
+1. The logic is stored in the database rather than Laravel.
+2. Debugging and testing may become more complicated.
+3. Database deployment needs to manage the trigger.
+4. It can surprise developers who expect Laravel alone to
+   create the history record.
+
+Use a trigger when database-level auditing is an intentional
+architectural decision.
+
+
+9. WHAT IF I WANT TO LOG ONLY THE OLD SALARY?
+---------------------------------------------
+
+Suppose your requirement is to store only the previous salary.
+
+Your table could contain:
+
+salary_histories
+-------------------------------------
+id
+employee_id
+old_salary
+created_at
+updated_at
+-------------------------------------
+
+Then the history insert becomes:
+
+SalaryHistory::create([
+    'employee_id' => $employee->id,
+    'old_salary' => $oldSalary,
+]);
+
+This records the old salary but not the new salary.
+
+However, storing both values is usually more useful for auditing.
+
+Example:
+
+old_salary = 50000
+new_salary = 60000
+
+This allows you to answer:
+1. What was the previous salary?
+2. What is the new salary?
+3. What changed?
+4. When did the change happen?
+
+Choose the table design based on the audit requirements.
+
+
+10. REQUIRED SALARY HISTORY MODEL CONFIGURATION
+-----------------------------------------------
+
+If you use SalaryHistory::create(), Laravel must know which
+fields are allowed for mass assignment.
+
+File:
+app/Models/SalaryHistory.php
+
+Example:
+
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class SalaryHistory extends Model
+{
+    protected $fillable = [
+        'employee_id',
+        'old_salary',
+        'new_salary',
+    ];
+}
+
+
+The salary_histories table must contain the corresponding
+columns.
+
+The employee_id should normally reference the employees table
+through a foreign key.
+
+Use a DECIMAL column for salaries, for example:
+
+salary DECIMAL(10, 2)
+
+Use a suitable DECIMAL type for old_salary and new_salary too.
+
+For monetary values, avoid relying on floating-point arithmetic
+for precise calculations.
+
+
+11. IMPORTANT ELOQUENT METHODS COMPARISON
+-----------------------------------------
+
+METHOD                 PURPOSE
+---------------------------------------------------------------
+getOriginal()          Gets the original model attribute value.
+
+getRawOriginal()       Gets the raw original stored value.
+
+isDirty()              Checks whether an attribute has changed.
+
+isClean()              Checks whether an attribute is unchanged.
+
+getChanges()           Gets attributes changed by the last save.
+
+wasChanged()           Checks whether an attribute changed
+                       during the last save.
+
+value()                Retrieves a single column value.
+
+findOrFail()           Retrieves a model or throws a not-found
+                       exception.
+
+save()                 Saves changes to an Eloquent model.
+
+create()               Creates a new model using mass assignment.
+
+DB::transaction()      Runs database operations atomically.
+
+lockForUpdate()        Locks selected rows during a transaction.
+
+
+12. WHICH METHOD SHOULD I USE?
+------------------------------
+
+CASE 1: I am learning Laravel.
+
+Use the controller approach first.
+
+Learn:
+1. Retrieve the old value.
+2. Assign the new value.
+3. Check isDirty().
+4. Insert the history record.
+5. Save the model.
+6. Use a transaction.
+
+CASE 2: My application has web and API interfaces.
+
+Use a service class for reusable salary-update business logic.
+
+Both controllers can call the same service.
+
+CASE 3: I want automatic logging for normal Eloquent updates.
+
+Consider a model event or observer.
+
+Remember that bulk query updates do not trigger per-model
+Eloquent events.
+
+CASE 4: I need database-wide auditing.
+
+Consider a database trigger if its trade-offs are acceptable.
+
+CASE 5: I only need one column from the database.
+
+Use value() when a full model is unnecessary.
+
+For critical updates, handle concurrency and transactions carefully.
+
+
+13. THE MOST IMPORTANT RULE
+---------------------------
+
+The safe sequence for recording an old value is:
+
+1. Retrieve the existing record from the database.
+2. Capture the old value before changing the model.
+3. Assign the new value from validated request data.
+4. Check whether the attribute actually changed.
+5. Insert the history record.
+6. Save the updated model.
+7. Use a transaction when both database operations must
+   succeed or fail together.
+
+Remember:
+
+REQUEST DATA:
+    Usually supplies the new value.
+
+DATABASE RECORD:
+    Supplies the trusted old value.
+
+ELOQUENT:
+    Helps retrieve the original value and detect changes.
+
+HISTORY TABLE:
+    Stores the audit record.
+
+TRANSACTION:
+    Keeps the history insert and model update together.
+
+SERVICE:
+    Organizes reusable business logic.
+
+OBSERVER:
+    Centralizes logic for normal Eloquent model events.
+
+DATABASE TRIGGER:
+    Can audit updates at the database level.

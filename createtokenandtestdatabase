@@ -1,0 +1,89 @@
+Test an authenticated request
+If you haven't generated a Sanctum token yet, open Tinker:
+php artisan tinker
+
+Run:
+$user = App\Models\User::find(1);
+
+Check that the user exists:
+$user;
+
+Generate a token:
+$token = $user->createToken('postman');
+
+Display the plain-text token:
+$token->plainTextToken;
+
+| Concept | What your test verifies |
+|---|---|
+| Feature testing | Tests the API through Laravel's HTTP request lifecycle. |
+| `RefreshDatabase` | Prepares a clean test database state. |
+| `Sanctum::actingAs()` | Authenticates a user for the API request. |
+| `postJson()` | Sends a JSON POST request to your API. |
+| `assertCreated()` | Verifies HTTP `201 Created`. |
+| `assertDatabaseHas()` | Verifies that employee data was saved. |
+| `assertUnprocessable()` | Verifies HTTP `422` for invalid input. |
+| `assertJsonValidationErrors()` | Checks which fields failed validation. |
+| `assertUnauthorized()` | Verifies HTTP `401` for unauthenticated requests. |
+
+
+actingAs   
+makes that user the authenticated user for subsequent requests in the test.Sanctum::actingAs() is a testing helper. It does not test the complete process of generating and submitting a real API token. That requires a separate authentication test.
+
+use Illuminate\Foundation\Testing\RefreshDatabase;
+Its main purpose is to prepare the database for tests and manage database changes so tests can run in isolation. 
+
+it() is a Pest function that defines a test.
+
+| Method | Purpose |
+|---|---|
+| `$this->get()` | Simulate an HTTP GET request |
+| `$this->getJson()` | Simulate a GET request expecting JSON |
+| `$this->post()` | Simulate an HTTP POST request |
+| `$this->postJson()` | Simulate a JSON POST request |
+| `$this->putJson()` | Simulate a JSON PUT request |
+| `$this->patchJson()` | Simulate a JSON PATCH request |
+| `$this->deleteJson()` | Simulate a JSON DELETE request |
+
+| # | Test | Expected result |
+|---|---|---|
+| 1 | List employees | `200 OK`, JSON data |
+| 2 | Create employee | `201 Created`, employee persisted |
+| 3 | Submit invalid employee data | `422 Unprocessable Entity` |
+| 4 | Show an employee | `200 OK`, employee resource |
+| 5 | Update an employee | Successful response and updated database record |
+| 6 | Submit invalid update data | `422 Unprocessable Entity` |
+| 7 | Delete an employee | Successful response and expected deletion behavior |
+| 8 | Access API without authentication | `401 Unauthorized` |
+| 9 | Employee attempts to view another employee | `403 Forbidden`, if the route uses the policy as expected |
+| 10 | Verify the API Resource structure | Correct employee and department JSON fields |
+
+
+
+| Method | Purpose | Example |
+|---|---|---|
+| `Log::emergency()` | The system is unusable | Critical application-wide failure |
+| `Log::alert()` | Immediate action is required | A serious service failure |
+| `Log::critical()` | A critical failure occurred | A required system component is unavailable |
+| `Log::error()` | An operation failed | Employee creation failed |
+| `Log::warning()` | Something unexpected happened | An external service is responding slowly |
+| `Log::notice()` | Something noteworthy happened | An unusual but recoverable condition |
+| `Log::info()` | Normal application activity | Employee created successfully |
+| `Log::debug()` | Detailed information useful during debugging | Details about a calculation |
+
+
+| Exception | What to investigate |
+|---|---|
+| `Illuminate\Database\QueryException` | SQL, database schema, constraints, or connection |
+| `Illuminate\Validation\ValidationException` | Validation rules and submitted data |
+| `Symfony\Component\HttpKernel\Exception\NotFoundHttpException` | Missing route or resource |
+| `Illuminate\Auth\Access\AuthorizationException` | Authorization rules or permissions |
+| `Error` | A PHP-level error, such as calling a method on an invalid value |
+| `TypeError` | A value has an incompatible type |
+
+
+
+
+
+
+

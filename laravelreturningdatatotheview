@@ -1,0 +1,892 @@
+LARAVEL: DIFFERENT WAYS TO SEND DATA TO A VIEW
+================================================
+
+PURPOSE
+-------
+
+Learn the different ways to pass data from Laravel routes and
+controllers to Blade views, and understand when to use each method.
+
+Example project: Employee Management System.
+
+
+1. USING view() WITH with()
+---------------------------
+
+This method passes a variable to a Blade view.
+
+CONTROLLER:
+
+use App\Models\Employee;
+
+public function show(int $id)
+{
+    $employee = Employee::findOrFail($id);
+
+    return view('employees.show')
+        ->with('employee', $employee);
+}
+
+VIEW FILE:
+resources/views/employees/show.blade.php
+
+<h1>Employee Details</h1>
+
+<p>Name: {{ $employee->name }}</p>
+<p>Salary: {{ $employee->salary }}</p>
+
+EXPLANATION:
+
+view('employees.show')
+    Renders resources/views/employees/show.blade.php.
+
+with('employee', $employee)
+    Makes the $employee variable available inside the view.
+
+WHEN TO USE:
+When you want to explicitly attach data to a view.
+
+
+2. USING AN ASSOCIATIVE ARRAY
+-----------------------------
+
+This method passes one or more variables to a view.
+
+CONTROLLER:
+
+use App\Models\Employee;
+
+public function show(int $id)
+{
+    $employee = Employee::findOrFail($id);
+
+    $companyName = 'ABC Technologies';
+
+    return view('employees.show', [
+        'employee' => $employee,
+        'companyName' => $companyName,
+    ]);
+}
+
+VIEW:
+
+<h1>{{ $companyName }}</h1>
+
+<p>Name: {{ $employee->name }}</p>
+<p>Salary: {{ $employee->salary }}</p>
+
+EXPLANATION:
+
+The array keys become variable names in the view.
+
+'employee' => $employee
+    Makes $employee available.
+
+'companyName' => $companyName
+    Makes $companyName available.
+
+WHEN TO USE:
+This is a good default when passing multiple variables
+from a controller to a Blade view.
+
+
+3. USING compact()
+------------------
+
+compact() creates an associative array from existing PHP variables.
+
+CONTROLLER:
+
+use App\Models\Employee;
+
+public function show(int $id)
+{
+    $employee = Employee::findOrFail($id);
+
+    $companyName = 'ABC Technologies';
+
+    return view(
+        'employees.show',
+        compact('employee', 'companyName')
+    );
+}
+
+VIEW:
+
+<h1>{{ $companyName }}</h1>
+
+<p>Name: {{ $employee->name }}</p>
+<p>Salary: {{ $employee->salary }}</p>
+
+EXPLANATION:
+
+compact('employee', 'companyName')
+
+Produces an array equivalent to:
+
+[
+    'employee' => $employee,
+    'companyName' => $companyName,
+]
+
+IMPORTANT:
+The variables must already exist before you use compact().
+
+WHEN TO USE:
+When you already have PHP variables and want to pass them
+to a view concisely.
+
+
+4. DIFFERENCE BETWEEN with(), ARRAY, AND compact()
+--------------------------------------------------
+
+METHOD A: with()
+
+return view('employees.show')
+    ->with('employee', $employee)
+    ->with('companyName', $companyName);
+
+METHOD B: ASSOCIATIVE ARRAY
+
+return view('employees.show', [
+    'employee' => $employee,
+    'companyName' => $companyName,
+]);
+
+METHOD C: compact()
+
+return view(
+    'employees.show',
+    compact('employee', 'companyName')
+);
+
+All three approaches can make the same variables available.
+
+RECOMMENDATION:
+Use an associative array as your default.
+Use compact() when it makes your code shorter and clearer.
+Use with() when you prefer explicitly attaching variables.
+
+
+5. PASSING A COLLECTION OF RECORDS
+----------------------------------
+
+Use this when displaying multiple employees.
+
+CONTROLLER:
+
+use App\Models\Employee;
+
+public function index()
+{
+    $employees = Employee::all();
+
+    return view('employees.index', [
+        'employees' => $employees,
+    ]);
+}
+
+VIEW:
+resources/views/employees/index.blade.php
+
+<h1>Employee List</h1>
+
+@forelse ($employees as $employee)
+    <p>
+        {{ $employee->name }}
+        - {{ $employee->salary }}
+    </p>
+@empty
+    <p>No employees found.</p>
+@endforelse
+
+EXPLANATION:
+
+Employee::all()
+    Retrieves all employee records as an Eloquent collection.
+
+@forelse
+    Loops through the collection.
+
+@empty
+    Displays a message if the collection is empty.
+
+WHEN TO USE:
+Employee lists, leave application histories, attendance records,
+and other pages displaying multiple database records.
+
+IMPORTANT:
+For large tables, prefer pagination instead of Employee::all().
+
+
+6. PASSING ONLY SPECIFIC COLUMNS USING select()
+-----------------------------------------------
+
+Use this when the view needs only a few columns.
+
+CONTROLLER:
+
+use App\Models\Employee;
+
+public function create()
+{
+    $employees = Employee::query()
+        ->select('id', 'name')
+        ->orderBy('name')
+        ->get();
+
+    return view('employees.create', [
+        'employees' => $employees,
+    ]);
+}
+
+VIEW:
+
+<select name="employee_id">
+    @foreach ($employees as $employee)
+        <option value="{{ $employee->id }}">
+            {{ $employee->name }}
+        </option>
+    @endforeach
+</select>
+
+EXPLANATION:
+
+select('id', 'name')
+    Requests only the specified columns from the database.
+
+get()
+    Executes the query and retrieves the results.
+
+WHEN TO USE:
+Dropdowns, search suggestions, lightweight tables, and pages
+that do not need every model attribute.
+
+
+7. USING pluck()
+----------------
+
+Use pluck() when you need a list of values rather than complete
+model objects.
+
+CONTROLLER:
+
+use App\Models\Employee;
+
+public function index()
+{
+    $employeeNames = Employee::pluck('name');
+
+    return view('employees.names', [
+        'employeeNames' => $employeeNames,
+    ]);
+}
+
+VIEW:
+
+<h1>Employee Names</h1>
+
+<ul>
+    @foreach ($employeeNames as $name)
+        <li>{{ $name }}</li>
+    @endforeach
+</ul>
+
+You can also key the values by another column:
+
+$employeeNames = Employee::pluck('name', 'id');
+
+Conceptual result:
+
+1 => Amit
+2 => Rahul
+3 => Priya
+
+WHEN TO USE:
+Dropdowns, lists of names, status values, and other situations
+where complete models are unnecessary.
+
+
+8. ELOQUENT with() VERSUS VIEW with()
+-------------------------------------
+
+There are two different uses of with().
+
+A. ELOQUENT RELATIONSHIP LOADING
+
+$employees = Employee::with('department')->get();
+
+This loads employees together with their department relationship.
+
+B. PASSING DATA TO A VIEW
+
+return view('employees.index')
+    ->with('employees', $employees);
+
+This makes the $employees variable available inside the view.
+
+EXAMPLE VIEW:
+
+@foreach ($employees as $employee)
+    <p>
+        {{ $employee->name }}
+        -
+        {{ $employee->department?->department_name ?? 'No Department' }}
+    </p>
+@endforeach
+
+WHEN TO USE ELOQUENT with():
+When the view needs related model data and you want to avoid
+unnecessary database queries.
+
+
+9. USING View::share()
+----------------------
+
+Use View::share() when the same data needs to be available
+across many views.
+
+FILE:
+app/Providers/AppServiceProvider.php
+
+EXAMPLE:
+
+<?php
+
+namespace App\Providers;
+
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
+
+class AppServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        View::share('companyName', 'ABC Technologies');
+    }
+}
+
+Now the variable can be used in a Blade view:
+
+<h1>{{ $companyName }}</h1>
+
+WHEN TO USE:
+For common values needed throughout many views.
+
+IMPORTANT:
+Avoid globally sharing large or sensitive user-specific datasets
+without a clear reason.
+
+
+10. USING VIEW COMPOSERS
+------------------------
+
+A view composer prepares data whenever a particular view renders.
+
+Example requirement:
+A sidebar should display the total employee count on multiple pages.
+
+CREATE CLASS:
+
+File:
+app/View/Composers/EmployeeSidebarComposer.php
+
+<?php
+
+namespace App\View\Composers;
+
+use App\Models\Employee;
+use Illuminate\View\View;
+
+class EmployeeSidebarComposer
+{
+    public function compose(View $view): void
+    {
+        $view->with(
+            'employeeCount',
+            Employee::count()
+        );
+    }
+}
+
+REGISTER THE COMPOSER:
+
+File:
+app/Providers/AppServiceProvider.php
+
+Add these imports:
+
+use App\View\Composers\EmployeeSidebarComposer;
+use Illuminate\Support\Facades\View;
+
+Register it inside boot():
+
+public function boot(): void
+{
+    View::composer(
+        'partials.sidebar',
+        EmployeeSidebarComposer::class
+    );
+}
+
+If boot() already contains code, keep it and add the registration.
+
+CREATE THE VIEW:
+
+File:
+resources/views/partials/sidebar.blade.php
+
+<aside>
+    <h2>Employee Management</h2>
+
+    <p>Total employees: {{ $employeeCount }}</p>
+</aside>
+
+INCLUDE THE VIEW:
+
+@include('partials.sidebar')
+
+WHEN TO USE:
+When a specific reusable view needs data across multiple pages.
+
+DIFFERENCE:
+View::share() makes data broadly available.
+View::composer() prepares data for particular views.
+
+
+11. PASSING DATA TO A BLADE COMPONENT
+------------------------------------
+
+Components are useful for reusable UI elements.
+
+CONTROLLER:
+
+use App\Models\Employee;
+
+public function show(int $id)
+{
+    $employee = Employee::findOrFail($id);
+
+    return view('employees.show', [
+        'employee' => $employee,
+    ]);
+}
+
+PARENT VIEW:
+resources/views/employees/show.blade.php
+
+<h1>Employee Details</h1>
+
+<x-employee-card :employee="$employee" />
+
+CREATE COMPONENT:
+
+php artisan make:component EmployeeCard
+
+COMPONENT VIEW:
+resources/views/components/employee-card.blade.php
+
+<div class="employee-card">
+    <h2>{{ $employee->name }}</h2>
+
+    <p>Salary: {{ $employee->salary }}</p>
+</div>
+
+EXPLANATION:
+
+:employee="$employee"
+    Passes the PHP variable into the component.
+
+WHEN TO USE:
+Employee cards, form fields, buttons, status badges, and reusable
+UI elements.
+
+A component does not automatically retrieve database records.
+The required data must be provided to it.
+
+
+12. PASSING PAGINATED DATA
+--------------------------
+
+Use pagination when a table contains many records.
+
+CONTROLLER:
+
+use App\Models\Employee;
+
+public function index()
+{
+    $employees = Employee::orderBy('id')
+        ->paginate(10);
+
+    return view('employees.index', [
+        'employees' => $employees,
+    ]);
+}
+
+VIEW:
+
+<h1>Employees</h1>
+
+@foreach ($employees as $employee)
+    <p>{{ $employee->name }}</p>
+@endforeach
+
+{{ $employees->links() }}
+
+EXPLANATION:
+
+paginate(10)
+    Retrieves a page containing up to 10 records.
+
+links()
+    Renders pagination controls.
+
+WHEN TO USE:
+Large employee lists, leave histories, attendance records,
+and administrative reports.
+
+
+13. PASSING VALIDATION ERRORS AND OLD INPUT
+-------------------------------------------
+
+When form validation fails during a normal web request,
+Laravel redirects back and makes validation errors available
+to the view.
+
+CONTROLLER:
+
+use Illuminate\Http\Request;
+
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'salary' => ['required', 'numeric', 'min:0'],
+    ]);
+
+    // Save the validated data here.
+}
+
+VIEW:
+
+<form method="POST" action="{{ route('employees.store') }}">
+    @csrf
+
+    <label for="name">Name</label>
+
+    <input
+        type="text"
+        id="name"
+        name="name"
+        value="{{ old('name') }}"
+    >
+
+    @error('name')
+        <p>{{ $message }}</p>
+    @enderror
+
+    <label for="salary">Salary</label>
+
+    <input
+        type="number"
+        id="salary"
+        name="salary"
+        value="{{ old('salary') }}"
+    >
+
+    @error('salary')
+        <p>{{ $message }}</p>
+    @enderror
+
+    <button type="submit">Save Employee</button>
+</form>
+
+EXPLANATION:
+
+old('name')
+    Retrieves previously submitted input when available.
+
+@error('name')
+    Displays the validation error for the name field.
+
+WHEN TO USE:
+Forms that need to preserve submitted values and display
+validation errors.
+
+
+14. REDIRECTING WITH A SUCCESS MESSAGE
+--------------------------------------
+
+After saving data, you may redirect the user to another page
+and display a success message.
+
+CONTROLLER:
+
+use App\Models\Employee;
+use Illuminate\Http\Request;
+
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'salary' => ['required', 'numeric', 'min:0'],
+    ]);
+
+    Employee::create($validated);
+
+    return redirect()
+        ->route('employees.index')
+        ->with('success', 'Employee created successfully.');
+}
+
+DESTINATION VIEW:
+
+@if (session('success'))
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
+@endif
+
+EXPLANATION:
+
+redirect()->route('employees.index')
+    Redirects the browser to the named route.
+
+with('success', '...')
+    Stores a flash message in the session for the next request.
+
+WHEN TO USE:
+After creating, updating, approving, or deleting a record.
+
+IMPORTANT DIFFERENCE:
+
+view()->with()
+    Passes data to the view being rendered.
+
+redirect()->with()
+    Flashes data to the session for a subsequent request.
+
+
+15. RETURNING A VIEW DIRECTLY FROM A ROUTE
+------------------------------------------
+
+For a simple page, you do not always need a controller.
+
+FILE:
+routes/web.php
+
+use Illuminate\Support\Facades\Route;
+
+Route::view('/about', 'about');
+
+This renders:
+
+resources/views/about.blade.php
+
+You can also pass data:
+
+Route::view('/about', 'about', [
+    'companyName' => 'ABC Technologies',
+]);
+
+VIEW:
+
+<h1>About {{ $companyName }}</h1>
+
+WHEN TO USE:
+Simple static pages that do not need controller logic.
+
+For pages involving database queries, validation, or business
+rules, a controller is generally more suitable.
+
+
+16. RETURNING A VIEW VERSUS JSON
+--------------------------------
+
+A. RETURN A BLADE VIEW
+
+return view('employees.show', [
+    'employee' => $employee,
+]);
+
+Purpose:
+Render HTML for a web page.
+
+B. RETURN JSON
+
+return response()->json([
+    'id' => $employee->id,
+    'name' => $employee->name,
+    'salary' => $employee->salary,
+]);
+
+Purpose:
+Return structured JSON data to a client.
+
+COMPARISON:
+
+view()
+    Returns rendered HTML.
+    Used for server-rendered web pages.
+    Uses Blade templates.
+
+response()->json()
+    Returns JSON.
+    Used for APIs and clients expecting JSON.
+    Does not render a Blade template.
+
+For a project with both web and mobile interfaces, keep the
+web and API layers separate while reusing business logic
+through service classes where appropriate.
+
+
+17. HOW DATA REACHES THE BLADE VIEW
+-----------------------------------
+
+CONTROLLER:
+
+public function show(int $id)
+{
+    $employee = Employee::findOrFail($id);
+
+    $companyName = 'ABC Technologies';
+
+    return view('employees.show', [
+        'employee' => $employee,
+        'companyName' => $companyName,
+    ]);
+}
+
+VIEW:
+
+<h1>{{ $companyName }}</h1>
+
+<p>{{ $employee->name }}</p>
+
+PROCESS:
+
+1. Laravel receives the request.
+2. The route invokes the controller.
+3. The controller retrieves the employee.
+4. The controller prepares the required variables.
+5. The controller returns a view response with those variables.
+6. Laravel renders the Blade template.
+7. Blade evaluates the variables and generates HTML.
+8. Laravel returns the HTML response to the browser.
+
+
+18. QUICK REFERENCE TABLE
+-------------------------
+
+REQUIREMENT
+    RECOMMENDED METHOD
+
+Send one variable to a view
+    view()->with()
+
+Send multiple variables
+    Associative array
+
+Send existing PHP variables concisely
+    compact()
+
+Display one employee
+    Retrieve a model and pass it to the view
+
+Display multiple employees
+    Retrieve a collection and pass it to the view
+
+Retrieve selected columns
+    select() followed by get()
+
+Retrieve a single column
+    value()
+
+Retrieve a collection of column values
+    pluck()
+
+Load related models
+    Eloquent with()
+
+Share data across views
+    View::share()
+
+Prepare data for specific views
+    View composers
+
+Pass data into a reusable UI element
+    Blade component attributes
+
+Display a large collection
+    paginate()
+
+Preserve previous form input
+    old()
+
+Display validation errors
+    @error or $errors
+
+Redirect with a success message
+    redirect()->with()
+
+Display a simple static page
+    Route::view()
+
+Return data to a mobile app
+    response()->json()
+
+
+19. FINAL RECOMMENDATION
+------------------------
+
+For most Laravel CRUD pages, use this pattern.
+
+CONTROLLER:
+
+public function index()
+{
+    $employees = Employee::orderBy('name')->paginate(10);
+
+    return view('employees.index', [
+        'employees' => $employees,
+    ]);
+}
+
+BLADE VIEW:
+
+<h1>Employees</h1>
+
+@foreach ($employees as $employee)
+    <p>{{ $employee->name }}</p>
+@endforeach
+
+{{ $employees->links() }}
+
+REMEMBER:
+
+1. Retrieve data in the controller or an appropriate service.
+2. Pass the required data to the view.
+3. Display it in Blade.
+4. Use pagination for large datasets.
+5. Use view composers for data repeatedly required by specific
+   views.
+6. Use Blade components for reusable UI elements.
+7. Use services for business logic that needs to be reused.
+8. Use JSON responses for endpoints designed to serve APIs.
+
+THE MOST IMPORTANT PATTERN:
+
+DATABASE
+    |
+    v
+CONTROLLER
+    |
+    v
+VIEW RESPONSE WITH DATA
+    |
+    v
+BLADE TEMPLATE
+    |
+    v
+HTML RESPONSE TO THE BROWSER
