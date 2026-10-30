@@ -1,0 +1,566 @@
+LARAVEL REQUEST METHODS — PRACTICAL REFERENCE
+Laravel 12 | Controller reference
+
+============================================================
+1. HOW TO USE REQUEST IN A CONTROLLER
+============================================================
+
+Most controllers need this import:
+
+    use Illuminate\Http\Request;
+
+Example:
+
+    <?php
+
+    namespace App\Http\Controllers;
+
+    use Illuminate\Http\Request;
+
+    class EmployeeController extends Controller
+    {
+        public function store(Request $request)
+        {
+            $name = $request->input('name');
+
+            return response()->json([
+                'name' => $name,
+            ]);
+        }
+    }
+
+The import makes Laravel's Request class available under the short name
+Request. You do not need a separate import for every method.
+
+Laravel's Request class extends Symfony's HTTP Foundation Request class.
+Some available methods are inherited, so not every method is declared
+directly in Laravel's Request.php file.
+
+============================================================
+2. INPUT RETRIEVAL METHODS
+============================================================
+
+Import:
+    use Illuminate\Http\Request;
+
+Method             Example                                  Purpose
+-----------------  ---------------------------------------  -----------------------------
+input()            $request->input('name')                  Retrieve an input value.
+all()              $request->all()                          Retrieve all input data.
+collect()          $request->collect()                      Return input as a Collection.
+only()             $request->only(['name', 'email'])        Select specified input fields.
+except()           $request->except(['password'])           Exclude specified input fields.
+query()            $request->query('page', 1)                Retrieve query-string parameters.
+string()           $request->string('name')                  Retrieve input as Stringable.
+integer()          $request->integer('department_id')        Convert input to an integer.
+boolean()          $request->boolean('is_active')            Convert supported values to boolean.
+array()            $request->array('employee_ids')           Retrieve input as an array.
+date()             $request->date('joining_date')            Retrieve a date as a Carbon object.
+enum()             $request->enum('status', Status::class)   Retrieve input as a PHP enum value.
+Dynamic property   $request->name                            Retrieve input using property syntax.
+
+Example:
+
+    $name = $request->input('name');
+    $departmentId = $request->integer('department_id');
+    $isActive = $request->boolean('is_active');
+
+Important:
+- Conversion is not validation. integer() does not prove that an ID exists in
+  the database or that the original value was valid.
+- Validate a date before using date(); invalid dates can cause exceptions.
+- Avoid saving $request->all() directly to the database without validation
+  and appropriate mass-assignment protection.
+
+============================================================
+3. INPUT PRESENCE AND CONDITIONAL METHODS
+============================================================
+
+Method             Example                                         Purpose
+-----------------  ----------------------------------------------  -----------------------------
+has()              $request->has('name')                           Check whether a key exists.
+hasAny()           $request->hasAny(['name', 'email'])             Check whether any key exists.
+filled()           $request->filled('name')                        Check whether a field is non-empty.
+isNotFilled()      $request->isNotFilled('name')                   Check whether missing or empty.
+missing()          $request->missing('name')                       Check whether a key is absent.
+anyFilled()        $request->anyFilled(['name', 'email'])          Check whether any field is filled.
+whenHas()          $request->whenHas('name', $callback)            Run callback if key exists.
+whenFilled()       $request->whenFilled('name', $callback)         Run callback if field is filled.
+whenMissing()      $request->whenMissing('name', $callback)        Run callback if key is missing.
+whenNotFilled()    $request->whenNotFilled('name', $callback)      Run callback if field is not filled.
+
+Example:
+
+    if ($request->filled('reason')) {
+        $reason = $request->input('reason');
+    }
+
+Difference:
+- has() checks for the presence of an input key.
+- filled() checks that a key is present and its value is not empty.
+- missing() checks that the key is absent.
+
+Presence checks do not prove that data is valid or that the user is allowed
+to submit it. Use validation and authorization separately.
+
+============================================================
+4. METHODS TO MODIFY OR FLASH INPUT
+============================================================
+
+Method             Example                                         Purpose
+-----------------  ----------------------------------------------  -----------------------------
+merge()            $request->merge(['is_active' => true])          Add or replace input values.
+mergeIfMissing()   $request->mergeIfMissing(['page' => 1])         Add values only for missing keys.
+replace()          $request->replace(['name' => 'Rahul'])          Replace request input parameters.
+flash()            $request->flash()                               Flash input to session for next request.
+flashOnly()        $request->flashOnly(['name', 'email'])          Flash selected input to session.
+flashExcept()      $request->flashExcept(['password'])             Flash input except selected fields.
+old()              $request->old('name')                           Retrieve previously flashed input.
+flush()            $request->flush()                               Remove flashed input data from session.
+
+Example:
+
+    $request->merge(['is_active' => true]);
+
+merge() changes the input available on the current request. It does not
+automatically update a database record.
+
+Blade forms commonly use the global old() helper:
+
+    <input type="text" name="name" value="{{ old('name') }}">
+
+Here old('name') is a helper, not a method call on the Request object.
+
+Session-dependent methods require an appropriate session context.
+
+============================================================
+5. HTTP METHOD AND ROUTE INSPECTION
+============================================================
+
+Method             Example                                         Purpose
+-----------------  ----------------------------------------------  -----------------------------
+method()           $request->method()                              Get effective HTTP method.
+isMethod()         $request->isMethod('POST')                      Check HTTP method.
+path()             $request->path()                                Get request path.
+decodedPath()      $request->decodedPath()                         Get decoded request path.
+is()               $request->is('admin/*')                         Match URL path pattern.
+routeIs()          $request->routeIs('employees.*')                Match route-name pattern.
+route()            $request->route('id')                           Get current route or route parameter.
+ajax()             $request->ajax()                                Check whether request is identified as AJAX.
+pjax()             $request->pjax()                                Check for a PJAX request.
+isJson()           $request->isJson()                              Check request content type for JSON.
+expectsJson()      $request->expectsJson()                         Check whether JSON response is expected.
+wantsJson()        $request->wantsJson()                           Check whether client prefers JSON.
+
+Example:
+
+    if ($request->routeIs('employees.*')) {
+        // The matched route name matches employees.*.
+    }
+
+For URL /employees/25/edit:
+    $request->path()  returns "employees/25/edit"
+
+routeIs() checks a named route. is() checks the URL path. They are not
+interchangeable.
+
+============================================================
+6. URL, HOST, SCHEME, AND PORT
+============================================================
+
+Method                 Example                                          Purpose
+---------------------  -----------------------------------------------  -----------------------------
+url()                  $request->url()                                  URL without query string.
+fullUrl()              $request->fullUrl()                              URL including query string.
+fullUrlWithQuery()     $request->fullUrlWithQuery(['page' => 2])        URL with merged query parameters.
+fullUrlWithoutQuery()  $request->fullUrlWithoutQuery(['page'])          URL without selected query parameters.
+root()                 $request->root()                                 Application root URL for request.
+previous()             $request->previous()                             Previous URL, when available.
+host()                 $request->host()                                 Hostname.
+httpHost()             $request->httpHost()                             HTTP host, including non-default port.
+scheme()               $request->scheme()                               URL scheme, such as http or https.
+secure()               $request->secure()                               Check whether request is considered HTTPS.
+getPort()              $request->getPort()                              Request port.
+schemeAndHttpHost()    $request->schemeAndHttpHost()                    Scheme and host together.
+getRequestUri()        $request->getRequestUri()                        Request URI, including query string.
+getUri()               $request->getUri()                               Full request URI.
+
+Example URL:
+    https://example.com/employees?page=2
+
+    $request->url();      // https://example.com/employees
+    $request->fullUrl();  // https://example.com/employees?page=2
+    $request->path();     // employees
+
+Use URL methods for navigation, filtering, URL generation, and debugging.
+Be careful with proxy and trusted-host configuration in production.
+
+============================================================
+7. REQUEST HEADER METHODS
+============================================================
+
+Method             Example                                         Purpose
+-----------------  ----------------------------------------------  -----------------------------
+header()           $request->header('User-Agent')                  Retrieve a header value.
+hasHeader()        $request->hasHeader('Authorization')            Check whether a header exists.
+bearerToken()      $request->bearerToken()                         Extract bearer token from Authorization header.
+
+Example:
+
+    $token = $request->bearerToken();
+
+For header:
+    Authorization: Bearer abc123
+
+bearerToken() extracts "abc123". It does not verify the token or authenticate
+the user. Use Laravel authentication middleware and Sanctum for protected
+API endpoints.
+
+============================================================
+8. CLIENT IP METHODS
+============================================================
+
+Method             Example                         Purpose
+-----------------  ------------------------------  ---------------------------------------------
+ip()               $request->ip()                 Get client's apparent IP address.
+ips()              $request->ips()                Get IP addresses inferred from request/proxy info.
+
+Use for diagnostic logs or security auditing. Configure trusted proxies
+correctly. An IP address is not proof of a user's identity.
+
+============================================================
+9. CONTENT NEGOTIATION METHODS
+============================================================
+
+Method                       Example                                               Purpose
+---------------------------  ----------------------------------------------------  -----------------------------
+accepts()                    $request->accepts(['application/json'])               Check if client accepts a type.
+prefers()                    $request->prefers(['application/json', 'text/html'])  Find preferred content type.
+acceptsAnyContentType()      $request->acceptsAnyContentType()                     Check if any type is accepted.
+acceptsJson()                $request->acceptsJson()                               Check if JSON is acceptable.
+getAcceptableContentTypes()  $request->getAcceptableContentTypes()                 List acceptable response types.
+
+Example:
+
+    if ($request->accepts(['application/json'])) {
+        return response()->json(['message' => 'Success']);
+    }
+
+For a dedicated REST API, it is usually simpler to return JSON consistently.
+
+============================================================
+10. JSON AND REQUEST BODY METHODS
+============================================================
+
+Method             Example                         Purpose
+-----------------  ------------------------------  ---------------------------------------------
+json()             $request->json('name')          Retrieve a value from JSON input.
+getContent()        $request->getContent()          Retrieve raw request body.
+getRealMethod()     $request->getRealMethod()       Retrieve original HTTP method before method overriding.
+
+Example:
+
+    $name = $request->input('name');
+    // Or, specifically from JSON input:
+    $name = $request->json('name');
+
+getContent() is useful for specialized cases such as custom payload processing
+or webhook-signature verification. For ordinary controller input, input()
+is usually the best starting point.
+
+============================================================
+11. FILE UPLOAD METHODS
+============================================================
+
+Method             Example                         Purpose
+-----------------  ------------------------------  ---------------------------------------------
+file()             $request->file('document')      Retrieve uploaded file.
+hasFile()          $request->hasFile('document')   Check whether a file was uploaded.
+allFiles()         $request->allFiles()            Retrieve all uploaded files.
+
+Example:
+
+    if ($request->hasFile('document')) {
+        $file = $request->file('document');
+
+        if ($file->isValid()) {
+            $path = $file->store('employee-documents', 'local');
+        }
+    }
+
+Note: isValid() and store() in this example are methods on the uploaded-file
+object, not on the Request object.
+
+Validate file type and size before storing files. Do not trust an original
+filename or client-provided MIME type alone.
+
+============================================================
+12. COOKIE METHODS
+============================================================
+
+Method             Example                         Purpose
+-----------------  ------------------------------  ---------------------------------------------
+cookie()           $request->cookie('theme')       Retrieve a cookie value.
+hasCookie()        $request->hasCookie('theme')    Check whether a cookie exists.
+
+Example:
+
+    $theme = $request->cookie('theme', 'light');
+
+If the cookie is missing, the default value is "light". Cookie handling
+depends on Laravel's middleware and application configuration.
+
+============================================================
+13. SESSION METHODS
+============================================================
+
+Method             Example                                              Purpose
+-----------------  ---------------------------------------------------  ---------------------------------------------
+session()          $request->session()->get('department')               Access session store/data.
+hasSession()       $request->hasSession()                                Check whether a session is available.
+
+Example:
+
+    $request->session()->put('department', 'IT');
+    $department = $request->session()->get('department');
+
+These methods are mainly useful for stateful web applications. Stateless
+APIs generally should not depend on session state unless intentionally
+designed to do so.
+
+============================================================
+14. AUTHENTICATION AND ROUTE ACCESS
+============================================================
+
+Method             Example                         Purpose
+-----------------  ------------------------------  ---------------------------------------------
+user()             $request->user()                Retrieve authenticated user, if available.
+user('sanctum')     $request->user('sanctum')      Retrieve user through specified guard.
+userResolver()     $request->userResolver()       Get/set callback used to resolve current user.
+route()            $request->route('id')          Retrieve current route or a route parameter.
+
+The two user() examples are variations of the same method.
+
+Example:
+
+    $user = $request->user();
+
+    if ($user === null) {
+        // No authenticated user is available.
+    }
+
+For a protected API route, use authentication middleware, for example:
+
+    Route::middleware('auth:sanctum')->get('/profile', function (Request $request) {
+        return $request->user();
+    });
+
+Do not trust a form field containing an employee ID when the action should be
+performed on behalf of the logged-in employee. Resolve the identity from the
+authenticated user and enforce authorization separately.
+
+============================================================
+15. VALIDATION-RELATED METHODS
+============================================================
+
+Method                 Used on                  Purpose
+---------------------  -----------------------  ---------------------------------------------
+validate()             Request                  Validate input and return validated fields.
+validateWithBag()      Request                  Validate using a named error bag.
+validatePrecognitive() Request                  Validate in a Precognition workflow.
+validated()            Validator/Form Request   Retrieve validated input.
+safe()                 Validator/Form Request   Retrieve a wrapper for validated input.
+validate()             Validator                Run validation on a validator instance.
+
+Example:
+
+    $validated = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email'],
+    ]);
+
+On a typical web request, failed validation redirects back with errors. For
+a request expecting JSON, Laravel normally returns a JSON validation response
+with HTTP status 422.
+
+Form Request example:
+
+    $validated = $request->validated();
+
+This works when $request is a Form Request object. The ordinary
+Illuminate\Http\Request object does not provide validated() or safe()
+directly; those methods belong to the validation APIs.
+
+Validation is not authorization. Business rules such as leave balances,
+overlapping applications, and approval workflow must be handled separately.
+
+============================================================
+16. ADDITIONAL METHODS INHERITED FROM SYMFONY
+============================================================
+
+Laravel's Request class extends Symfony's HTTP Foundation Request class.
+The following are common inherited methods. Exact availability can vary with
+the Symfony version installed by your Laravel project.
+
+Method                 Example                         Purpose
+---------------------  ------------------------------  ---------------------------------------------
+get()                  $request->get('name')          Get an attribute/parameter from Symfony parameter bags.
+getMethod()            $request->getMethod()           Get effective HTTP method.
+getScheme()            $request->getScheme()           Get URL scheme.
+getHost()              $request->getHost()             Get hostname.
+getPort()              $request->getPort()             Get request port.
+getPathInfo()          $request->getPathInfo()         Get path portion of request URI.
+getBaseUrl()           $request->getBaseUrl()          Get base URL for request/application context.
+getBasePath()          $request->getBasePath()         Get base path.
+getClientIps()         $request->getClientIps()        Get client IP information, including proxy info.
+getClientIp()          $request->getClientIp()         Get client IP as interpreted by Symfony.
+getLanguages()         $request->getLanguages()        Get language preferences.
+getCharsets()          $request->getCharsets()         Get accepted character sets.
+getEncodings()         $request->getEncodings()        Get accepted content encodings.
+getPreferredFormat()   $request->getPreferredFormat() Get preferred response format, when determinable.
+getFormat()            $request->getFormat('json')     Map a format name to a MIME type.
+isSecure()             $request->isSecure()            Check whether request is considered secure.
+isXmlHttpRequest()     $request->isXmlHttpRequest()    Check whether request is identified as XMLHttpRequest.
+duplicate()            $request->duplicate()           Create a duplicate request, optionally changing data.
+
+Caution:
+- Laravel has its own methods that overlap with Symfony methods. Prefer
+  Laravel's documented methods when available.
+- Symfony get() is not a universal replacement for Laravel input().
+- Some inherited methods or signatures can differ by dependency version.
+
+============================================================
+17. SPECIALIZED LARAVEL METHODS
+============================================================
+
+Method                    Example                                      Purpose
+------------------------  -------------------------------------------  ---------------------------------------------
+fingerprint()             $request->fingerprint()                      Generate fingerprint from request characteristics.
+isPrecognitive()          $request->isPrecognitive()                   Check whether request is part of Precognition.
+isAttemptingPrecognition() $request->isAttemptingPrecognition()        Check whether request is attempting Precognition.
+filterPrecognitiveRules() $request->filterPrecognitiveRules($rules)    Filter validation rules for Precognition.
+
+Precognition methods are useful when implementing Laravel Precognition,
+which can validate forms before final submission. Use them when that feature
+is part of your application.
+
+============================================================
+18. IMPORTS REFERENCE
+============================================================
+
+Class/functionality                         Import
+------------------------------------------  -----------------------------------------------
+Laravel Request                            use Illuminate\Http\Request;
+Laravel Form Request                       use Illuminate\Foundation\Http\FormRequest;
+Uploaded file, when type-hinting it         use Illuminate\Http\UploadedFile;
+Laravel Stringable, when type-hinting it    use Illuminate\Support\Stringable;
+Laravel Carbon, when type-hinting it        use Illuminate\Support\Carbon;
+Application enum                           use App\Enums\Status;
+Symfony Request, when explicitly needed     use Symfony\Component\HttpFoundation\Request;
+
+You do not need to import all of these in every controller. Import only the
+classes your code actually references. Avoid importing Symfony's Request
+instead of Laravel's Request when you need Laravel-specific methods such as
+input(), validate(), or user().
+
+============================================================
+19. GET THE EXACT METHOD LIST FROM YOUR INSTALLED VERSION
+============================================================
+
+The reference above covers many commonly used Laravel Request methods and
+selected inherited methods. It is not a guarantee that every public method
+in the framework and all its dependencies is listed.
+
+To inspect the exact methods available in your installed Laravel project:
+
+1. Open a terminal in the project directory.
+2. Run:
+
+    php artisan tinker
+
+3. In Tinker, run:
+
+    $reflection = new ReflectionClass(\Illuminate\Http\Request::class);
+
+    $methods = collect($reflection->getMethods())
+        ->pluck('name')
+        ->unique()
+        ->sort()
+        ->values();
+
+    $methods;
+
+To see which class declares each method:
+
+    $reflection = new ReflectionClass(\Illuminate\Http\Request::class);
+
+    $methods = collect($reflection->getMethods())
+        ->map(fn ($method) => [
+            'method' => $method->getName(),
+            'declared_in' => $method->getDeclaringClass()->getName(),
+        ])
+        ->sortBy('method')
+        ->values();
+
+    $methods;
+
+Exit Tinker with:
+
+    exit
+
+The reflection list includes methods available through the class, including
+inherited public methods. Methods declared in traits may be reported as
+belonging to the class using the trait.
+
+Official references:
+- Laravel 12 HTTP Requests:
+  https://laravel.com/docs/12.x/requests
+- Laravel API: Illuminate\Http\Request:
+  https://api.laravel.com/docs/12.x/Illuminate/Http/Request.html
+- Symfony HTTP Foundation:
+  https://symfony.com/doc/current/components/http_foundation.html
+
+============================================================
+20. THE 20 METHODS TO LEARN FIRST
+============================================================
+
+1.  input()         Retrieve submitted input.
+2.  all()           Retrieve all input.
+3.  only()          Select specific input fields.
+4.  query()         Retrieve query-string parameters.
+5.  integer()       Convert input to an integer.
+6.  boolean()       Interpret checkbox-like values.
+7.  has()           Check whether an input key exists.
+8.  filled()        Check whether a field is non-empty.
+9.  validate()      Validate incoming data.
+10. method()        Retrieve effective HTTP method.
+11. route()         Retrieve route parameters.
+12. user()          Retrieve authenticated user.
+13. file()          Retrieve an uploaded file.
+14. hasFile()       Check whether a file was uploaded.
+15. header()        Retrieve a request header.
+16. bearerToken()   Extract a bearer token.
+17. session()       Access session data.
+18. expectsJson()   Check whether JSON is expected.
+19. url()           Retrieve URL without query string.
+20. merge()         Add or replace input values.
+
+FINAL DISTINCTION
+-----------------
+
+Request methods retrieve and inspect incoming data.
+Validation checks whether data satisfies defined rules.
+Authorization checks whether a user may perform an operation.
+Business logic determines what the application should do.
+Persistence saves changes to the database.
+
+Example in a Leave Management System:
+- Retrieve leave_type_id: Request operation.
+- Check that it is a valid leave type: validation.
+- Check employee eligibility: authorization/business rules.
+- Check balances and overlapping applications: business logic.
+- Save the application: persistence.
+- Deduct leave only after approval: approval workflow/business logic.
+
+Keeping these responsibilities separate makes controllers easier to understand,
+test, and maintain.

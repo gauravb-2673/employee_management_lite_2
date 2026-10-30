@@ -1,0 +1,1936 @@
+# LARAVEL: HOW ROUTES ARE CALLED, SENT, AND USED IN BLADE VIEWS
+
+============================================================
+1. INTRODUCTION
+============================================================
+
+In Laravel, routes connect URLs to controller methods or other actions.
+
+Blade views use routes to:
+
+1. Generate URLs.
+2. Create navigation links.
+3. Submit forms.
+4. Send data to controllers.
+5. Display dynamic links for database records.
+6. Redirect users after operations.
+7. Pass route parameters and query parameters.
+8. Generate pagination links.
+9. Check the currently active route.
+10. Generate signed URLs.
+
+Example project: Employee Management System.
+
+The complete flow is:
+
+Browser
+   |
+   | Requests /employees
+   v
+routes/web.php
+   |
+   | Matches the URL and HTTP method
+   v
+EmployeeController@index
+   |
+   | Fetches employees from the database
+   v
+return view('employees.index', ['employees' => $employees])
+   |
+   v
+resources/views/employees/index.blade.php
+   |
+   | Generates links and forms
+   v
+Browser displays HTML
+   |
+   | User clicks a link or submits a form
+   v
+Browser sends another HTTP request
+   |
+   v
+Laravel matches the route and executes its action
+
+IMPORTANT:
+
+Generating a URL does not immediately execute the route.
+
+For example:
+
+<a href="{{ route('employees.index') }}">Employees</a>
+
+Laravel generates the URL. The browser sends a GET request when the user clicks the link.
+
+============================================================
+2. REGISTER ROUTES
+============================================================
+
+File: routes/web.php
+
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EmployeeController;
+
+Route::get('/employees', [EmployeeController::class, 'index'])
+    ->name('employees.index');
+
+Route::get('/employees/create', [EmployeeController::class, 'create'])
+    ->name('employees.create');
+
+Route::post('/employees', [EmployeeController::class, 'store'])
+    ->name('employees.store');
+
+Route::get('/employees/{employee}', [EmployeeController::class, 'show'])
+    ->name('employees.show');
+
+Route::get('/employees/{employee}/edit', [EmployeeController::class, 'edit'])
+    ->name('employees.edit');
+
+Route::put('/employees/{employee}', [EmployeeController::class, 'update'])
+    ->name('employees.update');
+
+Route::patch('/employees/{employee}', [EmployeeController::class, 'update'])
+    ->name('employees.patch');
+
+Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])
+    ->name('employees.destroy');
+
+
+UNDERSTANDING A ROUTE:
+
+Route::get(
+    '/employees/{employee}',
+    [EmployeeController::class, 'show']
+)->name('employees.show');
+
+Route::get()
+    Defines a route that accepts a GET request.
+
+'/employees/{employee}'
+    Defines the URL pattern.
+    {employee} is a route parameter.
+
+[EmployeeController::class, 'show']
+    Specifies the controller and method to execute.
+
+->name('employees.show')
+    Assigns a name to the route.
+
+WHY USE NAMED ROUTES?
+
+Instead of writing the URL manually in every Blade file, use:
+
+route('employees.index')
+
+If the URL changes later, the named route can continue working without requiring changes to every Blade link.
+
+============================================================
+3. METHOD 1: route() HELPER
+============================================================
+
+The route() helper generates a URL using a named route.
+
+BLADE:
+
+<a href="{{ route('employees.index') }}">
+    View All Employees
+</a>
+
+If the registered route is:
+
+Route::get('/employees', [EmployeeController::class, 'index'])
+    ->name('employees.index');
+
+Laravel generates a URL similar to:
+
+/employees
+
+The complete URL depends on the application's configured URL.
+
+HOW IT WORKS:
+
+1. Blade evaluates the PHP expression.
+2. Laravel finds the route named employees.index.
+3. Laravel generates the URL.
+4. Blade places the generated URL into the HTML.
+5. The browser displays the link.
+6. The browser sends a GET request when the user clicks it.
+
+MORE EXAMPLES:
+
+<a href="{{ route('employees.index') }}">Employee List</a>
+
+<a href="{{ route('employees.create') }}">Add Employee</a>
+
+<a href="{{ route('dashboard') }}">Dashboard</a>
+
+Use route() when generating URLs for application routes.
+
+The named route must exist.
+
+============================================================
+4. METHOD 2: PASS ROUTE PARAMETERS
+============================================================
+
+ROUTE:
+
+Route::get('/employees/{employee}', [EmployeeController::class, 'show'])
+    ->name('employees.show');
+
+
+A. PASS THE ID DIRECTLY
+
+<a href="{{ route('employees.show', 5) }}">
+    View Employee
+</a>
+
+Generated URL:
+
+/employees/5
+
+
+B. PASS A DYNAMIC ID
+
+@foreach ($employees as $employee)
+
+    <p>{{ $employee->name }}</p>
+
+    <a href="{{ route('employees.show', $employee->id) }}">
+        View Employee
+    </a>
+
+@endforeach
+
+If employee IDs are 5, 8, and 12, Laravel generates:
+
+/employees/5
+/employees/8
+/employees/12
+
+
+C. PASS PARAMETERS USING AN ASSOCIATIVE ARRAY
+
+<a href="{{ route('employees.show', ['employee' => $employee->id]) }}">
+    View Employee
+</a>
+
+The key employee corresponds to the route parameter {employee}.
+
+
+D. PASS MULTIPLE PARAMETERS
+
+ROUTE:
+
+Route::get(
+    '/departments/{department}/employees/{employee}',
+    [EmployeeController::class, 'show']
+)->name('departments.employees.show');
+
+
+BLADE:
+
+<a href="{{ route('departments.employees.show', [
+    'department' => $department->id,
+    'employee' => $employee->id,
+]) }}">
+    View Employee
+</a>
+
+Generated URL example:
+
+/departments/2/employees/5
+
+
+E. PASS AN ELOQUENT MODEL
+
+<a href="{{ route('employees.show', $employee) }}">
+    View Employee
+</a>
+
+Laravel normally uses the model's route key, which is usually its ID.
+
+IMPORTANT:
+
+Route parameter names must match the parameters expected by the route.
+
+============================================================
+5. METHOD 3: url() HELPER
+============================================================
+
+The url() helper generates a URL from a path.
+
+EXAMPLE:
+
+<a href="{{ url('/employees') }}">
+    Employee List
+</a>
+
+DYNAMIC URL:
+
+<a href="{{ url('/employees/' . $employee->id) }}">
+    View Employee
+</a>
+
+For employee ID 5, the generated path is:
+
+/employees/5
+
+
+PASS A COMPLETE PATH:
+
+<a href="{{ url('/departments/2/employees/5') }}">
+    View Employee
+</a>
+
+
+DIFFERENCE BETWEEN route() AND url():
+
+route('employees.index')
+
+    Generates a URL using a named route.
+    Laravel uses the registered route definition.
+
+url('/employees')
+
+    Generates a URL from the specified path.
+    Laravel does not look up a named route.
+
+WHY PREFER route()?
+
+Suppose the route changes from:
+
+/employees
+
+to:
+
+/staff
+
+If you use:
+
+<a href="{{ route('employees.index') }}">Employees</a>
+
+and keep the route name employees.index, Laravel generates the updated URL.
+
+But if you use:
+
+<a href="{{ url('/employees') }}">Employees</a>
+
+you must manually update the path.
+
+============================================================
+6. METHOD 4: action() HELPER
+============================================================
+
+The action() helper generates a URL for a controller action.
+
+EXAMPLE:
+
+<a href="{{ action([EmployeeController::class, 'index']) }}">
+    Employee List
+</a>
+
+WITH A ROUTE PARAMETER:
+
+<a href="{{ action(
+    [EmployeeController::class, 'show'],
+    ['employee' => $employee->id]
+) }}">
+    View Employee
+</a>
+
+Laravel must be able to find a matching route for the controller action and parameters.
+
+For ordinary application navigation, route() is usually clearer.
+
+IMPORTANT:
+
+action() generates a URL.
+It does not execute the controller method immediately.
+
+============================================================
+7. METHOD 5: GET THE CURRENT URL
+============================================================
+
+Laravel provides request helpers for accessing information about the current request.
+
+CURRENT URL:
+
+{{ request()->url() }}
+
+FULL URL INCLUDING QUERY STRING:
+
+{{ request()->fullUrl() }}
+
+CURRENT PATH:
+
+{{ request()->path() }}
+
+HTTP METHOD:
+
+{{ request()->method() }}
+
+
+EXAMPLE REQUEST:
+
+/employees?department_id=2
+
+POSSIBLE RESULTS:
+
+request()->url()
+    https://example.com/employees
+
+request()->fullUrl()
+    https://example.com/employees?department_id=2
+
+request()->path()
+    employees
+
+request()->method()
+    GET
+
+
+GET THE CURRENT ROUTE NAME:
+
+{{ request()->route()?->getName() }}
+
+
+CHECK THE CURRENT ROUTE:
+
+@if (request()->routeIs('employees.index'))
+
+    <p>You are viewing the employee list.</p>
+
+@endif
+
+
+CHECK A GROUP OF ROUTES:
+
+@if (request()->routeIs('employees.*'))
+
+    <p>You are inside the employee section.</p>
+
+@endif
+
+
+HIGHLIGHT THE ACTIVE NAVIGATION LINK:
+
+<a
+    href="{{ route('employees.index') }}"
+    class="{{ request()->routeIs('employees.index') ? 'active' : '' }}"
+>
+    Employees
+</a>
+
+The active CSS class is applied when the current route is employees.index.
+
+============================================================
+8. METHOD 6: NAVIGATION LINKS USING href
+============================================================
+
+The HTML anchor tag creates a link.
+
+EXAMPLES:
+
+<a href="{{ route('employees.index') }}">Employee List</a>
+
+<a href="{{ route('employees.create') }}">Add Employee</a>
+
+<a href="{{ route('employees.show', $employee) }}">View Employee</a>
+
+<a href="{{ route('employees.edit', $employee) }}">Edit Employee</a>
+
+When clicked, these links normally send GET requests.
+
+USE LINKS FOR:
+
+1. Navigation.
+2. Opening a record.
+3. Opening an edit page.
+4. Moving between pages.
+
+DO NOT USE GET LINKS FOR DELETING OR MODIFYING DATABASE RECORDS.
+
+Destructive actions should use forms with the appropriate HTTP method.
+
+============================================================
+9. METHOD 7: GET FORM
+============================================================
+
+GET forms commonly send search, filtering, sorting, and pagination parameters through the URL.
+
+EXAMPLE: SEARCH EMPLOYEES
+
+File: resources/views/employees/index.blade.php
+
+<form action="{{ route('employees.index') }}" method="GET">
+
+    <input
+        type="text"
+        name="search"
+        placeholder="Search employees"
+        value="{{ request('search') }}"
+    >
+
+    <button type="submit">Search</button>
+
+</form>
+
+
+IF THE USER SEARCHES FOR GAURAV:
+
+/employees?search=Gaurav
+
+
+CONTROLLER:
+
+use App\Models\Employee;
+use Illuminate\Http\Request;
+
+public function index(Request $request)
+{
+    $search = $request->query('search');
+
+    $employees = Employee::query()
+        ->when($search, function ($query, $search) {
+            $query->where(
+                'name',
+                'like',
+                '%' . $search . '%'
+            );
+        })
+        ->get();
+
+    return view('employees.index', [
+        'employees' => $employees,
+        'search' => $search,
+    ]);
+}
+
+
+GET A QUERY PARAMETER:
+
+$request->query('search');
+
+GET A GENERAL REQUEST INPUT:
+
+$request->input('search');
+
+
+The query() method specifically reads query-string parameters.
+
+The input() method can retrieve submitted input from the request, including query-string input.
+
+USE GET FOR:
+
+1. Searching.
+2. Filtering.
+3. Sorting.
+4. Pagination.
+5. Report filters.
+
+Avoid GET for creating, updating, or deleting records.
+
+============================================================
+10. METHOD 8: POST FORM
+============================================================
+
+POST is commonly used to create a database record.
+
+
+STEP 1: REGISTER THE ROUTE
+
+Route::post('/employees', [EmployeeController::class, 'store'])
+    ->name('employees.store');
+
+
+STEP 2: CREATE THE FORM
+
+File: resources/views/employees/create.blade.php
+
+<form action="{{ route('employees.store') }}" method="POST">
+
+    @csrf
+
+    <label for="name">Employee Name</label>
+
+    <input
+        type="text"
+        id="name"
+        name="name"
+        value="{{ old('name') }}"
+    >
+
+    @error('name')
+        <p>{{ $message }}</p>
+    @enderror
+
+
+    <label for="email">Email</label>
+
+    <input
+        type="email"
+        id="email"
+        name="email"
+        value="{{ old('email') }}"
+    >
+
+    @error('email')
+        <p>{{ $message }}</p>
+    @enderror
+
+
+    <button type="submit">Create Employee</button>
+
+</form>
+
+
+STEP 3: PROCESS THE REQUEST
+
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'unique:employees,email'],
+    ]);
+
+    $employee = Employee::create($validated);
+
+    return to_route('employees.show', $employee)
+        ->with('success', 'Employee created successfully.');
+}
+
+
+IMPORTANT PARTS:
+
+action="{{ route('employees.store') }}"
+
+    Specifies where the form submits.
+
+method="POST"
+
+    Specifies the HTTP method.
+
+@csrf
+
+    Adds the CSRF token required for a normal session-based web form.
+
+name="name"
+
+    Identifies the submitted field.
+
+$request->input('name')
+
+    Retrieves the submitted name.
+
+$request->validate([...])
+
+    Validates the submitted data.
+
+Employee::create($validated)
+
+    Creates the database record if validation passes and the model permits mass assignment.
+
+to_route('employees.show', $employee)
+
+    Redirects the browser to the employee's show page.
+
+
+WHY REDIRECT AFTER POST?
+
+Redirecting after a successful POST helps prevent accidental duplicate submissions when the user refreshes the resulting page.
+
+This is commonly called the Post/Redirect/Get pattern.
+
+============================================================
+11. METHOD 9: PUT FORM
+============================================================
+
+PUT is commonly used for updating an existing record.
+
+
+STEP 1: REGISTER THE ROUTE
+
+Route::put('/employees/{employee}', [EmployeeController::class, 'update'])
+    ->name('employees.update');
+
+
+STEP 2: CREATE THE EDIT FORM
+
+File: resources/views/employees/edit.blade.php
+
+<form action="{{ route('employees.update', $employee) }}" method="POST">
+
+    @csrf
+
+    @method('PUT')
+
+    <label for="name">Employee Name</label>
+
+    <input
+        type="text"
+        id="name"
+        name="name"
+        value="{{ old('name', $employee->name) }}"
+    >
+
+    <label for="email">Email</label>
+
+    <input
+        type="email"
+        id="email"
+        name="email"
+        value="{{ old('email', $employee->email) }}"
+    >
+
+    <button type="submit">Update Employee</button>
+
+</form>
+
+
+WHY USE @method('PUT')?
+
+Standard HTML forms support GET and POST directly.
+
+They do not directly support PUT, PATCH, or DELETE.
+
+Laravel uses method spoofing.
+
+@method('PUT')
+
+generates a hidden input similar to:
+
+<input type="hidden" name="_method" value="PUT">
+
+The browser submits POST, and Laravel recognizes the _method field as PUT.
+
+
+STEP 3: UPDATE THE RECORD
+
+public function update(Request $request, Employee $employee)
+{
+    $validated = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => [
+            'required',
+            'email',
+            'unique:employees,email,' . $employee->id,
+        ],
+    ]);
+
+    $employee->update($validated);
+
+    return to_route('employees.show', $employee)
+        ->with('success', 'Employee updated successfully.');
+}
+
+
+The example assumes a standard ID primary key.
+
+Laravel's Rule::unique()->ignore($employee) is an alternative for uniqueness validation when working with model instances.
+
+============================================================
+12. METHOD 10: PATCH FORM
+============================================================
+
+PATCH is commonly used for partial updates.
+
+ROUTE:
+
+Route::patch('/employees/{employee}', [EmployeeController::class, 'update'])
+    ->name('employees.patch');
+
+
+BLADE:
+
+<form action="{{ route('employees.patch', $employee) }}" method="POST">
+
+    @csrf
+
+    @method('PATCH')
+
+    <input
+        type="text"
+        name="name"
+        value="{{ old('name', $employee->name) }}"
+    >
+
+    <button type="submit">Update Name</button>
+
+</form>
+
+
+PUT:
+    Commonly used for a complete resource update.
+
+PATCH:
+    Commonly used for a partial resource update.
+
+The controller should validate and update only the fields permitted to change.
+
+============================================================
+13. METHOD 11: DELETE FORM
+============================================================
+
+Deleting a record should use a DELETE request, not a normal GET link.
+
+
+STEP 1: REGISTER THE ROUTE
+
+Route::delete('/employees/{employee}', [EmployeeController::class, 'destroy'])
+    ->name('employees.destroy');
+
+
+STEP 2: CREATE THE FORM
+
+<form
+    action="{{ route('employees.destroy', $employee) }}"
+    method="POST"
+    onsubmit="return confirm('Are you sure you want to delete this employee?')"
+>
+
+    @csrf
+
+    @method('DELETE')
+
+    <button type="submit">Delete Employee</button>
+
+</form>
+
+
+STEP 3: CONTROLLER
+
+public function destroy(Employee $employee)
+{
+    $employee->delete();
+
+    return to_route('employees.index')
+        ->with('success', 'Employee deleted successfully.');
+}
+
+
+FLOW:
+
+User clicks Delete
+    |
+    v
+Browser submits POST
+    |
+    | Contains CSRF token and _method=DELETE
+    v
+Laravel recognizes DELETE
+    |
+    v
+employees.destroy route
+    |
+    v
+EmployeeController@destroy
+    |
+    v
+Employee is deleted
+    |
+    v
+Browser is redirected to employees.index
+
+
+IMPORTANT:
+
+The JavaScript confirmation dialog is not security.
+
+Always enforce authorization on the server before deleting a record.
+
+============================================================
+14. METHOD 12: QUERY PARAMETERS
+============================================================
+
+Query parameters are commonly used for filtering and searching.
+
+
+ROUTE:
+
+Route::get('/employees', [EmployeeController::class, 'index'])
+    ->name('employees.index');
+
+
+BLADE:
+
+<a href="{{ route('employees.index', [
+    'department_id' => 2,
+    'status' => 'active',
+    'sort' => 'name',
+]) }}">
+    View Active Employees
+</a>
+
+
+GENERATED URL:
+
+/employees?department_id=2&status=active&sort=name
+
+
+CONTROLLER:
+
+$departmentId = $request->query('department_id');
+
+$status = $request->query('status');
+
+$sort = $request->query('sort');
+
+
+ROUTE PARAMETER:
+
+/employees/5
+
+Route:
+
+Route::get('/employees/{employee}', ...);
+
+The value 5 is a route parameter.
+
+
+QUERY PARAMETER:
+
+/employees?department_id=2
+
+Route:
+
+Route::get('/employees', ...);
+
+The department_id value is a query parameter.
+
+
+DIFFERENCE:
+
+Route parameters:
+    Identify a resource or form part of the URL structure.
+
+Query parameters:
+    Commonly specify filters, search terms, sorting, and options.
+
+============================================================
+15. METHOD 13: RESOURCE ROUTES
+============================================================
+
+Register all standard CRUD routes with one declaration:
+
+Route::resource('employees', EmployeeController::class);
+
+
+STANDARD RESOURCE ROUTES:
+
+employees.index
+    GET /employees
+    Calls index()
+
+employees.create
+    GET /employees/create
+    Calls create()
+
+employees.store
+    POST /employees
+    Calls store()
+
+employees.show
+    GET /employees/{employee}
+    Calls show()
+
+employees.edit
+    GET /employees/{employee}/edit
+    Calls edit()
+
+employees.update
+    PUT/PATCH /employees/{employee}
+    Calls update()
+
+employees.destroy
+    DELETE /employees/{employee}
+    Calls destroy()
+
+
+BLADE EXAMPLES:
+
+<a href="{{ route('employees.index') }}">Employee List</a>
+
+<a href="{{ route('employees.create') }}">Add Employee</a>
+
+<a href="{{ route('employees.show', $employee) }}">View Employee</a>
+
+<a href="{{ route('employees.edit', $employee) }}">Edit Employee</a>
+
+
+UPDATE FORM:
+
+<form action="{{ route('employees.update', $employee) }}" method="POST">
+
+    @csrf
+
+    @method('PUT')
+
+    <input
+        type="text"
+        name="name"
+        value="{{ old('name', $employee->name) }}"
+    >
+
+    <button type="submit">Update</button>
+
+</form>
+
+
+DELETE FORM:
+
+<form action="{{ route('employees.destroy', $employee) }}" method="POST">
+
+    @csrf
+
+    @method('DELETE')
+
+    <button type="submit">Delete</button>
+
+</form>
+
+
+CHECK REGISTERED ROUTES:
+
+php artisan route:list --path=employees
+
+You do not need to define each standard CRUD route manually when using Route::resource().
+
+============================================================
+16. METHOD 14: REDIRECT USING to_route()
+============================================================
+
+The to_route() helper redirects the browser to a named route.
+
+EXAMPLE:
+
+public function store(Request $request)
+{
+    // Validate and save the employee.
+
+    return to_route('employees.index');
+}
+
+
+REDIRECT WITH A PARAMETER:
+
+return to_route('employees.show', [
+    'employee' => $employee->id,
+]);
+
+
+REDIRECT WITH A FLASH MESSAGE:
+
+return to_route('employees.index')
+    ->with('success', 'Employee created successfully.');
+
+
+DISPLAY THE MESSAGE IN BLADE:
+
+@if (session('success'))
+
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
+
+@endif
+
+
+ALTERNATIVE:
+
+return redirect()->route('employees.index');
+
+
+DIFFERENCE:
+
+route('employees.index')
+    Generates a URL.
+
+to_route('employees.index')
+    Returns a redirect response to a named route.
+
+Use route() in Blade links and form actions.
+
+Use to_route() in controllers when redirecting after an operation.
+
+============================================================
+17. METHOD 15: old() AND @error
+============================================================
+
+These helpers are useful when form validation fails.
+
+
+BLADE:
+
+<form action="{{ route('employees.store') }}" method="POST">
+
+    @csrf
+
+    <label for="name">Name</label>
+
+    <input
+        type="text"
+        id="name"
+        name="name"
+        value="{{ old('name') }}"
+    >
+
+    @error('name')
+        <p class="error">{{ $message }}</p>
+    @enderror
+
+    <button type="submit">Save</button>
+
+</form>
+
+
+old('name')
+
+    Retrieves the previous submitted value, typically flashed after a validation failure.
+
+@error('name')
+
+    Displays the validation error associated with the name field.
+
+
+EDIT FORM:
+
+<input
+    type="text"
+    name="name"
+    value="{{ old('name', $employee->name) }}"
+>
+
+
+The first argument is the input field name.
+
+The second argument is the default value.
+
+If an old submitted value exists, it is displayed. Otherwise, the employee's saved name is displayed.
+
+============================================================
+18. METHOD 16: REUSABLE NAVIGATION WITH @include
+============================================================
+
+Create:
+
+resources/views/layouts/navigation.blade.php
+
+
+CONTENTS:
+
+<nav>
+    <a href="{{ route('dashboard') }}">Dashboard</a>
+
+    <a href="{{ route('employees.index') }}">Employees</a>
+
+    <a href="{{ route('employees.create') }}">Add Employee</a>
+</nav>
+
+
+INCLUDE IT IN A LAYOUT:
+
+<body>
+
+    @include('layouts.navigation')
+
+    <main>
+        @yield('content')
+    </main>
+
+</body>
+
+
+Multiple Blade pages can reuse the same navigation.
+
+The corresponding named routes must exist.
+
+============================================================
+19. METHOD 17: @push AND @stack
+============================================================
+
+These directives organize page-specific scripts and styles.
+
+IN A BLADE PAGE:
+
+@push('scripts')
+
+    <script>
+        console.log('Employee page loaded');
+    </script>
+
+@endpush
+
+
+IN THE MAIN LAYOUT, BEFORE </body>:
+
+@stack('scripts')
+
+
+Blade inserts pushed scripts at the stack location.
+
+This is for organizing view assets, not for registering routes.
+
+============================================================
+20. METHOD 18: ROUTE-MODEL BINDING
+============================================================
+
+ROUTE:
+
+Route::get('/employees/{employee}', [EmployeeController::class, 'show'])
+    ->name('employees.show');
+
+
+CONTROLLER:
+
+public function show(Employee $employee)
+{
+    return view('employees.show', [
+        'employee' => $employee,
+    ]);
+}
+
+
+BLADE:
+
+<a href="{{ route('employees.show', $employee) }}">
+    View Employee
+</a>
+
+
+Laravel uses the route parameter and the Employee type hint to retrieve the corresponding model through implicit route-model binding.
+
+If the record does not exist, Laravel normally returns a 404 response.
+
+
+CUSTOM ROUTE KEY EXAMPLE:
+
+Route::get('/employees/{employee:email}', [
+    EmployeeController::class,
+    'show',
+])->name('employees.show');
+
+
+This tells Laravel to bind the employee using the email column rather than the default route key.
+
+Be careful about exposing personal information, such as email addresses, in URLs.
+
+============================================================
+21. METHOD 19: API ROUTES
+============================================================
+
+Laravel applications can have browser routes and API routes.
+
+WEB:
+
+routes/web.php
+
+    Browser-facing routes.
+    Commonly uses session authentication and Blade views.
+
+
+API:
+
+routes/api.php
+
+    API endpoints.
+    Commonly returns JSON for mobile applications and other API clients.
+
+
+EXAMPLE API ROUTE:
+
+Route::get('/employees', [EmployeeApiController::class, 'index'])
+    ->name('api.employees.index');
+
+
+BLADE LINK:
+
+<a href="{{ route('api.employees.index') }}">
+    Employee API
+</a>
+
+
+An API route typically returns JSON rather than a Blade page.
+
+In Laravel 12, API routing may need to be installed and configured if routes/api.php does not exist.
+
+For applications supporting both a website and a mobile app, keep web controllers and API controllers separate while reusing shared business logic through services.
+
+============================================================
+22. METHOD 20: SIGNED ROUTES
+============================================================
+
+Signed URLs help detect URL tampering.
+
+They are useful for certain invitations, verification flows, and temporary links.
+
+
+REGISTER THE ROUTE:
+
+Route::get('/employee-invitation/{employee}', [
+    EmployeeInvitationController::class,
+    'show',
+])
+    ->name('employees.invitation')
+    ->middleware('signed');
+
+
+GENERATE A TEMPORARY SIGNED URL:
+
+use Illuminate\Support\Facades\URL;
+
+$url = URL::temporarySignedRoute(
+    'employees.invitation',
+    now()->addMinutes(30),
+    ['employee' => $employee->id]
+);
+
+
+PASS THE URL TO A VIEW:
+
+return view('employees.invitation-email', [
+    'invitationUrl' => $url,
+]);
+
+
+BLADE:
+
+<a href="{{ $invitationUrl }}">Open Invitation</a>
+
+
+The signed middleware validates the signature and expiration.
+
+A signed URL does not replace authentication or authorization when those are required.
+
+============================================================
+23. METHOD 21: PAGINATION LINKS
+============================================================
+
+CONTROLLER:
+
+public function index(Request $request)
+{
+    $employees = Employee::paginate(10);
+
+    return view('employees.index', [
+        'employees' => $employees,
+    ]);
+}
+
+
+BLADE:
+
+@foreach ($employees as $employee)
+
+    <p>{{ $employee->name }}</p>
+
+@endforeach
+
+{{ $employees->links() }}
+
+
+Laravel generates pagination links using query parameters such as:
+
+/employees?page=1
+/employees?page=2
+/employees?page=3
+
+
+PRESERVE QUERY PARAMETERS:
+
+$employees = Employee::query()
+    ->when($request->query('search'), function ($query, $search) {
+        $query->where('name', 'like', '%' . $search . '%');
+    })
+    ->paginate(10)
+    ->withQueryString();
+
+
+withQueryString() preserves the existing query parameters when generating pagination links.
+
+For example:
+
+/employees?search=Gaurav&page=2
+
+============================================================
+24. METHOD 22: REDIRECTING VERSUS GENERATING URLS
+============================================================
+
+GENERATE A URL:
+
+$url = route('employees.index');
+
+
+CREATE A BLADE LINK:
+
+<a href="{{ route('employees.index') }}">Employees</a>
+
+
+REDIRECT FROM A CONTROLLER:
+
+return to_route('employees.index');
+
+
+REDIRECT A PATH AT THE ROUTING LEVEL:
+
+Route::redirect('/staff', '/employees');
+
+
+These operations have different purposes.
+
+A URL helper generates a URL.
+
+An anchor tag lets the browser navigate to a URL.
+
+A redirect response instructs the browser to navigate elsewhere.
+
+A redirect route sends requests from one path to another.
+
+============================================================
+25. METHOD 23: URL FACADE
+============================================================
+
+The URL facade can also generate URLs for named routes.
+
+BLADE:
+
+{{ \Illuminate\Support\Facades\URL::route('employees.index') }}
+
+
+PHP:
+
+use Illuminate\Support\Facades\URL;
+
+$url = URL::route('employees.show', [
+    'employee' => $employee->id,
+]);
+
+
+For ordinary Blade templates, route() is usually shorter and easier to read.
+
+============================================================
+26. METHOD 24: href, action, AND route()
+============================================================
+
+A. href
+
+<a href="{{ route('employees.index') }}">Employees</a>
+
+href is an HTML attribute specifying the destination of a link.
+
+
+B. action
+
+<form action="{{ route('employees.store') }}" method="POST">
+
+    @csrf
+
+    <input name="name">
+
+    <button type="submit">Save</button>
+
+</form>
+
+action is an HTML attribute specifying the destination of a form submission.
+
+
+C. route()
+
+{{ route('employees.index') }}
+
+route() is a Laravel helper that generates a URL using a named route.
+
+
+SUMMARY:
+
+href
+    Used for HTML links.
+
+action
+    Used for HTML forms.
+
+route()
+    Generates a URL.
+
+None of these operations, by itself, immediately executes a controller action.
+
+============================================================
+27. COMPLETE EMPLOYEE MANAGEMENT EXAMPLE
+============================================================
+
+ROUTES:
+
+File: routes/web.php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\EmployeeController;
+
+Route::resource('employees', EmployeeController::class);
+
+
+CONTROLLER:
+
+File: app/Http/Controllers/EmployeeController.php
+
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Employee;
+use Illuminate\Http\Request;
+
+class EmployeeController extends Controller
+{
+    public function index(Request $request)
+    {
+        $search = $request->query('search');
+
+        $employees = Employee::query()
+            ->when($search, function ($query, $search) {
+                $query->where(
+                    'name',
+                    'like',
+                    '%' . $search . '%'
+                );
+            })
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('employees.index', [
+            'employees' => $employees,
+            'search' => $search,
+        ]);
+    }
+
+    public function create()
+    {
+        return view('employees.create');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'unique:employees,email'],
+        ]);
+
+        $employee = Employee::create($validated);
+
+        return to_route('employees.show', $employee)
+            ->with('success', 'Employee created successfully.');
+    }
+
+    public function show(Employee $employee)
+    {
+        return view('employees.show', [
+            'employee' => $employee,
+        ]);
+    }
+
+    public function edit(Employee $employee)
+    {
+        return view('employees.edit', [
+            'employee' => $employee,
+        ]);
+    }
+
+    public function update(Request $request, Employee $employee)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'required',
+                'email',
+                'unique:employees,email,' . $employee->id,
+            ],
+        ]);
+
+        $employee->update($validated);
+
+        return to_route('employees.show', $employee)
+            ->with('success', 'Employee updated successfully.');
+    }
+
+    public function destroy(Employee $employee)
+    {
+        $employee->delete();
+
+        return to_route('employees.index')
+            ->with('success', 'Employee deleted successfully.');
+    }
+}
+
+
+BLADE:
+
+File: resources/views/employees/index.blade.php
+
+@extends('layouts.app')
+
+@section('content')
+
+    <h1>Employee Management</h1>
+
+    @if (session('success'))
+
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+
+    @endif
+
+
+    <a href="{{ route('employees.create') }}">
+        Add Employee
+    </a>
+
+
+    <form action="{{ route('employees.index') }}" method="GET">
+
+        <input
+            type="text"
+            name="search"
+            placeholder="Search employees"
+            value="{{ request('search') }}"
+        >
+
+        <button type="submit">Search</button>
+
+    </form>
+
+
+    @forelse ($employees as $employee)
+
+        <div>
+
+            <h3>{{ $employee->name }}</h3>
+
+            <p>{{ $employee->email }}</p>
+
+            <a href="{{ route('employees.show', $employee) }}">
+                View
+            </a>
+
+            <a href="{{ route('employees.edit', $employee) }}">
+                Edit
+            </a>
+
+            <form
+                action="{{ route('employees.destroy', $employee) }}"
+                method="POST"
+                onsubmit="return confirm('Are you sure you want to delete this employee?')"
+            >
+
+                @csrf
+
+                @method('DELETE')
+
+                <button type="submit">Delete</button>
+
+            </form>
+
+        </div>
+
+    @empty
+
+        <p>No employees found.</p>
+
+    @endforelse
+
+
+    {{ $employees->links() }}
+
+@endsection
+
+
+This example assumes:
+- An employees table with name and email columns.
+- An Employee model that permits these attributes for mass assignment.
+- A standard ID primary key.
+- A layout at resources/views/layouts/app.blade.php.
+- Appropriate authentication and authorization are implemented where required.
+
+============================================================
+28. DEBUGGING ROUTE PROBLEMS
+============================================================
+
+STEP 1: CHECK REGISTERED ROUTES
+
+php artisan route:list
+
+FILTER BY PATH:
+
+php artisan route:list --path=employees
+
+
+STEP 2: CHECK THE ROUTE NAME
+
+If you write:
+
+route('employees.show', $employee)
+
+make sure employees.show exists and accepts the expected parameter.
+
+
+STEP 3: CHECK THE GENERATED URL
+
+Inspect the HTML in the browser's developer tools.
+
+Confirm the link or form points to the correct URL.
+
+
+STEP 4: CHECK THE HTTP METHOD
+
+A GET link cannot directly call a route that accepts only POST.
+
+For update and delete forms, use the appropriate method spoofing:
+
+@method('PUT')
+
+@method('PATCH')
+
+@method('DELETE')
+
+
+STEP 5: CHECK CSRF
+
+Session-based POST forms in the web middleware group normally require:
+
+@csrf
+
+
+STEP 6: CHECK VALIDATION
+
+Use:
+
+@error('name')
+    <p>{{ $message }}</p>
+@enderror
+
+And:
+
+old('name')
+
+
+STEP 7: CHECK ROUTE PARAMETERS
+
+For:
+
+Route::get('/employees/{employee}', ...)
+
+pass the required parameter:
+
+route('employees.show', $employee)
+
+
+STEP 8: CHECK AUTHENTICATION AND AUTHORIZATION
+
+A registered route can still reject a request because:
+- The user is not authenticated.
+- The user lacks the required permission.
+- A policy denies access.
+- The requested record does not exist.
+
+
+STEP 9: CLEAR ROUTE CACHE IF NECESSARY
+
+php artisan route:clear
+
+For appropriate production deployments:
+
+php artisan route:cache
+
+============================================================
+29. QUICK REFERENCE TABLE
+============================================================
+
+REQUIREMENT                      RECOMMENDED APPROACH
+------------------------------------------------------------
+
+Link to a page                   route('employees.index')
+
+Link to a specific employee      route('employees.show', $employee)
+
+Link to the create page          route('employees.create')
+
+Link to the edit page            route('employees.edit', $employee)
+
+Generate URL from a path          url('/employees')
+
+Generate controller action URL    action([Controller::class, 'method'])
+
+Search employees                 GET form
+
+Create employee                  POST form
+
+Update employee                  PUT/PATCH form
+
+Delete employee                  DELETE form
+
+Redirect after saving            to_route('employees.index')
+
+Redirect with a message          to_route(...)->with(...)
+
+Get current URL                  request()->url()
+
+Get full current URL              request()->fullUrl()
+
+Get current path                 request()->path()
+
+Get query parameter              request()->query('search')
+
+Check current route name         request()->routeIs('employees.*')
+
+Display validation errors        @error('name')
+
+Preserve old form values         old('name')
+
+Generate pagination links        $employees->links()
+
+Generate a signed URL            URL::temporarySignedRoute(...)
+
+
+============================================================
+30. MOST IMPORTANT CONCEPTS
+============================================================
+
+CONCEPT 1: GENERATE A URL
+
+{{ route('employees.show', $employee) }}
+
+This generates a URL.
+
+
+CONCEPT 2: NAVIGATE TO A URL
+
+<a href="{{ route('employees.show', $employee) }}">
+    View Employee
+</a>
+
+The browser sends a GET request when the user clicks the link.
+
+
+CONCEPT 3: SUBMIT DATA TO A ROUTE
+
+<form action="{{ route('employees.store') }}" method="POST">
+
+    @csrf
+
+    <input type="text" name="name">
+
+    <button type="submit">Save</button>
+
+</form>
+
+The browser sends the submitted form data to the route.
+
+
+CONCEPT 4: REDIRECT THE BROWSER
+
+return to_route('employees.show', $employee);
+
+The controller returns a redirect response.
+
+
+CONCEPT 5: PASS A ROUTE PARAMETER
+
+route('employees.show', $employee)
+
+The employee identifies the record associated with the route.
+
+
+CONCEPT 6: PASS A QUERY PARAMETER
+
+route('employees.index', ['search' => 'Gaurav'])
+
+Generates a URL similar to:
+
+/employees?search=Gaurav
+
+
+CONCEPT 7: RECEIVE FORM DATA
+
+$request->input('name');
+
+The controller reads the submitted input.
+
+
+CONCEPT 8: RECEIVE QUERY PARAMETERS
+
+$request->query('search');
+
+The controller reads a query-string value.
+
+
+CONCEPT 9: PROTECT A WEB FORM
+
+@csrf
+
+Adds the CSRF token to a normal session-based web form.
+
+
+CONCEPT 10: USE PUT, PATCH, OR DELETE
+
+@method('PUT')
+
+@method('PATCH')
+
+@method('DELETE')
+
+Laravel recognizes the intended HTTP method through method spoofing.
+
+
+============================================================
+31. RECOMMENDED LEARNING ORDER
+============================================================
+
+Learn these topics in this order:
+
+1. Named routes.
+2. route() helper.
+3. HTML links using href.
+4. Route parameters.
+5. GET forms.
+6. POST forms.
+7. @csrf.
+8. Request input and query parameters.
+9. Validation.
+10. old() and @error.
+11. PUT and PATCH forms.
+12. @method().
+13. DELETE forms.
+14. Redirects using to_route().
+15. Resource routes.
+16. Route-model binding.
+17. Pagination.
+18. Authentication and authorization.
+19. Signed URLs.
+20. API routes and JSON responses.
+
+FINAL RULE:
+
+Use route() to generate URLs for named routes.
+
+Use href for navigation links.
+
+Use form action to specify where a form submits.
+
+Use GET for navigation and retrieving filtered data.
+
+Use POST to create records.
+
+Use PUT or PATCH to update records.
+
+Use DELETE to delete records.
+
+Use @csrf for normal session-based web forms.
+
+Use @method() when submitting PUT, PATCH, or DELETE through an HTML form.
+
+Use to_route() when redirecting from a controller.
+
+Use request()->query() to read query-string values.
+
+Use $request->input() to read submitted request input.
+
+Always validate input and enforce authorization on the server.

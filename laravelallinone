@@ -1,0 +1,1967 @@
+# LARAVEL CONTROLLER — COMPLETE LEARNING ROADMAP
+
+This document covers the important controller-side concepts in Laravel, from beginner to advanced level.
+
+The goal is to understand:
+- How a request reaches a controller.
+- How to receive and validate user input.
+- How to interact with models and databases.
+- How to send data to views and return different responses.
+- How to handle authentication and authorization.
+- How to manage transactions, exceptions, files, and relationships.
+- How to structure controllers professionally.
+- How controllers work with services, events, queues, and APIs.
+- How to test controller functionality.
+
+============================================================
+1. UNDERSTANDING THE REQUEST LIFECYCLE
+============================================================
+
+When a user sends a request, Laravel processes it through several stages.
+
+Typical flow:
+
+Browser
+    |
+    v
+routes/web.php
+    |
+    v
+Middleware
+    |
+    v
+Controller
+    |
+    v
+Validation
+    |
+    v
+Model / Service
+    |
+    v
+Database
+    |
+    v
+Controller
+    |
+    v
+View / JSON / Redirect
+    |
+    v
+Browser or API Client
+
+Example:
+
+Route::get('/employees', [EmployeeController::class, 'index']);
+
+Controller:
+
+public function index()
+{
+    $employees = Employee::all();
+
+    return view('employees.index', compact('employees'));
+}
+
+Explanation:
+
+1. The browser requests /employees.
+2. Laravel matches the route.
+3. Middleware runs.
+4. Laravel calls the index() method.
+5. The controller retrieves employees.
+6. The controller sends the employees to a Blade view.
+7. Laravel renders the view and returns the HTML response.
+
+Important files:
+
+routes/web.php
+app/Http/Controllers/EmployeeController.php
+app/Models/Employee.php
+resources/views/employees/index.blade.php
+
+
+============================================================
+2. RECEIVING DATA FROM A REQUEST
+============================================================
+
+Laravel provides several methods for accessing request data.
+
+Example request:
+
+Name: Rahul
+Email: rahul@example.com
+Salary: 50000
+
+Assume these values are submitted through a form.
+
+2.1 input()
+
+$name = $request->input('name');
+
+Purpose:
+Retrieve a particular input value.
+
+You can provide a default value:
+
+$name = $request->input('name', 'Unknown');
+
+If the name input is missing, Laravel returns Unknown.
+
+2.2 all()
+
+$data = $request->all();
+
+Purpose:
+Retrieve all request input data.
+
+Example result:
+
+[
+    'name' => 'Rahul',
+    'email' => 'rahul@example.com',
+    'salary' => '50000'
+]
+
+Important:
+Do not pass all request data directly into database operations without validation and appropriate mass-assignment protection.
+
+2.3 only()
+
+$data = $request->only(['name', 'email']);
+
+Purpose:
+Retrieve only the specified input fields.
+
+2.4 except()
+
+$data = $request->except(['password']);
+
+Purpose:
+Retrieve all input data except the specified fields.
+
+Important:
+except() is not a replacement for validation. Explicitly select and validate the fields your application accepts.
+
+2.5 query()
+
+$search = $request->query('search');
+
+Purpose:
+Retrieve a query-string parameter.
+
+Example URL:
+
+/employees?search=Rahul
+
+The search value is Rahul.
+
+Use query() when you specifically want a value from the URL query string.
+
+2.6 route()
+
+$id = $request->route('id');
+
+Purpose:
+Retrieve a route parameter.
+
+Example route:
+
+Route::get('/employees/{id}', [EmployeeController::class, 'show']);
+
+URL:
+
+/employees/10
+
+The route parameter id is 10.
+
+2.7 has()
+
+if ($request->has('name')) {
+    // The input key exists.
+}
+
+Purpose:
+Check whether an input key is present.
+
+2.8 filled()
+
+if ($request->filled('name')) {
+    // The input has a non-empty value.
+}
+
+Purpose:
+Check whether an input has a non-empty value.
+
+2.9 boolean()
+
+$isActive = $request->boolean('is_active');
+
+Purpose:
+Convert supported truthy request values into a boolean.
+
+Useful for checkbox inputs.
+
+2.10 file()
+
+$file = $request->file('document');
+
+Purpose:
+Retrieve an uploaded file.
+
+2.11 header()
+
+$token = $request->header('Authorization');
+
+Purpose:
+Retrieve an HTTP header.
+
+2.12 Request method
+
+$method = $request->method();
+
+Purpose:
+Retrieve the HTTP method used for the request.
+
+Examples:
+
+GET
+POST
+PUT
+PATCH
+DELETE
+
+2.13 Check the request method
+
+if ($request->isMethod('post')) {
+    // Handle POST-specific logic.
+}
+
+Important:
+Request input methods retrieve data. They do not automatically validate whether the data is correct or safe.
+
+
+============================================================
+3. ROUTING AND CONTROLLER METHODS
+============================================================
+
+3.1 Define a route
+
+use App\Http\Controllers\EmployeeController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/employees', [EmployeeController::class, 'index']);
+
+3.2 Route with a parameter
+
+Route::get('/employees/{id}', [EmployeeController::class, 'show']);
+
+Controller:
+
+public function show($id)
+{
+    $employee = Employee::findOrFail($id);
+
+    return view('employees.show', compact('employee'));
+}
+
+3.3 Route-model binding
+
+Route:
+
+Route::get('/employees/{employee}', [EmployeeController::class, 'show']);
+
+Controller:
+
+public function show(Employee $employee)
+{
+    return view('employees.show', compact('employee'));
+}
+
+Laravel automatically attempts to find the employee using the route parameter.
+
+If the employee cannot be found, Laravel returns a 404 response.
+
+3.4 Named routes
+
+Route::get('/employees', [EmployeeController::class, 'index'])
+    ->name('employees.index');
+
+Generate the URL:
+
+route('employees.index');
+
+Redirect to the route:
+
+return redirect()->route('employees.index');
+
+Benefits:
+- Easier maintenance.
+- Avoids hardcoding URLs throughout the application.
+- Makes redirects more readable.
+
+3.5 Resource controllers
+
+Route::resource('employees', EmployeeController::class);
+
+Laravel generates standard resource routes.
+
+Common resource methods:
+
+index()    - Display a list.
+create()   - Display the creation form.
+store()    - Save a new record.
+show()     - Display one record.
+edit()     - Display the editing form.
+update()   - Update an existing record.
+destroy()  - Delete a record.
+
+3.6 Invokable controllers
+
+An invokable controller has a single __invoke() method.
+
+Example:
+
+class DashboardController extends Controller
+{
+    public function __invoke()
+    {
+        return view('dashboard');
+    }
+}
+
+Route:
+
+Route::get('/dashboard', DashboardController::class);
+
+Use this when a controller represents one specific action.
+
+3.7 Middleware
+
+Middleware runs before a request reaches the controller, or after the controller returns a response, depending on its implementation.
+
+Example:
+
+Route::get('/employees', [EmployeeController::class, 'index'])
+    ->middleware('auth');
+
+Purpose:
+Only authenticated users can access this route.
+
+Common middleware responsibilities:
+- Authentication.
+- Authorization checks.
+- Request throttling.
+- Request filtering.
+- Other cross-cutting request checks.
+
+============================================================
+4. VALIDATION
+============================================================
+
+Validation checks whether submitted data meets your application's rules.
+
+Never assume that data received from a form is valid.
+
+4.1 Validate inside a controller
+
+use Illuminate\Http\Request;
+
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => ['required', 'email', 'unique:employees,email'],
+        'salary' => ['required', 'numeric', 'min:0'],
+    ]);
+
+    $employee = Employee::create($validated);
+
+    return redirect()
+        ->route('employees.index')
+        ->with('success', 'Employee created successfully.');
+}
+
+Explanation:
+
+required:
+The field must be provided and cannot be empty.
+
+string:
+The value must be a string.
+
+max:255:
+The value must not exceed 255 characters.
+
+email:
+The value must be a valid email address.
+
+unique:employees,email:
+The email must be unique in the employees table.
+
+numeric:
+The value must be numeric.
+
+min:0:
+The salary must be at least zero.
+
+The validate() method returns validated data when validation succeeds.
+
+For a traditional web request, failed validation normally redirects back with errors and old input.
+
+For a JSON request, Laravel can return a JSON validation error response.
+
+4.2 Use validated data
+
+Correct:
+
+$validated = $request->validate([
+    'name' => ['required', 'string'],
+]);
+
+Employee::create($validated);
+
+Avoid:
+
+Employee::create($request->all());
+
+Reason:
+The request may contain unexpected or unwanted fields.
+
+4.3 Update validation
+
+When updating a record, exclude the current employee from the unique email check.
+
+use Illuminate\Validation\Rule;
+
+public function update(Request $request, Employee $employee)
+{
+    $validated = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => [
+            'required',
+            'email',
+            Rule::unique('employees', 'email')->ignore($employee->id),
+        ],
+    ]);
+
+    $employee->update($validated);
+
+    return redirect()
+        ->route('employees.index')
+        ->with('success', 'Employee updated successfully.');
+}
+
+4.4 Form Request classes
+
+For complex validation, create a dedicated Form Request.
+
+Command:
+
+php artisan make:request StoreEmployeeRequest
+
+File:
+
+app/Http/Requests/StoreEmployeeRequest.php
+
+Example:
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class StoreEmployeeRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'unique:employees,email'],
+            'salary' => ['required', 'numeric', 'min:0'],
+        ];
+    }
+}
+
+Controller:
+
+use App\Http\Requests\StoreEmployeeRequest;
+
+public function store(StoreEmployeeRequest $request)
+{
+    $employee = Employee::create($request->validated());
+
+    return redirect()
+        ->route('employees.index')
+        ->with('success', 'Employee created successfully.');
+}
+
+Why use Form Requests?
+
+- Keeps controllers cleaner.
+- Groups validation rules in one place.
+- Allows request authorization checks.
+- Makes validation easier to maintain and test.
+
+Important:
+Do not leave authorize() returning true without considering whether authorization is required. Implement the appropriate authorization rule when necessary.
+
+
+============================================================
+5. AUTHENTICATION AND AUTHORIZATION
+============================================================
+
+Authentication:
+Who is the user?
+
+Authorization:
+What is the user allowed to do?
+
+Example:
+
+Authentication:
+Is the user logged in?
+
+Authorization:
+Is the logged-in user allowed to delete this employee?
+
+5.1 Authentication middleware
+
+Route:
+
+Route::middleware('auth')->group(function () {
+    Route::resource('employees', EmployeeController::class);
+});
+
+Purpose:
+Protect the employee routes from unauthenticated access.
+
+5.2 Authorization using a policy
+
+Example:
+
+$this->authorize('update', $employee);
+
+Purpose:
+Ask Laravel whether the current user is allowed to update this employee.
+
+If authorization fails, Laravel normally returns a 403 response.
+
+5.3 Authorization using a Gate
+
+Example:
+
+use Illuminate\Support\Facades\Gate;
+
+if (Gate::denies('delete-employee')) {
+    abort(403);
+}
+
+Purpose:
+Check whether the current user has permission to perform an action.
+
+5.4 Use authorization before sensitive operations
+
+Example:
+
+public function destroy(Employee $employee)
+{
+    $this->authorize('delete', $employee);
+
+    $employee->delete();
+
+    return redirect()
+        ->route('employees.index')
+        ->with('success', 'Employee deleted successfully.');
+}
+
+Important:
+Hiding a Delete button in Blade is not sufficient authorization.
+
+Users may send direct HTTP requests. Always enforce authorization on the server.
+
+
+============================================================
+6. CRUD OPERATIONS
+============================================================
+
+CRUD means:
+
+Create
+Read
+Update
+Delete
+
+6.1 Create
+
+$validated = $request->validate([
+    'name' => ['required', 'string', 'max:255'],
+    'email' => ['required', 'email', 'unique:employees,email'],
+]);
+
+$employee = Employee::create($validated);
+
+6.2 Read all records
+
+$employees = Employee::all();
+
+6.3 Read one record
+
+$employee = Employee::findOrFail($id);
+
+6.4 Update a record
+
+$validated = $request->validate([
+    'name' => ['required', 'string', 'max:255'],
+]);
+
+$employee->update($validated);
+
+6.5 Delete a record
+
+$employee->delete();
+
+6.6 Mass assignment
+
+Laravel provides methods such as:
+
+Employee::create($validated);
+
+$employee->update($validated);
+
+These methods assign multiple attributes at once.
+
+The model must be configured to permit the attributes.
+
+Example:
+
+class Employee extends Model
+{
+    protected $fillable = [
+        'name',
+        'email',
+        'salary',
+    ];
+}
+
+Important:
+- Only include fields that users are allowed to change.
+- Never treat $fillable as a replacement for validation.
+- Never assume a field is safe just because it appears in a form.
+
+6.7 Soft deletes
+
+A soft delete marks a record as deleted instead of immediately removing its database row.
+
+Model:
+
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Employee extends Model
+{
+    use SoftDeletes;
+}
+
+The table must contain a deleted_at column.
+
+Delete:
+
+$employee->delete();
+
+Retrieve records including soft-deleted records:
+
+$employees = Employee::withTrashed()->get();
+
+Retrieve only soft-deleted records:
+
+$employees = Employee::onlyTrashed()->get();
+
+Restore a soft-deleted record:
+
+$employee->restore();
+
+Force delete:
+
+$employee->forceDelete();
+
+Use forceDelete() carefully because it permanently removes the record from the database.
+
+
+============================================================
+7. DATABASE TRANSACTIONS
+============================================================
+
+Transactions are important when multiple database operations must succeed or fail together.
+
+Example:
+When approving a leave application, the application status and leave balance must remain consistent.
+
+If one operation succeeds and the other fails, the database may become inconsistent unless both operations are managed correctly.
+
+7.1 Basic transaction
+
+use Illuminate\Support\Facades\DB;
+
+DB::transaction(function () {
+    // Perform related database operations.
+});
+
+If an exception escapes the transaction closure, Laravel rolls back the transaction.
+
+If the closure completes successfully, Laravel commits the transaction.
+
+7.2 Example: Update salary and save salary history
+
+use App\Models\Employee;
+use App\Models\SalaryHistory;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+public function updateSalary(Request $request, Employee $employee)
+{
+    $validated = $request->validate([
+        'salary' => ['required', 'numeric', 'min:0'],
+    ]);
+
+    DB::transaction(function () use ($employee, $validated) {
+        $oldSalary = $employee->getRawOriginal('salary');
+        $newSalary = $validated['salary'];
+
+        if ((string) $oldSalary !== (string) $newSalary) {
+            SalaryHistory::create([
+                'employee_id' => $employee->id,
+                'old_salary' => $oldSalary,
+                'new_salary' => $newSalary,
+            ]);
+
+            $employee->salary = $newSalary;
+            $employee->save();
+        }
+    });
+
+    return redirect()
+        ->back()
+        ->with('success', 'Salary updated successfully.');
+}
+
+Important:
+This example assumes the SalaryHistory model and its database table already exist, and that the required fields are configured correctly.
+
+For concurrent salary updates, reload the employee inside the transaction and consider using lockForUpdate().
+
+7.3 Row locking
+
+Example:
+
+DB::transaction(function () use ($id) {
+    $employee = Employee::whereKey($id)
+        ->lockForUpdate()
+        ->firstOrFail();
+
+    // Read and update the employee safely.
+});
+
+Purpose:
+Lock the selected database row while the transaction is active, where supported by the database.
+
+This helps prevent conflicting concurrent updates.
+
+Use row locking for sensitive operations such as:
+- Leave balance deduction.
+- Inventory deduction.
+- Financial balance changes.
+- Other operations where simultaneous requests could conflict.
+
+Important:
+A lock does not replace validation or correct transaction design.
+
+
+============================================================
+8. SEARCHING, FILTERING, SORTING, AND PAGINATION
+============================================================
+
+Controllers often need to retrieve records based on user-selected filters.
+
+8.1 Search
+
+$search = $request->input('search');
+
+$employees = Employee::query()
+    ->where('name', 'like', '%' . $search . '%')
+    ->get();
+
+For production code, validate the search input and handle missing values.
+
+8.2 Optional filters
+
+$query = Employee::query();
+
+if ($request->filled('department_id')) {
+    $query->where('department_id', $request->input('department_id'));
+}
+
+$employees = $query->get();
+
+8.3 Sorting
+
+$employees = Employee::orderBy('name', 'asc')->get();
+
+Descending order:
+
+$employees = Employee::orderBy('created_at', 'desc')->get();
+
+8.4 Never trust a user-supplied column name
+
+Do not directly use arbitrary request input as an orderBy column.
+
+Instead, allow only known columns.
+
+$allowedSortColumns = ['name', 'email', 'created_at'];
+
+$sortBy = $request->input('sort_by', 'name');
+
+if (! in_array($sortBy, $allowedSortColumns, true)) {
+    $sortBy = 'name';
+}
+
+$employees = Employee::orderBy($sortBy)->get();
+
+8.5 Pagination
+
+$employees = Employee::paginate(10);
+
+This retrieves up to 10 records per page.
+
+Preserve query-string filters:
+
+$employees = Employee::query()
+    ->when($request->filled('search'), function ($query) use ($request) {
+        $query->where(
+            'name',
+            'like',
+            '%' . $request->input('search') . '%'
+        );
+    })
+    ->paginate(10)
+    ->withQueryString();
+
+Benefits:
+- Reduces the number of records loaded at once.
+- Improves usability.
+- Helps avoid loading large tables into memory.
+
+For large datasets, consider cursorPaginate() where appropriate.
+
+
+============================================================
+9. ELOQUENT RELATIONSHIPS AND N+1 QUERIES
+============================================================
+
+Suppose every employee belongs to a department.
+
+Employee model:
+
+public function department()
+{
+    return $this->belongsTo(Department::class);
+}
+
+Department model:
+
+public function employees()
+{
+    return $this->hasMany(Employee::class);
+}
+
+9.1 Retrieve employees with departments
+
+$employees = Employee::with('department')->get();
+
+Purpose:
+Load the related departments efficiently.
+
+9.2 The N+1 problem
+
+Problematic example:
+
+$employees = Employee::all();
+
+foreach ($employees as $employee) {
+    echo $employee->department->department_name;
+}
+
+Depending on the relationship and data, this may execute one query for employees and an additional query for each employee's department.
+
+Improved example:
+
+$employees = Employee::with('department')->get();
+
+foreach ($employees as $employee) {
+    echo $employee->department?->department_name;
+}
+
+This uses eager loading to reduce unnecessary database queries.
+
+9.3 Load only required columns
+
+$employees = Employee::query()
+    ->select(['id', 'name', 'department_id'])
+    ->with('department:id,department_name')
+    ->get();
+
+Important:
+When selecting columns for eager-loaded relationships, include the necessary primary and foreign keys.
+
+9.4 Load relationships after retrieving a model
+
+$employee = Employee::findOrFail($id);
+
+$employee->load('department');
+
+9.5 Count related records
+
+$departments = Department::withCount('employees')->get();
+
+The returned models contain an employees_count attribute.
+
+Use eager loading and relationship counts when the page needs related information.
+
+
+============================================================
+10. FILE UPLOADS
+============================================================
+
+Laravel controllers can receive uploaded files through the request.
+
+10.1 Validate a file
+
+$validated = $request->validate([
+    'document' => ['required', 'file', 'mimes:pdf,doc,docx', 'max:10240'],
+]);
+
+The max value for file validation is expressed in kilobytes.
+
+Here, 10240 KB is approximately 10 MB.
+
+10.2 Store the file
+
+$path = $request->file('document')->store('documents', 'private');
+
+This example assumes a private disk is configured.
+
+The returned path can be stored in the database.
+
+10.3 Store a file on the public disk
+
+$path = $request->file('image')->store('images', 'public');
+
+The public disk is commonly used for files intended to be publicly accessible.
+
+If using Laravel's default local public disk configuration, the storage link is generally created with:
+
+php artisan storage:link
+
+Important:
+Do not expose confidential documents through public storage.
+
+For private files, authorize the download request and return the file through a controller or another appropriate private-file delivery mechanism.
+
+10.4 Delete a stored file
+
+use Illuminate\Support\Facades\Storage;
+
+Storage::disk('private')->delete($path);
+
+Important:
+When replacing or deleting a database record associated with a file, consider what should happen to the stored file. Use appropriate error handling and cleanup logic.
+
+
+============================================================
+11. EXCEPTION HANDLING
+============================================================
+
+An exception indicates that an operation could not proceed normally.
+
+Examples:
+- A requested employee does not exist.
+- A database operation fails.
+- A file cannot be stored.
+- An external service is unavailable.
+
+11.1 findOrFail()
+
+$employee = Employee::findOrFail($id);
+
+If the employee does not exist, Laravel throws a model-not-found exception.
+
+For typical web requests, Laravel converts this into a 404 response.
+
+11.2 firstOrFail()
+
+$employee = Employee::where('email', $email)->firstOrFail();
+
+Purpose:
+Retrieve the first matching record or throw an exception.
+
+11.3 Manual exception handling
+
+try {
+    // Perform an operation.
+} catch (\Throwable $exception) {
+    report($exception);
+
+    return back()->with(
+        'error',
+        'Something went wrong. Please try again.'
+    );
+}
+
+Important:
+Use try/catch only when you can handle the failure meaningfully.
+
+Do not catch every exception merely to hide the error.
+
+Avoid displaying internal exception messages, SQL queries, stack traces, or sensitive details to end users.
+
+11.4 Let Laravel handle expected framework exceptions
+
+For example:
+
+$employee = Employee::findOrFail($id);
+
+In many cases, you do not need to write a try/catch around this call because Laravel already handles the resulting exception.
+
+11.5 Log unexpected failures
+
+use Illuminate\Support\Facades\Log;
+
+Log::error('Employee update failed.', [
+    'employee_id' => $employee->id,
+]);
+
+Never put passwords, authentication tokens, or other sensitive information into application logs.
+
+
+============================================================
+12. DIFFERENT TYPES OF RESPONSES
+============================================================
+
+A controller can return several kinds of responses.
+
+12.1 Return a Blade view
+
+return view('employees.index');
+
+Purpose:
+Display an HTML page.
+
+12.2 Pass data to a view
+
+return view('employees.index', [
+    'employees' => $employees,
+]);
+
+Or:
+
+return view('employees.index', compact('employees'));
+
+12.3 Redirect to a URL
+
+return redirect('/employees');
+
+12.4 Redirect to a named route
+
+return redirect()->route('employees.index');
+
+12.5 Redirect with a success message
+
+return redirect()
+    ->route('employees.index')
+    ->with('success', 'Employee created successfully.');
+
+12.6 Return JSON
+
+return response()->json([
+    'message' => 'Employee created successfully.',
+    'employee' => $employee,
+], 201);
+
+Purpose:
+Return structured data, commonly for APIs.
+
+12.7 Return a status code
+
+return response('Created', 201);
+
+Common HTTP status codes:
+
+200 - OK.
+201 - Created.
+204 - No Content.
+302 - Redirect.
+400 - Bad Request.
+401 - Unauthenticated.
+403 - Forbidden.
+404 - Not Found.
+409 - Conflict.
+422 - Validation or semantic request error.
+429 - Too Many Requests.
+500 - Internal Server Error.
+
+Choose the response type based on whether the request comes from a browser-based web workflow or an API client.
+
+
+============================================================
+13. FLASH MESSAGES AND OLD INPUT
+============================================================
+
+13.1 Flash messages
+
+Controller:
+
+return redirect()
+    ->route('employees.index')
+    ->with('success', 'Employee created successfully.');
+
+Blade:
+
+@if (session('success'))
+    <div class="alert alert-success">
+        {{ session('success') }}
+    </div>
+@endif
+
+Flash data is intended for the next request, commonly after a redirect.
+
+13.2 Validation errors
+
+Blade:
+
+@if ($errors->any())
+    <div>
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+13.3 Preserve old input
+
+<input
+    type="text"
+    name="name"
+    value="{{ old('name') }}"
+>
+
+Purpose:
+If validation fails and Laravel redirects back, old input can repopulate the form.
+
+Do not use old input as proof that data is valid. Validate it again when processing the request.
+
+
+============================================================
+14. CONTROLLER VS SERVICE CLASS
+============================================================
+
+A controller should coordinate the request and response.
+
+A service class can contain reusable business logic.
+
+Avoid placing every business rule inside a large controller.
+
+14.1 Controller responsibility
+
+A controller commonly handles:
+
+- Receiving the request.
+- Validating input.
+- Authorizing the action.
+- Calling a service or model.
+- Choosing the response.
+
+14.2 Service responsibility
+
+A service commonly handles:
+
+- Business rules.
+- Multi-step workflows.
+- Related database operations.
+- Reusable application logic.
+- Transaction boundaries when appropriate.
+
+14.3 Example: Leave approval service
+
+Create the service:
+
+app/Services/Leave/LeaveApprovalService.php
+
+Example:
+
+namespace App\Services\Leave;
+
+use App\Models\LeaveApplication;
+use Illuminate\Support\Facades\DB;
+
+class LeaveApprovalService
+{
+    public function approve(LeaveApplication $application): void
+    {
+        DB::transaction(function () use ($application) {
+            $application = LeaveApplication::query()
+                ->whereKey($application->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($application->status !== 'pending') {
+                throw new \DomainException(
+                    'Only pending applications can be approved.'
+                );
+            }
+
+            $application->status = 'approved';
+            $application->save();
+
+            // Apply the remaining business rules here:
+            // - Validate leave eligibility.
+            // - Calculate the deduction.
+            // - Update the appropriate leave balance.
+            // - Record any required audit history.
+        });
+    }
+}
+
+This is an illustrative example, not a complete leave-management implementation. Your actual model names, status values, balance rules, and approval workflow must match your application.
+
+Controller:
+
+use App\Models\LeaveApplication;
+use App\Services\Leave\LeaveApprovalService;
+
+public function approve(
+    LeaveApplication $application,
+    LeaveApprovalService $service
+) {
+    $this->authorize('approve', $application);
+
+    $service->approve($application);
+
+    return redirect()
+        ->back()
+        ->with('success', 'Leave application approved successfully.');
+}
+
+Important:
+- The policy authorizes the action.
+- The service performs the business operation.
+- The transaction keeps related database changes together.
+- The controller returns the response.
+
+Laravel's service container can automatically inject many concrete service classes into controller methods.
+
+Do not duplicate the same leave-approval rules in a web controller and an API controller.
+
+
+============================================================
+15. MODEL EVENTS, OBSERVERS, AND AUDIT HISTORY
+============================================================
+
+Laravel supports model lifecycle events such as:
+
+creating
+created
+updating
+updated
+saving
+saved
+deleting
+deleted
+restoring
+restored
+
+Example:
+
+Employee::updating(function (Employee $employee) {
+    if ($employee->isDirty('salary')) {
+        // The salary is changing.
+    }
+});
+
+Important distinction:
+
+getOriginal('salary'):
+Retrieve the original attribute value tracked by the model.
+
+getRawOriginal('salary'):
+Retrieve the original raw attribute value without normal attribute casting or accessors.
+
+isDirty('salary'):
+Check whether the attribute has changed compared with the model's original state.
+
+isClean('salary'):
+Check whether the attribute has not changed.
+
+getChanges():
+Retrieve attributes changed by the most recent successful model save.
+
+wasChanged('salary'):
+Check whether the attribute changed during the most recent save.
+
+Important:
+- Model events can be useful for auditing.
+- Bulk query updates generally bypass normal per-model events.
+- Transactions are still important when an audit record and the main update must succeed together.
+- If audit history is critical, design the operation so that the business update and audit record are atomic.
+
+
+============================================================
+16. EVENTS, LISTENERS, NOTIFICATIONS, AND QUEUES
+============================================================
+
+These mechanisms help separate business operations from secondary actions.
+
+Example:
+When an employee is created, the application may need to send a welcome email.
+
+Possible workflow:
+
+Employee Controller
+    |
+    v
+Employee Service
+    |
+    v
+Create Employee
+    |
+    v
+Dispatch Event
+    |
+    v
+Listener
+    |
+    v
+Send Welcome Notification
+
+16.1 Events
+
+An event represents something that happened.
+
+Example:
+
+EmployeeCreated
+
+16.2 Listeners
+
+A listener responds to an event.
+
+Example:
+
+SendWelcomeEmail
+
+16.3 Notifications
+
+Laravel notifications can deliver messages through supported channels such as mail and database notifications.
+
+16.4 Queues
+
+Queues allow suitable tasks to run asynchronously.
+
+Examples:
+- Sending emails.
+- Processing large files.
+- Generating reports.
+- Performing slow external API calls.
+
+Important:
+Dispatching a queued job does not, by itself, guarantee that a worker is running.
+
+A queue worker must be configured and running for queued work to be processed.
+
+For business-critical operations, design the transaction and job-dispatch workflow carefully so that a job does not run before the relevant database changes are committed.
+
+
+============================================================
+17. API CONTROLLERS
+============================================================
+
+A web controller usually returns HTML views or redirects.
+
+An API controller commonly returns JSON.
+
+It is often useful to keep web and API controllers separate.
+
+Example structure:
+
+app/
+    Http/
+        Controllers/
+            EmployeeController.php
+            Api/
+                V1/
+                    EmployeeController.php
+
+routes/
+    web.php
+    api.php
+
+The API route file may require the API routing setup provided by your Laravel application.
+
+17.1 Example API response
+
+return response()->json([
+    'data' => $employee,
+], 200);
+
+17.2 Create a JSON resource
+
+Command:
+
+php artisan make:resource EmployeeResource
+
+Resource:
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class EmployeeResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'name' => $this->name,
+            'email' => $this->email,
+        ];
+    }
+}
+
+Controller:
+
+use App\Http\Resources\EmployeeResource;
+
+public function show(Employee $employee)
+{
+    return new EmployeeResource($employee);
+}
+
+Benefits:
+- Controls which fields are exposed.
+- Helps keep API responses consistent.
+- Separates the public response format from the database model.
+
+17.3 API authentication
+
+Laravel Sanctum can be used for supported API authentication scenarios.
+
+Example route:
+
+Route::middleware('auth:sanctum')->get(
+    '/user',
+    function (Request $request) {
+        return $request->user();
+    }
+);
+
+Choose the appropriate authentication approach for the type of client and authentication flow.
+
+17.4 API versioning
+
+Example URL:
+
+/api/v1/employees
+
+Versioning can help introduce future API changes without immediately breaking existing clients.
+
+17.5 Rate limiting
+
+Rate limiting helps control how frequently clients can make requests.
+
+It is useful for protecting APIs against excessive requests and accidental overload.
+
+
+============================================================
+18. TESTING CONTROLLERS
+============================================================
+
+Controller behavior should be tested through HTTP requests where practical.
+
+Laravel feature tests can test the request lifecycle, middleware, validation, database changes, and responses.
+
+18.1 Example test
+
+public function test_employee_index_page_is_accessible(): void
+{
+    $response = $this->get('/employees');
+
+    $response->assertOk();
+}
+
+This test assumes that the route is accessible to an unauthenticated user.
+
+If the route requires authentication, authenticate an appropriate user in the test.
+
+18.2 Test validation
+
+public function test_employee_requires_a_name(): void
+{
+    $response = $this->post('/employees', [
+        'name' => '',
+        'email' => 'rahul@example.com',
+    ]);
+
+    $response->assertSessionHasErrors('name');
+}
+
+This example assumes the POST route validates the name field and uses the traditional web validation response.
+
+18.3 Test authorization
+
+Test that users who are not permitted to perform an action cannot perform it through a direct request.
+
+For example:
+- An ordinary employee cannot approve another employee's leave.
+- An HR user cannot perform an administrator-only action.
+- A user cannot access another user's private document.
+
+18.4 Test database changes
+
+Use assertions such as:
+
+$this->assertDatabaseHas('employees', [
+    'email' => 'rahul@example.com',
+]);
+
+18.5 Important test categories
+
+- Successful requests.
+- Validation failures.
+- Unauthenticated requests.
+- Unauthorized requests.
+- Missing records.
+- Database changes.
+- Transaction-related failures.
+- File upload validation.
+- API response structure.
+- Concurrent or duplicate workflow operations where relevant.
+
+Always make test assumptions match the actual routes, middleware, schema, and authorization rules in your application.
+
+
+============================================================
+19. OTHER IMPORTANT CONTROLLER-SIDE TOPICS
+============================================================
+
+Learn these concepts after mastering the fundamentals.
+
+19.1 Dependency injection
+
+Laravel can inject dependencies into controller constructors or action methods.
+
+Example:
+
+public function show(Employee $employee)
+{
+    return view('employees.show', compact('employee'));
+}
+
+Here, Laravel resolves the Employee route-model binding.
+
+A service class can also be injected into a controller method.
+
+19.2 Query scopes
+
+Reusable database query conditions can be defined on models.
+
+These help avoid repeating the same filtering logic.
+
+19.3 Accessors and mutators
+
+These control how model attributes are retrieved or assigned.
+
+They are useful for attribute transformations, but should not replace validation or explicit business rules.
+
+19.4 API pagination
+
+Use paginated results instead of returning an unlimited number of records.
+
+19.5 Caching
+
+Caching can improve performance for appropriate data.
+
+Consider:
+- Cache keys.
+- Expiration.
+- Invalidation.
+- Whether the data is user-specific.
+- Whether stale data is acceptable.
+
+19.6 Authorization policies
+
+Policies organize authorization logic around model-related actions.
+
+They are useful for applications with multiple user roles and ownership rules.
+
+19.7 Idempotency
+
+Idempotency means that repeating an operation does not incorrectly repeat its effects.
+
+It is particularly important for payment processing, leave approval, balance deductions, and API operations that clients may retry.
+
+19.8 Concurrency
+
+Two users may submit conflicting operations at nearly the same time.
+
+Learn:
+- Database transactions.
+- Row locking.
+- Unique constraints.
+- Optimistic concurrency strategies.
+- Idempotent workflow design.
+
+19.9 Audit logging
+
+Audit logs help record who performed an important action, what changed, and when it happened.
+
+Avoid recording passwords, tokens, or unnecessary sensitive information.
+
+19.10 Performance monitoring
+
+Learn to identify:
+- N+1 queries.
+- Slow database queries.
+- Unnecessary model retrieval.
+- Excessive external requests.
+- Expensive synchronous tasks.
+
+
+============================================================
+20. WHAT SHOULD A PROFESSIONAL CONTROLLER LOOK LIKE?
+============================================================
+
+A controller should usually be easy to read.
+
+Example:
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StoreEmployeeRequest;
+use App\Models\Employee;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
+
+class EmployeeController extends Controller
+{
+    public function index(): View
+    {
+        $employees = Employee::query()
+            ->with('department')
+            ->paginate(10);
+
+        return view('employees.index', compact('employees'));
+    }
+
+    public function store(
+        StoreEmployeeRequest $request
+    ): RedirectResponse {
+        Employee::create($request->validated());
+
+        return redirect()
+            ->route('employees.index')
+            ->with('success', 'Employee created successfully.');
+    }
+
+    public function show(Employee $employee): View
+    {
+        return view('employees.show', compact('employee'));
+    }
+}
+
+This example assumes:
+- The Employee model exists.
+- The department relationship exists.
+- The employees.index and employees.show views exist.
+- The StoreEmployeeRequest class is configured correctly.
+- The Employee model allows the validated attributes through its mass-assignment configuration.
+
+A controller does not have to contain every possible method. Keep only the actions needed by your application.
+
+============================================================
+21. COMMON CONTROLLER MISTAKES
+============================================================
+
+Mistake 1:
+Passing all request data directly to a model.
+
+Problem:
+
+Employee::create($request->all());
+
+Better:
+
+$validated = $request->validate([
+    'name' => ['required', 'string', 'max:255'],
+    'email' => ['required', 'email'],
+]);
+
+Employee::create($validated);
+
+Mistake 2:
+Checking permissions only in Blade.
+
+Problem:
+A user can send a direct HTTP request.
+
+Better:
+Enforce authorization in the controller, policy, middleware, or another appropriate server-side layer.
+
+Mistake 3:
+Putting every business rule in a large controller.
+
+Problem:
+The controller becomes difficult to maintain and test.
+
+Better:
+Move reusable, multi-step business operations into service classes where appropriate.
+
+Mistake 4:
+Using all() on a large table.
+
+Problem:
+Too many records may be loaded into memory.
+
+Better:
+Use pagination, chunking, lazy processing, or another suitable retrieval method.
+
+Mistake 5:
+Ignoring N+1 queries.
+
+Problem:
+Repeated relationship access may generate excessive queries.
+
+Better:
+Use eager loading where appropriate.
+
+Mistake 6:
+Updating multiple related records without considering transactions.
+
+Problem:
+Partial updates can leave the database inconsistent.
+
+Better:
+Use transactions when related database operations must succeed or fail together.
+
+Mistake 7:
+Trusting user-supplied sort columns.
+
+Problem:
+Unrestricted sort parameters can produce errors or unsafe query construction.
+
+Better:
+Allowlist supported columns.
+
+Mistake 8:
+Catching exceptions and hiding the real problem.
+
+Problem:
+Unexpected failures become difficult to diagnose.
+
+Better:
+Handle expected failures meaningfully, report unexpected exceptions, and show safe messages to users.
+
+Mistake 9:
+Using the same controller for unrelated web and API responsibilities.
+
+Problem:
+Response formats and authentication behavior can become confusing.
+
+Better:
+Separate web and API controllers when the responsibilities differ.
+
+Mistake 10:
+Forgetting automated tests.
+
+Problem:
+Changes can break existing behavior without being noticed.
+
+Better:
+Test successful requests, validation, authorization, and important database effects.
+
+
+============================================================
+22. RECOMMENDED LEARNING ORDER
+============================================================
+
+PHASE 1: CONTROLLER FUNDAMENTALS
+
+1. Controller creation.
+2. Routes and controller methods.
+3. Request object.
+4. Receiving input.
+5. Route parameters.
+6. Route-model binding.
+7. Returning views.
+8. Redirects and flash messages.
+9. Returning JSON.
+10. HTTP status codes.
+
+PHASE 2: DATABASE OPERATIONS
+
+11. Eloquent CRUD.
+12. Mass assignment.
+13. Query builder.
+14. Search and filtering.
+15. Sorting.
+16. Pagination.
+17. Eloquent relationships.
+18. Eager loading.
+19. N+1 query prevention.
+20. Soft deletes.
+
+PHASE 3: VALIDATION AND SECURITY
+
+21. Request validation.
+22. Form Request classes.
+23. Authentication.
+24. Middleware.
+25. Authorization.
+26. Policies.
+27. Gates.
+28. Safe file uploads.
+29. Error handling.
+30. Exception reporting.
+
+PHASE 4: ADVANCED DATABASE WORK
+
+31. Database transactions.
+32. Row locking.
+33. Old and new attribute values.
+34. Model events.
+35. Observers.
+36. Audit history.
+37. Concurrency.
+38. Idempotency.
+39. Database constraints.
+40. Reconciliation and consistency checks.
+
+PHASE 5: CLEAN ARCHITECTURE
+
+41. Dependency injection.
+42. Service classes.
+43. Business logic separation.
+44. Reusable query logic.
+45. Events and listeners.
+46. Notifications.
+47. Queues.
+48. Caching.
+49. Logging.
+50. Performance monitoring.
+
+PHASE 6: API DEVELOPMENT
+
+51. API routes.
+52. API controllers.
+53. JSON responses.
+54. API Resources.
+55. Sanctum authentication.
+56. API validation errors.
+57. API authorization.
+58. Pagination for APIs.
+59. Rate limiting.
+60. API versioning.
+
+PHASE 7: TESTING AND DEPLOYMENT
+
+61. Feature tests.
+62. Unit tests for isolated business logic.
+63. Validation tests.
+64. Authorization tests.
+65. Database assertions.
+66. File upload tests.
+67. API tests.
+68. Queue and notification tests.
+69. Logging and production debugging.
+70. Deployment configuration.
+
+============================================================
+23. WHAT TO LEARN NEXT
+============================================================
+
+If you already understand CRUD, request input, returning views, and basic Eloquent queries, prioritize the following:
+
+1. Form Request validation.
+2. Route-model binding.
+3. Authentication and authorization.
+4. Policies and Gates.
+5. Database transactions.
+6. Exception handling.
+7. Eloquent relationships and eager loading.
+8. Service classes.
+9. Model events and audit history.
+10. Feature testing.
+
+These concepts are especially important for a real-world application such as a Leave Management System.
+
+For example, approving a leave application may require you to:
+
+1. Authenticate the user.
+2. Authorize the approval.
+3. Load the leave application.
+4. Verify that it is still pending.
+5. Check leave eligibility.
+6. Lock the relevant records when needed.
+7. Calculate the leave deduction.
+8. Update the leave balance.
+9. Update the application status.
+10. Record the audit history.
+11. Commit the transaction.
+12. Return a success response.
+
+The exact workflow depends on your business rules.
+
+The controller should coordinate the operation, while reusable business logic should live in an appropriate service class.
+
+============================================================
+FINAL CHECKLIST
+============================================================
+
+Before considering your controller knowledge complete, make sure you can answer these questions:
+
+[ ] How does Laravel route a request to a controller?
+[ ] What is the difference between input(), all(), only(), and query()?
+[ ] How do route parameters work?
+[ ] What is route-model binding?
+[ ] How do you validate incoming data?
+[ ] Why should you use validated() or validated request data?
+[ ] What is the difference between authentication and authorization?
+[ ] How do middleware, policies, and Gates work?
+[ ] How do you perform CRUD operations?
+[ ] What is mass assignment?
+[ ] How do you handle soft deletes?
+[ ] How do you search, filter, sort, and paginate records?
+[ ] What is an N+1 query problem?
+[ ] How do you eager-load relationships?
+[ ] When should you use database transactions?
+[ ] What does lockForUpdate() do?
+[ ] How do you record old and new attribute values?
+[ ] What is the difference between model events and observers?
+[ ] How do you handle exceptions?
+[ ] What response types can a controller return?
+[ ] How do you upload and store files securely?
+[ ] What is the difference between a controller and a service?
+[ ] How do events, listeners, notifications, and queues work?
+[ ] How do web controllers differ from API controllers?
+[ ] What are API Resources?
+[ ] How do you protect APIs?
+[ ] How do you write feature tests for controllers?
+[ ] How do you prevent duplicate or conflicting operations?
+[ ] How do you keep database records consistent?
+[ ] How do you identify and fix performance problems?
+
+If you can explain these concepts and implement them in a practical project, you will have a strong foundation in Laravel controller development.

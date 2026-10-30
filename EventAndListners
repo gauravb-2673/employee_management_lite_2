@@ -1,0 +1,73 @@
+queue:
+
+php artisan queue:work
+Mail::to($employee->email)
+                    ->queue(new WelcomeEmployeeMail($employee));
+Mail::to($employee->email)
+                    ->send(new WelcomeEmployeeMail($employee));                    
+in queue implements ShouldQueue  is used for asynchronous (use queue in instead of send) and for synchronous it is not used (use send direclty instead of queue).
+
+
+php artisan make:event UserRoleChanged 	
+
+php artisan make:listener LogUserRoleChange --event=UserRoleChanged
+
+
+app/
+├── Events/
+│   └── UserRoleChanged.php
+│
+└── Listeners/
+    └── LogUserRoleChange.php
+    
+<?php
+
+namespace App\Events;
+
+use App\Models\User;
+use Illuminate\Foundation\Events\Dispatchable;
+use Illuminate\Queue\SerializesModels;
+
+class UserRoleChanged
+{
+    use Dispatchable, SerializesModels;
+
+    public function __construct(
+        public User $user,
+        public ?string $oldRole,
+        public string $newRole,
+    ) {}
+}
+
+
+
+
+
+<?php
+
+namespace App\Listeners;
+
+use App\Events\UserRoleChanged;
+use Illuminate\Support\Facades\Log;
+
+class LogUserRoleChange
+{
+    public function handle(UserRoleChanged $event): void
+    {
+        Log::info('User role changed', [
+            'user_id' => $event->user->id,
+            'user_name' => $event->user->name,
+            'old_role' => $event->oldRole,
+            'new_role' => $event->newRole,
+            'changed_at' => now()->toDateTimeString(),
+        ]);
+    }
+}
+
+
+Check event discovery
+php artisan event:list
+
+
+
+
