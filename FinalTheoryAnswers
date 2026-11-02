@@ -1,0 +1,191 @@
+Final Assessment: Theory
+Date: Monday 2 November. Time: 11:30 AM to 1:00 PM (90 minutes). Marks: 100.
+
+Pass: 75 or more, and Q3, Q7 and Q9 must be correct.
+Write your answers in your own words in a file named FinalTheoryAnswers and push it to a new branch named final-assessment, created from your feature/test-3 branch. Short, clear answers are enough. Add a small code example where it helps. No AI tools.
+
+Section A: Short questions (12 x 5 = 60 marks)
+About 3 minutes each. Two or three lines is enough.
+
+1. A request comes in for PUT /employees/5. Put these in the order Laravel runs them:
+   controller, middleware, Form Request validation, route model binding, Policy check.
+
+middleware,
+route model binding,
+Form Request,
+controller,
+Policy check,
+Form Request validation
+
+// first from the route when middleware is present the request reaches the middleware, if middleware check passes it reaches to the route model binding.
+// then the Form Request reaches the controller , then Policy check happens if the user is allowed to perfom this action or not and later the Form request is validated inside the controller i.e if the data submitted in the form is according to the requested form rules or not.
+
+2. Why does a Blade form that updates a record need @method('PUT') and @csrf? What happens without each one?
+   when we define a route, we also define which http method is allowed against that route. For eg get, post, put, patch or delete. A normal HTML Form allows us to send through GET and POST methods. But laravel provides us the directive @method()
+   Through which we can send PUT, PATCH, DELETE methods in the form according to what the route requires.
+   @csrf is a blade directive provided by laravel which is used to protect the form from the csrf realted attacks.
+   The directive automatically generates the csrf token when it is used in the form.
+   If a request does not does not contain a correct csrf token it gives the 419 code error (Page Expired) to the user. Does protecting us against the malicious requests.
+
+3. Your User model has fillable name, email and password. A form also sends is_active=0. (a) What happens to is_active when you call User::create() with all the request data? (b) Name two ways a non-fillable field CAN be saved, and say when each one is safe to use.
+   (a) What happens to is_active when you call User::create() with all the request data?
+   => Through User::create() eloquoent protects/does not save any extra model attributes which are not present in the fillable.
+   so in this case the record will be created but is_active=0 will be skipped by eloquoent.
+
+(b) Name two ways a non-fillable field CAN be saved, and say when each one is safe to use.
+=> First way (forceFill) - Through eloqoent we can use forceFill to bypass the fillable model attributes and add extra attributes.
+Second way (directly saving in db) - We can direcly save the data in DB without using the eloqoent in exceptional cases by directly getting the form inputs from request and then use save().
+
+It is not safe in case if the fields which we are saving are authorization or permissons realted or where the data directly affects the accuary and integrity. It should be used in cases where the flow of the other process need not to be distrubed yet we have to save the data. for eg if the login/registration from is already using the fillable but we later need to save an extra field without adding it in the login form we can use this method. so the flow of existing process does not get distrubed and yet we are able to save extra data using this method.
+
+4. What is the N+1 query problem? Write one line of code that causes it and the one-line fix.
+   N + 1 query problem occurs when the data fetched through the model realtionship makes new query for each number of record instead of using a single query. We use with and load to fix the N + 1 query problems which uses the where in clause to fetch the data instead of making new query for each record.
+
+$Employee::departments->get(); // This causes the N+1 query problem.
+$Employee::with('departments'); // This fixes the N+1 query problem.
+
+5.  Explain hasMany, belongsTo and belongsToMany with one example each from your project.
+    hasMany => For eg One Department Has Many Employees. so we can use this relationship to get all the employees working in a department.
+    belongsTo => For eg One Employee belongs to one Department. So we can use this realtionship to get all the employees with their department.
+    belongsToMany => For eg One employee belongs to Many projects. So we can fetch all the employees with their projects i.e it can be multiple projects.
+
+6.  What is the difference between with() and load()? When would you use load()?
+    with is used to fetch all data using the relationships while building query.
+    load is used to fetch all data using the relationships when we perform new query on a already existing model object.
+
+7.  A table on the live server already has data. You need to rename a column and add a new nullable column. Why must you not edit the old migration? Write the new migration, including a working down() method.
+    We should not edit an old migration as it will tamper the history of changes of the database structure which will affect the overall management of the database and its history and it will cause issue in the live server if not managed and executed properly with new migration.
+
+    public function up(): void
+    {
+    Schema::table('employees', function (Blueprint $table) {
+    $table->renameColumn('salary', 'Salary');
+    $table->int('age', 10 )->nullable();
+    });
+    }
+
+    public function down(): void
+    {
+    Schema::table('employees', function (Blueprint $table) {
+
+                $table->renameColumn('Salary', 'salary');
+                $table->dropColumn('age');
+            });
+
+        }
+
+8.  Write the validation rule for an email that must be unique in the employees table but must ignore the current employee during an update.
+    while adding
+    public function rules(): array
+    {
+    email' => 'required|email|unique:employees,email',
+    }
+
+    while updating
+    public function rules(): array
+    {
+    'email' => ['required', 'email', Rule::unique('employees', 'email')->ignore($this->employee)],
+    }
+
+    you have to import this use Illuminate\Validation\Rule; for using the rule in the update request.
+
+9.  What is the difference between a Spatie permission middleware on a route and a Policy method? Give one example where only a Policy can do the job.
+    Spatie permission middleware on a route => Spatie helps us to protect the routes based on the roles and permissons allocated to the user. the user can perform only the action which is allowed by permissons and also check for valid role if any case fails user will not be able to perform the actions, it is based on how it is setup.
+
+    Policy method => when we impose a policy on a method it checks if the model on which we are performing the action is meeting the policy defined.
+    This helps us to get the model level control and protects from expose of important data or do unauthorized requests.
+
+    Give one example where only a Policy can do the job => policy can do a job where we have to impose the restrictions on a model level. We can define its accessibiltiy, and restrictions based on customized parametrs other than role.
+
+10. Why do you use DB::transaction() when saving an employee and their projects together? What happens to a queued email sent inside a transaction that rolls back, and how do you prevent it?'
+    We use DB::transaction because it provides us with concept of Atomocity i.e all queries either pass together or fail and the transaction rollback's back. In case of employee and projects we first update the empoyee data then sync and save their projects in the piviot table. So if the employee gets updated but the projects fail for some reason the incorrect data will reamin in the employees table. Does we have to wrap queries in the Database transaction so that the it is commited only when all queries are passing and if any fails the transaction can be rolled back preventing the inconsistent data.
+    What happens to a queued email sent inside a transaction that rolls back, and how do you prevent it?=> the queued email sent inside the transaction remains as it is when it is called before commiting the transaction, which becomes inconsistent when the transaction is rolled back. Therefore it should be called after the Transaction commit is sucessful. does preventing inconsistent queued emails.
+
+11. Give one example each, from an employee API, of these status codes: 401, 403, 404 and 422.
+    401 => Unauthorized => When user is not having correct permissons or role to perform the action but trying to perform action for eg - PUT api/v1/employees/{employee} users cannot Update Employee data unless their role is HR or ADMIN they will see this error with status code.
+    403 => Forebidden => When the policy is written for a model that each employee role can view their own employee record and they try to access get api/v1/employees/{employee} some other employees record the following response code occurs.
+    404=> Not found => When the requested resource is not present i.e the route is not defined for eg api/v1/employees/test
+    In this case the following response code occurs.
+    422=> Unprocessible Request => When the user is supplying extra fields in the form request more then that which are allowed in fillable and through eloqueont we call create or insert or other method this response code occurs.for POST api/v1/employees we send extra field isAdmin=1
+
+12. Which commands do you run, in order, when you deploy a change with a new migration to a live server? Say what each one does.
+    check the status of migration : php artisan migrate:status
+    check if all the previous migrations before change are already stated as ran
+    then php artisan migrate - run the changes and the migration on the live server if no existing migrations are present.
+    if specific migration we have to run then php artisna migrate --pathofthemigrationfileandfilename
+
+Section B: Live-project scenarios (2 x 20 = 40 marks)
+About 20 minutes each. Write your steps and your reasons.
+B1. Code review (20 marks)
+A teammate sends this code for review. Find at least 5 problems, explain why each one is a problem, and write the corrected code.
+public function update(Request $request, $id)
+{
+    $employee = Employee::find($id);
+$employee->update($request->all());
+
+    $projects = Project::all();
+    foreach ($projects as $project) {
+        echo $project->employees->count();
+    }
+
+    DB::statement("UPDATE employees SET salary = " . $request->salary . " WHERE id = " . $id);
+
+    Mail::to($employee->email)->send(new WelcomeEmployeeMail($employee));
+
+    return view('employee.edit', ['employee' => $employee, 'note' => $request->note]);
+
+}
+1)update($request->all() is used instead of validation the data before saving. 2) $projects = Project::all(); eager loading is not used causing N+1 query
+3)DB::statement("UPDATE employees SET salary = " . $request->salary . " WHERE id = " . $id); => raw sql query is used which exposes the threat of SQL injection/XSS attacks where the users inputs the SQL in the input texts.
+4)Queries are not wrapped in a single transaction which will cause inconsistent data if the transaction fails after updating the first employee query. i.e if employee data is updated byt the projects query fails. 5) Emai is send to the employee but should only be send when the transaction succeds instead of sending it every time.
+
+public function update(Request $request, $id)
+{
+Try{
+
+DB::BeginTransaction();
+
+$employee = Employee::find($id);
+
+$employee->update($request->validated());
+
+    $projects = Project::with('employees');
+    foreach ($projects as $project) {
+        echo $project->employees->count();
+    }
+
+    $employee=Employee:update($employee);
+
+DB::Commit()
+
+    Mail::to($employee->email)->send(new WelcomeEmployeeMail($employee));
+
+     return view('employee.edit', ['employee' => $employee, 'note' => $request->note]);
+    }
+    catch{
+
+DB:Rollback();
+
+    }
+
+}
+
+The Blade view prints the note with {!! $note !!}.
+B2. Live bug (20 marks)
+After yesterday's deployment, users report that the employee list page on the live server is very slow and sometimes shows a 500 error. You have server access and Git. Write step by step how you would find the cause, fix it safely, test the fix, and deploy it without losing data. Name the logs, commands and tools you would use.
+
+1. Check on the server if all the services are correctly running and does not have failing service. Check if multiple active connnections or large database queries in present in mysql.
+
+2) clone the live project and create a new issue branch
+
+3) Check the frontend first if there is some issue or bug in frontend code or any possibiltiy of N +1 Queries problems are present.
+
+4) Check the Controller if it has some code which is causing the delay
+
+5) test all the queries in mysql to check if the delay is caused by the query i.e check for proper indexes and propery query optimization is followed.
+
+6) debug the time taken by the controller to respond to the view step by step to track down where the performance issue lies.
+
+7) Fix the probelem if it is in code and give it for testing and after approval send the pull request to the for merge.
+
+review what all cases will occur and if the change breaks the existing flow or not if all cases pass send it for test and then for merge.
