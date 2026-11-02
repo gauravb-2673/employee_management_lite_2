@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 use App\Models\EmployeeSalaryHistories;
+use App\Models\ExpenseClaims;
+
 
 class EmployeeController extends Controller
 {
@@ -322,6 +324,7 @@ class EmployeeController extends Controller
 
         // 6. Find the existing document, if one exists.
         $existingDocument = $employee->documents()->first();
+
         $existingEmployeeSalary = $employee->salary;
         $newEmployeeSalary = $data['salary'] ?? $existingEmployeeSalary;
         $salaryChanged = (float) $existingEmployeeSalary !== (float) $newEmployeeSalary;

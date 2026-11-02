@@ -5,6 +5,8 @@ use App\Http\Controllers\Api\V1\EmployeeController as V1EmployeeController;
 use App\Http\Controllers\Api\V2\EmployeeController as V2EmployeeController;
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Api\V1\ExpenseClaimController as V1ExpenseClaimController;
+
 /*
 |--------------------------------------------------------------------------
 | API Version 1
@@ -28,6 +30,12 @@ Route::prefix('v1')
         Route::get('/department/{department}/employees', [DepartmentController::class, 'departments']);
     });
 
+Route::prefix('v1')
+    ->name('api.v1.')
+    ->middleware('auth:sanctum')
+    ->group(function () {
+        Route::get('/claims', [V1ExpenseClaimController::class, 'index']);
+    });
 /*
 |--------------------------------------------------------------------------
 | API Version 2

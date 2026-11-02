@@ -5,6 +5,7 @@ use App\Http\Controllers\EmployeeDocumentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserRoleController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ExpenseClaimController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -74,6 +75,20 @@ Route::middleware(['auth', 'active'])->group(function () {
         '/employee-documents/{document}/view',
         [EmployeeDocumentController::class, 'view']
     )->name('employee-documents.view');
+
+    // Employee expense claims route
+    Route::get('/claims', [ExpenseClaimController::class, 'index'])
+        ->middleware('permission:view employees')
+        ->name('claims.index');
+
+    Route::post('claims/{employee}/approve', [ExpenseClaimController::class, 'store'])
+        ->middleware('permission:view employees')
+        ->name('claims.store');
+
+    Route::post('claims/{employee}/reject', [ExpenseClaimController::class, 'reject'])
+        ->middleware('permission:view employees')
+        ->name('claims.reject');
 });
+
 
 require __DIR__ . '/auth.php';
