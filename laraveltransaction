@@ -1,0 +1,298 @@
+| Method                   | Purpose                                                 |
+| ------------------------ | ------------------------------------------------------- |
+| `DB::beginTransaction()` | Starts a transaction.                                   |
+| `DB::commit()`           | Permanently saves all changes made in the transaction.  |
+| `DB::rollBack()`         | Reverts all changes made since the transaction started. |
+
+Import the DB facade:
+use Illuminate\Support\Facades\DB;
+
+2. beginTransaction(), commit() and rollBack()
+   Let's understand each method.
+   Step 1: Start a transaction
+   DB::beginTransaction();
+
+This tells the database:
+
+"Start tracking the database changes. Don't permanently save them yet."
+Step 2: Perform database operations
+DB::table('employees')
+->where('id', 1)
+->update(['salary' => 50000]);
+
+DB::table('departments')
+->where('id', 1)
+->update(['department_name' => 'IT']);
+
+These changes are part of the transaction.
+Step 3: Commit
+DB::commit();
+
+This permanently saves all changes made during the transaction.
+Step 4: Rollback
+DB::rollBack();
+
+This cancels all database changes made during the current transaction.
+
+Important: You normally call either commit() or rollBack(), not both.
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class EmployeeController extends Controller
+{
+    public function updateEmployee()
+    {
+        try {
+
+            // STEP 1: Start transaction
+            DB::beginTransaction();
+
+            // STEP 2: Update employee
+            DB::table('employees')
+                ->where('id', 1)
+                ->update([
+                    'salary' => 60000
+                ]);
+
+            // STEP 3: Update department
+            DB::table('departments')
+                ->where('id', 1)
+                ->update([
+                    'department_name' => 'Development'
+                ]);
+
+            // STEP 4: Save all changes permanently
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Employee updated successfully'
+            ]);
+
+        } catch (\Throwable $e) {
+
+            // STEP 5: Undo all changes
+            DB::rollBack();
+
+            return response()->json([
+                'message' => 'Something went wrong',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+}
+
+use App\Models\Employee;
+use App\Models\Department;
+use Illuminate\Support\Facades\DB;
+
+public function updateEmployee()
+{
+    try {
+
+        DB::transaction(function () {
+
+            $employee = Employee::findOrFail(1);
+
+            $employee->update([
+                'salary' => 60000
+            ]);
+
+            $department = Department::findOrFail(1);
+
+            $department->update([
+                'department_name' => 'Development'
+            ]);
+
+        });
+
+        return response()->json([
+            'message' => 'Updated successfully'
+        ]);
+
+    } catch (\Throwable $e) {
+
+        return response()->json([
+            'message' => 'Update failed'
+        ], 500);
+
+    }
+}
+
+1. What happens if you execute DB::beginTransaction() but never call commit()?
+Answer: The transaction remains open on that database connection. Its changes are not committed.
+- Other database connections generally cannot see the uncommitted changes.
+- The changes may remain locked.
+- If the connection closes without committing, the database rolls back the uncommitted transaction.
+Important: Always ensure that a transaction is either committed or rolled back.
+2. If the first two queries succeed and the third query throws an exception, what happens inside DB::transaction()?
+Answer: Laravel automatically rolls back all three queries' database changes.
+
+Example:
+DB::transaction(function () {
+
+    // Query 1: Successful
+    DB::table('employees')
+        ->where('id', 1)
+        ->update(['salary' => 50000]);
+
+    // Query 2: Successful
+    DB::table('departments')
+        ->where('id', 1)
+        ->update(['department_name' => 'IT']);
+
+    // Query 3: Exception
+    throw new Exception('Something went wrong');
+
+});
+
+Execution:
+Query 1 -> Success
+Query 2 -> Success
+Query 3 -> Exception
+             |
+             v
+         ROLLBACK
+             |
+             v
+Query 1 -> Reverted
+Query 2 -> Reverted
+
+Remember: Laravel also rethrows the exception, so you can catch it outside the transaction.
+3. Can DB::rollBack() undo changes after DB::commit()?
+Answer: No.
+
+Once you execute:
+DB::commit();
+
+The transaction changes are permanently committed.
+
+Example:
+DB::beginTransaction();
+
+DB::table('employees')
+    ->where('id', 1)
+    ->update(['salary' => 50000]);
+
+DB::commit();
+
+// This cannot undo the committed update.
+DB::rollBack();
+
+If you want to reverse a committed change, you must execute another database operation to restore the previous value.
+4. What is the difference between DB::transaction() and DB::beginTransaction()?
+Answer: The main difference is automatic versus manual transaction management.
+Feature	DB::transaction()	DB::beginTransaction()
+Starts transaction	Automatically	Manually
+Commit	Automatically	Manually
+Rollback	Automatically on exception	Manually
+Exception handling	Automatically rolls back and rethrows	You must handle rollback
+Control	Less manual control	More manual control
+Code complexity	Less	More
+
+
+DB::transaction():
+DB::transaction(function () {
+
+    // Database queries
+
+});
+
+Manual transaction:
+try {
+
+    DB::beginTransaction();
+
+    // Database queries
+
+    DB::commit();
+
+} catch (\Throwable $e) {
+
+    DB::rollBack();
+
+    throw $e;
+}
+
+Use DB::transaction() in most situations.
+5. If you upload a PDF inside a database transaction and the transaction rolls back, will Laravel automatically delete that PDF?
+Answer: NO.
+
+Database transactions only manage database changes. They don't automatically manage filesystem operations.
+
+Example:
+try {
+
+    DB::transaction(function () {
+
+        // Insert employee record
+        $employee = Employee::create([
+            'name' => 'Rahul'
+        ]);
+
+        // Upload PDF
+        $path = request()->file('document')
+            ->store('documents');
+
+        // Simulate error
+        throw new Exception('Something went wrong');
+
+    });
+
+} catch (\Throwable $e) {
+
+    // Database transaction rolled back.
+    // Uploaded PDF still exists!
+
+}
+
+Result:
+Operation	Result
+Employee record inserted	Rolled back
+PDF uploaded	Still exists
+Database transaction	Rolled back
+
+
+How should you handle this?
+
+Keep track of uploaded files and delete them if the transaction fails.
+$path = null;
+
+try {
+
+    DB::transaction(function () use (&$path) {
+
+        $employee = Employee::create([
+            'name' => 'Rahul'
+        ]);
+
+        $path = request()->file('document')
+            ->store('documents');
+
+        // Other database operations
+
+    });
+
+} catch (\Throwable $e) {
+
+    if ($path) {
+        Storage::delete($path);
+    }
+
+    throw $e;
+}
+
+Don't forget the import:
+use Illuminate\Support\Facades\Storage;
+
+Final revision: Remember these five concepts
+Concept	Remember
+beginTransaction()	Start transaction manually.
+commit()	Save all transaction changes.
+rollBack()	Undo uncommitted database changes.
+transaction()	Automatically manages commit and rollback.
+File upload	Not automatically reverted by database rollback.
