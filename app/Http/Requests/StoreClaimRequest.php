@@ -12,7 +12,7 @@ class StoreClaimRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,28 +23,12 @@ class StoreClaimRequest extends FormRequest
     public function rules(): array
     {
         return [
-
-            'employee_id' => 'required|integer|exists:employee,id',
-            'category' => 'required|string|max:100',
-            'amount' => [
-                'required',
-                'numeric',
-                'min:0',
-                'max:99999999.99',
-                'decimal:2',
-            ],
-            'expense_date' => 'required|date|before_or_equal:today',
-            'description' => 'required|string|max:100',
-            'receipt_path' => [
-                'nullable',
-                'file',
-                'mimes:pdf,jpg,png',
-                'max:2048',
-            ],
-            'status' => 'required|string|max:100',
-            'reviewed_at' => 'required|date',
-            'rejection_reason' => 'required|string|max:100',
-
+            'employee_id' => 'required|exists:employees,id',
+            'category' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'expense_date' => 'required|date',
+            'description' => 'nullable|string',
+            'document' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:10240',
         ];
     }
 }

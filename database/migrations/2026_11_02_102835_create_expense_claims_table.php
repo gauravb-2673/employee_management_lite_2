@@ -26,8 +26,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'approved', 'rejected'])->default('pending');
             $table->foreignId('reviewed_by')
                 ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
+                ->constrained('users');
             $table->date('reviewed_at')->nullable();
             $table->string('rejection_reason')->nullable();
 

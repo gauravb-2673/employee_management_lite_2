@@ -5,10 +5,11 @@ namespace Database\Factories;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\ExpenseClaims;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends Factory<Employee>
+ * @extends Factory<ExpenseClaims>
  */
 class ExpenseClaimsFactory extends Factory
 {
@@ -33,7 +34,7 @@ class ExpenseClaimsFactory extends Factory
             ),
 
             'reviewed_by' => fake()->randomElement(
-                Employee::pluck('id')->toArray()
+                User::pluck('id')->toArray()
             ),
             'reviewed_at' => fake()->date(),
             'rejection_reason' => fake()->name(),

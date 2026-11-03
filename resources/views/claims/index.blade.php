@@ -1,60 +1,58 @@
 <form action="{{ route('claims.index') }}" method="GET">
-
     <div>
-        <label for="statussearch" class="mb-1.5 block text-sm font-medium text-slate-700">
-            Search employees
-        </label>
+        <label for="statussearch">Search status</label>
 
         <input type="text" name="statussearch" id="statussearch" value="{{ request('statussearch') }}">
 
+        <button type="submit">Search</button>
 
-
-        <div>
-            <button type="submit">
-                Search
-            </button>
-        </div>
-
-
-        <div>
-            <a href="{{ route('claims.index') }}">
-                Clear Filters
-            </a>
-        </div>
+        <a href="{{ route('claims.index') }}">Clear Filters</a>
     </div>
 </form>
 
-<table border="1">
+<form action="{{ route('claims.create') }}" method="GET">
+    <button type="submit">Create Claim</button>
+</form>
 
-    <th>
+<table border="1">
+    <thead>
         <tr>
-            <td>Employee Name</td>
-            <td>Category</td>
-            <td>Amount</td>
-            <td>Expense date</td>
-            <td>Description</td>
-            <td>Status</td>
-            <td>Reviewed by</td>
-            <td>Reviewed at</td>
-            <td>Rejection reason</td>
-        <tr>
-    </th>
+            <th>Employee Name</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Expense Date</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Reviewed By</th>
+            <th>Reviewed At</th>
+            <th>Rejection Reason</th>
+            <th>Review</th>
+        </tr>
+    </thead>
+
     <tbody>
         @foreach ($claims as $claim)
             <tr>
-                <td> {{ $claim->employee->name }}</td>
+                <td>{{ $claim->employee?->name ?? 'Employee Not Found' }}</td>
                 <td>{{ $claim->category }}</td>
                 <td>{{ $claim->amount }}</td>
                 <td>{{ $claim->expense_date }}</td>
                 <td>{{ $claim->description }}</td>
-                <td> {{ $claim->status }}</td>
-                <td> {{ $claim->user->name }}</td>
-                <td>{{ $claim->reviewed_at }}</td>
-                <td> {{ $claim->rejection_reason }}</td>
+                <td>{{ ucfirst($claim->status) }}</td>
+                <td>{{ $claim->reviewedBy?->name ?? 'Not Reviewed' }}</td>
+                <td>{{ $claim->reviewed_at ?? 'Not Reviewed' }}</td>
+                <td>{{ $claim->rejection_reason ?? 'N/A' }}</td>
+
+                <td>
+                    @if (auth()->check() && auth()->user()->hasRole('admin') && $claim->status === 'pending')
+                        <a href="{{ route('claims.review', $claim->id) }}">
+                            <button type="button">Review</button>
+                        </a>
+                    @else
+                        -
+                    @endif
+                </td>
             </tr>
         @endforeach
     </tbody>
-
-
-
 </table>

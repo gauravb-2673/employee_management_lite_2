@@ -77,15 +77,34 @@ Route::middleware(['auth', 'active'])->group(function () {
     )->name('employee-documents.view');
 
     // Employee expense claims route
+    // Expense Claims Routes
+
+    // Display all expense claims
     Route::get('/claims', [ExpenseClaimController::class, 'index'])
         ->middleware('permission:view employees')
         ->name('claims.index');
 
-    Route::post('claims/{employee}/approve', [ExpenseClaimController::class, 'store'])
+    // Display create claim form
+    Route::get('/claims/create', [ExpenseClaimController::class, 'create'])
+        ->middleware('permission:view employees')
+        ->name('claims.create');
+
+    // Store expense claim
+    Route::post('/claims', [ExpenseClaimController::class, 'store'])
         ->middleware('permission:view employees')
         ->name('claims.store');
 
-    Route::post('claims/{employee}/reject', [ExpenseClaimController::class, 'reject'])
+    Route::get('claims/review/{claim}', [ExpenseClaimController::class, 'review'])
+        ->middleware('permission:view employees')
+        ->name('claims.review');
+
+    // Approve expense claim
+    Route::post('/claims/{claim}/approve', [ExpenseClaimController::class, 'approve'])
+        ->middleware('permission:view employees')
+        ->name('claims.approve');
+
+    // Reject expense claim
+    Route::post('/claims/{claim}/reject', [ExpenseClaimController::class, 'reject'])
         ->middleware('permission:view employees')
         ->name('claims.reject');
 });

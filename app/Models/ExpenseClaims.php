@@ -22,9 +22,9 @@ class ExpenseClaims extends Model
         'description',
         'receipt_path',
         'status',
+        'reviewed_by',
         'reviewed_at',
         'rejection_reason',
-
     ];
 
     protected function casts(): array
