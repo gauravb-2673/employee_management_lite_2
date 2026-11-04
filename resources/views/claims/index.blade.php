@@ -39,9 +39,9 @@
                 <td>{{ $claim->expense_date }}</td>
                 <td>{{ $claim->description }}</td>
                 <td>{{ ucfirst($claim->status) }}</td>
-                <td>{{ $claim->reviewedBy?->name ?? 'Not Reviewed' }}</td>
+                <td>{{ $claim->user?->name ?? 'Not Reviewed' }}</td>
                 <td>{{ $claim->reviewed_at ?? 'Not Reviewed' }}</td>
-                <td>{{ $claim->rejection_reason ?? 'N/A' }}</td>
+                <td>{{ $claim->rejection_reason ?? '' }}</td>
 
                 <td>
                     @if (auth()->check() && auth()->user()->hasRole('admin') && $claim->status === 'pending')
@@ -56,3 +56,33 @@
         @endforeach
     </tbody>
 </table>
+<div>
+    {{ $claims->links('vendor.pagination.claims') }}
+</div>
+<style>
+    .custom-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin-top: 20px;
+    }
+
+    .custom-pagination a,
+    .custom-pagination span {
+        padding: 8px 14px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .custom-pagination .active {
+        background-color: #2563eb;
+        color: white;
+    }
+
+    .custom-pagination .disabled {
+        color: gray;
+    }
+</style>
