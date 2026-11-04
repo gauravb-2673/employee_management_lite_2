@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
+use App\Models\EmployeeSalaryHistories;
+use App\Models\ExpenseClaims;
+
 
 class EmployeeController extends Controller
 {
@@ -321,7 +324,10 @@ class EmployeeController extends Controller
 
         // 6. Find the existing document, if one exists.
         $existingDocument = $employee->documents()->first();
-        $existingEmployeeSalary = $employee->where('id', $employeeid);
+
+        $existingEmployeeSalary = $employee->salary;
+        $newEmployeeSalary = $data['salary'] ?? $existingEmployeeSalary;
+        $salaryChanged = (float) $existingEmployeeSalary !== (float) $newEmployeeSalary;
 
         //dd($existingEmployeeSalary);
         // Keep the old physical path until the update succeeds.
@@ -338,10 +344,23 @@ class EmployeeController extends Controller
                 $file,
                 $request,
                 $existingDocument,
+                $existingEmployeeSalary,
+                $newEmployeeSalary,
+                $salaryChanged,
                 &$newPath
             ) {
                 // Update employee details.
                 $employee->update($data);
+
+                // Save salary history only if salary changed.
+                if ($salaryChanged) {
+                    EmployeeSalaryHistories::create([
+                        'employee_id' => $employee->id,
+                        'old_salary' => $existingEmployeeSalary,
+                        'new_salary' => $newEmployeeSalary,
+                        'changed_by' => $request->user()->id,
+                    ]);
+                }
 
                 // Synchronize project assignments.
                 $employee->projects()->sync($syncData);

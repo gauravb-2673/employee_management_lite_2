@@ -33,6 +33,24 @@
                     </div>
                 </div>
 
+                <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div class="p-6 text-gray-900">
+
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">
+                            Expense Claim Management
+                        </h3>
+
+                        <p class="text-sm text-gray-600">
+                            To manage expense claims, click
+                            <a href="{{ route('claims.index') }}"
+                                class="font-medium text-indigo-700 hover:text-indigo-900 underline">
+                                here
+                            </a>.
+                        </p>
+
+                    </div>
+                </div>
+
                 {{-- Employee Data card --}}
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">

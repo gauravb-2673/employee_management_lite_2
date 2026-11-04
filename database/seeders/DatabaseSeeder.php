@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\ExpenseClaims;
 use App\Models\Project;
 use App\Models\RoleMaster;
 use App\Models\User;
@@ -19,7 +20,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        User::factory(10)->create();
 
         // User::factory()->create([
         //     'name' => 'Test User',
@@ -29,6 +30,7 @@ class DatabaseSeeder extends Seeder
         Project::factory()->count(5)->create();
         Employee::factory()->count(20)->create();
         RoleMaster::factory()->count(5)->create();
+        ExpenseClaims::factory()->count(5)->create();
         // Seed roles and permissions.
         $this->call([
             RoleAndPermissionSeeder::class,

@@ -187,4 +187,9 @@ class Employee extends Model
     {
         return $this->hasMany(EmployeeSalaryHistories::class);
     }
+
+    public function claims(): HasMany
+    {
+        return $this->hasMany(ExpenseClaims::class);
+    }
 }
